@@ -28,7 +28,7 @@ A plugin-oriented mass text communication system
 |           |                       | *Note: `POST`/`PUT` requests for services are not supported; service availability is defined by which plugins the server has installed*
 |           | **Servicechains**     | 
 | GET       | /servicechains        | List of servicechains
-| GET       | /servicechaisns{id}
+| GET       | /servicechains/{id}   | Servicechain info
 
 ### Terminology
 * `blast` is collection of `message`s, all sent as one go with the same message body
