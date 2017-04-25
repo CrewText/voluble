@@ -6,7 +6,7 @@ A plugin-oriented mass text communication system
 |-----------|-----------------------|---------
 |           | **Groups**            |   
 | GET       | /groups               | List of groups
-| GET       | /groups/{id}          | List of contacts in group
+| GET       | /groups/{id}          | List of contacts in group and default servicechain
 | POST      | /groups               | Create new group
 | PUT       | /groups/{id}          | Update group
 | DELETE    | /groups/{id}          | Delete group
