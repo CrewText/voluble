@@ -1,7 +1,7 @@
-# voluble
+# Voluble
 A plugin-oriented mass text communication system
 
-## Implementation thoughts
+## REST API Implementation thoughts
 | VERB      | URL                   | Usage
 |-----------|-----------------------|---------
 |           | **Groups**            |   
@@ -31,6 +31,6 @@ A plugin-oriented mass text communication system
 | GET       | /servicechaisns{id}
 
 ### Terminology
-* `blast` is collection of `message`s
+* `blast` is collection of `message`s, all sent as one go with the same message body
 * A `service` is a way of sending a message. Examples: `esendex`, `twilio`, `telegram`
 * A `servicechain` is a failure-chain of `services` that Voluble should use to try and send a message (eg. Telegram -> SMS -> Email). If the first sending-attempt fails, then Voluble will use the next `service` in the chain to attempt to send the message, and so on.
