@@ -2,28 +2,28 @@ var express = require('express');
 var router = express.Router();
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.get('/groups', function(req,res,next){
-  res.render('groups_list')
+router.get('/', function(req,res,next){
+  res.render('contacts_list')
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.get('/groups/{id}', function(req, res, next){
-  res.render('groups_list_contacts', {id: id})
+router.get('/{id}', function(req, res, next){
+  res.render('contact_info', {contact_id: id})
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.post('/groups', function(req, res, next){
-  res.render('groups_create', {data: req.params}) // Is this right?
+router.post('/', function(req, res, next){
+  res.render('contacts_create', {data: req.params}) // Is this right?
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.put('/groups/{id}', function(req, res, next){
-  res.render('groups_update', {group_id: id, data: req.params}) // Is this right?
+router.put('/{id}', function(req, res, next){
+  res.render('contacts_update', {group_id: id, data: req.params}) // Is this right?
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.delete('/groups/{id}', function(req, res, next){
-  res.render('groups_delete', {group_id: id})
+router.delete('/{id}', function(req, res, next){
+  res.render('contacts_delete', {group_id: id})
 })
 
 module.exports = router;

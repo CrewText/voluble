@@ -10,6 +10,7 @@ var http = require('http');
 var index = require('./routes/index');
 var users = require('./routes/users');
 var routerGroups = require('./routes/groups');
+var routerContacts = require('./routes/contacts');
 
 var app = express();
 
