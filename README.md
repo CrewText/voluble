@@ -21,6 +21,7 @@ A plugin-oriented mass text communication system
 | GET       | /messages/{id}        | Message info
 | POST      | /messages             | Send new message
 |           | **Blasts**            |   
+| GET       | /blasts               | List of blasts sent
 | GET       | /blasts/{id}          | Blast info
 | POST      | /blasts               | Send new blast
 |           | **Services**          | 

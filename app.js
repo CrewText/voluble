@@ -13,6 +13,7 @@ var routerGroups = require('./routes/groups');
 var routerContacts = require('./routes/contacts');
 var routerMessages = require('./routes/messages');
 var routerServices = require('./routes/services');
+var routerBlasts = require('./routes/blasts');
 
 var app = express();
 
@@ -87,6 +88,7 @@ app.use('/groups', routerGroups)
 app.use('/contacts', routerContacts)
 app.use('/messages', routerMessages)
 app.use('/services', routerServices)
+app.use('/blasts', routerBlasts)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
