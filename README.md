@@ -29,6 +29,9 @@ A plugin-oriented mass text communication system
 |           | **Servicechains**     | 
 | GET       | /servicechains        | List of servicechains
 | GET       | /servicechains/{id}   | Servicechain info
+| POST      | /servicechains        | Create new servicechain with a given list of services
+| PUT       | /servicechains/{id}   | Update a servicechain
+| DELETE    | /servicechains/{id}   | Delete a servicechain
 
 ### Terminology
 * `blast` is collection of `message`s, all sent as one go with the same message body
