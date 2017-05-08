@@ -34,3 +34,12 @@ A plugin-oriented mass text communication system
 * `blast` is collection of `message`s, all sent as one go with the same message body
 * A `service` is a way of sending a message. Examples: `esendex`, `twilio`, `telegram`
 * A `servicechain` is a failure-chain of `services` that Voluble should use to try and send a message (eg. Telegram -> SMS -> Email). If the first sending-attempt fails, then Voluble will use the next `service` in the chain to attempt to send the message, and so on.
+
+### Message States
+| State                 | Meaning
+|-----------------------|--------
+| MSG_SENT              | Message has been sent by Voluble, but we cannot confirm that it has been delivered or read.
+| MSG_DELIVERED_SERVICE | In the case of messages that use an intermediate delivery serice (e.g. Facebook Messenger, Telegram, etc.), the message has been confirmed as delivered to the intermediary, but the user has not necessarily recieved it. Does not apply in the case of SMS messages.
+| MSG_DELIVERED_USER    | The message has been delivered to the user through a given service. Cannot confirm that the message has been read. Final state for SMS messages, unless they are replied to.
+| MSG_READ              | The message has been confirmed as read by the user. Does not apply to SMS messages.
+| MSG_REPLIED           | The user has sent a reply to the message through a given channel.
