@@ -14,6 +14,7 @@ var routerContacts = require('./routes/contacts');
 var routerMessages = require('./routes/messages');
 var routerServices = require('./routes/services');
 var routerBlasts = require('./routes/blasts');
+var routerServicechains = require('./routes/servicechains')
 
 var app = express();
 
@@ -89,6 +90,7 @@ app.use('/contacts', routerContacts)
 app.use('/messages', routerMessages)
 app.use('/services', routerServices)
 app.use('/blasts', routerBlasts)
+app.use('/servicechains', routerServicechains)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
