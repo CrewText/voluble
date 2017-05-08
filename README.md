@@ -17,6 +17,7 @@ A plugin-oriented mass text communication system
 | PUT       | /contacts/{id}        | Update contact
 | DELETE    | /contacts/{id}        | Delete contact
 |           | **Messages**          |   
+| GET       | /messages             | List of messages sent
 | GET       | /messages/{id}        | Message info
 | POST      | /messages             | Send new message
 |           | **Blasts**            |   
