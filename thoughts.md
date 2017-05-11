@@ -6,6 +6,42 @@
 #### REST API
 This is the primary way that Voluble Server instances interact with outside clients. All client-facing Voluble operations should be accessible through the REST API. This includes managing contacts, sending messages and defining how messages can be sent.
 
+The design and implementation of this section is arguably the largest part of the whole project. It forms the bulk of the work that needs to be done, since it is effectively the basis of the software - it does the heavy lifting.
+
+Points to consider:
+* The API design/URL scheme itself
+    * Presumably, this will take the standard object-oriented-esque REST style
+    * Think:
+        * https://<SERVER_URL>/messages/<MESSAGE_ID>
+        * https://<SERVER_URL>/contacts/<MESSAGE_ID>
+        * https://<SERVER_URL>/blasts/<MESSAGE_ID>
+        * etc.
+* In what format and in what structure information will be transmitted between Voluble and a client
+* The structure of and information that relates to each of the core concepts in Voluble (`message`s, `blast`s, `service`s, `servicechain`s, etc.) and how they relate to each other.
+    * Perhaps, a `GET` request for a particular `message` (i.e. a request to the endpoint `https://<SERVER_URL>/messages/<MESSAGE_ID>`) might return the following:
+
+```
+{
+    message:
+    {
+        id: 01234567890123456789,
+        content: "Hi Steve, how's things?"
+        contact_id: 987654321
+        service_state:
+        {
+            service: "telegram",
+            state: "MSG_RECIEVED"
+        }
+    }
+
+    metadata:
+    {
+        unique_url: "https://<SERVER_URL>/messages/01234567890123456789"
+        auth_token: "BEARER_TOKEN_RECIEVED"
+    }
+}
+```
+
 #### Data Storage
 All of the contacts and messages that are sent by Voluble are stored somewhere. This is the somewhere. There are a number of options to consider here:
 * What kind of database are we using? Relational or NoSQL? Flat-file based or engine-based?
