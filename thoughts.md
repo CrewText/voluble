@@ -41,3 +41,7 @@ Likely options:
     * Requires the user to transmit their username and password hash every time they make a request, which could present security vulnerabilities
 
 ### Front End/Website
+
+#### Design
+
+#### Back-End Interaction
