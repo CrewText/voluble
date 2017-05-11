@@ -18,7 +18,7 @@ Points to consider:
         * etc.
 * In what format and in what structure information will be transmitted between Voluble and a client
 * The structure of and information that relates to each of the core concepts in Voluble (`message`s, `blast`s, `service`s, `servicechain`s, etc.) and how they relate to each other.
-    * Perhaps, a `GET` request for a particular `message` (i.e. a request to the endpoint `https://<SERVER_URL>/messages/<MESSAGE_ID>`) might return the following:
+    * Perhaps, a `GET` request for a particular `message` (i.e. a request to the endpoint `https://<SERVER_URL>/messages/01234567890123456789`) might return the following:
 
 ```
 {
@@ -36,6 +36,7 @@ Points to consider:
 
     metadata:
     {
+        http_code: 200,
         unique_url: "https://<SERVER_URL>/messages/01234567890123456789"
         auth_token: "BEARER_TOKEN_RECIEVED"
     }
