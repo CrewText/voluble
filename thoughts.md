@@ -53,11 +53,46 @@ All of the contacts and messages that are sent by Voluble are stored somewhere. 
     * If using a NoSQL or document database, how is the information arranged into a vaguely predictable, but extensible way?
 
 #### Plugins
- I'm of the belief that sending of messages isn't something that should be part of the Voluble core. Instead, this behaviour should be delegated to plugins, each of which represents a system of sending messages (SMS, Telegram, etc.), and Voluble should be able to interact with every plugin in a predictable way, withough having to think about how it actually sends the messages.
- 
- This way, if Voluble needs to be able to support a new system for sending messages, then all that needs to happen is for a plugin (`service` in Voluble-speak) to be installed and added to a `servicechain` (a system for sending messages). Voluble itself doesn't need a new version-release or code update.
+I'm of the belief that sending of messages isn't something that should be part of the Voluble core. Instead, this behaviour should be delegated to plugins, each of which represents a system of sending messages (SMS, Telegram, etc.), and Voluble should be able to interact with every plugin in a predictable way, withough having to think about how it actually sends the messages.
+
+This way, if Voluble needs to be able to support a new system for sending messages, then all that needs to happen is for a plugin (`service` in Voluble-speak) to be installed and added to a `servicechain` (a system for sending messages). Voluble itself doesn't need a new version-release or code update.
     
 How should a plugin work? If Voluble needs to work with it in a predictable way, then it needs to expose a certain set of interfaces/methods and not break when it's used. How can we ensure this? How do we define what the plugin needs to make available for Voluble to be able to use it?
+
+#### Client/User creation
+* User responsibility delegation
+    * How do we decide how we structure users in Voluble?
+        * Should Voluble be able to support multiple 'Organizations', each with it's own set of Users and Contacts, that are completely separate within Voluble?
+            * This would be closest to replicating the current functionality of Info2Text and would avoid having multiple instances running for multiple clients
+            * In this case, the responsibility structure might look like this:
+
+                    voluble_instance:
+                        sysadmin
+                            organization
+                            {
+                                organization_admin
+                                [...]
+                                    organization_regular_user
+                                    [...]
+                            }
+                            organization
+                            {
+                                organization_admin
+                                [...]
+                                    organization_regular_user
+                                    [...]
+                            }
+                            etc...
+
+
+        * Or, do we decide that a single Voluble instance represents a single Organization?
+            * This would provide a neater way of splitting up instances of Voluble, but would require additional outlay per client, with greater setup time to roll-out
+
+* For each level of client/user, Voluble will also need to be able to implement the following basic features:
+    * User creation
+    * Login/logout + cookie management
+    * Password reset
+
 
 #### Client Authentication
 * As with all API-based systems, we need a way of making sure that only the right people have access to the right information. There are a number of ways to accomplish this, and several mechanisms for each.
@@ -78,7 +113,10 @@ Likely options:
     * Requires the user to transmit their username and password hash every time they make a request, which could present security vulnerabilities
 
 ### Front End/Website
+The website is effectively a pleasnt-looking wrapper around the API functions. While this sounds straightforward, it will still take a considerable amount of time to implement.
 
 #### Design
 
 #### Back-End Interaction
+
+#### User Login/Logout
