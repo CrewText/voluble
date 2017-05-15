@@ -30,18 +30,26 @@ Points to consider:
         service_state:
         {
             service: "telegram",
-            state: "MSG_RECIEVED"
+            direction: "incoming", /* "incoming" | "outgoing"
+            state: "MSG_RECIEVED",
+            reply_to: None
         }
     }
 
     metadata:
     {
         http_code: 200,
+        method: "GET",
         unique_url: "https://<SERVER_URL>/messages/01234567890123456789"
         auth_token: "BEARER_TOKEN_RECIEVED"
     }
 }
 ```
+
+#### Message Flow
+How do we refer to the state of a `message`? It makes sense that each message is stored with a state indicator, that defines whether a message has been sent, delivered or read (where appropriate; this cannot be determined in the case of say, SMS.)
+
+How do we deal with replies? The most straightforward method might be to store the reply as a standard `message`, with a `reply_to` field. The downside of this is that by default, every message sent from a contact to an organization would be a reply to the previous message sent (assuming the contact had not already replied). Perhaps an implementation with a `direction` parameter stored in the message would be helpful, so we know whether or not the message was sent by a contact, and if so, whether it was a reply to a message sent out or an unsolicited message. Doing this would allow contacts to contact an organization without the organization sending a message to the contact first, and also allow Voluble to keep track of conversations, regardless of who initiated it.
 
 #### Data Storage
 All of the contacts and messages that are sent by Voluble are stored somewhere. This is the somewhere. There are a number of options to consider here:
