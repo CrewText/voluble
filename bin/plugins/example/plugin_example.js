@@ -1,5 +1,5 @@
 // @ts-check
-var voluble_plugin_base = require('./plugin_base.js')
+var voluble_plugin_base = require('../plugin_base.js')
 
 var ExamplePlugin = {
     name: "Example",
