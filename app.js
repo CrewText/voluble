@@ -1,3 +1,4 @@
+// @ts-check
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -14,10 +15,9 @@ var routerContacts = require('./routes/contacts');
 var routerMessages = require('./routes/messages');
 var routerServices = require('./routes/services');
 var routerBlasts = require('./routes/blasts');
-var routerServicechains = require('./routes/servicechains')
+var routerServicechains = require('./routes/servicechains');
 
 var app = express();
-
 
 /**
  * Get port from environment and store in Express.

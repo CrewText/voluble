@@ -1,3 +1,4 @@
+// @ts-check
 var BaseContact = {
     first_name: null,
     last_name: null,
@@ -10,12 +11,12 @@ var TelegramContact = {
 }
 
 function makeTelegramContact(contact, telegram_id){
-    tc = Object.assign(contact, TelegramContact)
+    let tc = Object.assign(contact, TelegramContact)
     tc.telegram_id = telegram_id
     return tc
 }
 
 function createContact(){
-    cont = Object.create(BaseContact)
+    let cont = Object.create(BaseContact)
     return cont
 }
