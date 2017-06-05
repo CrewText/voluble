@@ -1,6 +1,6 @@
 {
   "name": "voluble",
-  "version": "0.0.0",
+  "version": "0.0.0a1",
   "private": true,
   "scripts": {
     "start": "node app.js"
@@ -12,6 +12,7 @@
     "express": "~4.15.2",
     "jade": "~1.11.0",
     "morgan": "~1.8.1",
-    "serve-favicon": "~2.4.2"
+    "serve-favicon": "~2.4.2",
+    "common-errors": "~1.0.2"
   }
 }
