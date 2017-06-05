@@ -1,25 +1,14 @@
-var plugin = {
-    name: 'Your Plugin Name',
-    description: 'Your Plugin Description',
+// @ts-check
+var errors = require('common-errors')
 
-    send_message = function(message_content,contact) {
+var voluble_plugin = {
+    name: 'plugin_base_name',
+    description: 'plugin_base_description',
+
+    send_message: function (message_content, contact) {
         // This absolutely must be overridden by a plugin
+        throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
+
     }
 }
-
-var TwilioPlugin = {
-    name: "Twilio",
-    description: "A plugin for Twilio",
-    
-    api_key = "",
-    api_secret = ""
-}
-
-function createTwilioPlugin(api_key, api_secret){
-    tp = Object.assign(Object.create(plugin), TwilioPlugin)
-
-    tp.api_key = api_key
-    tp.api_secret = api_secret
-
-    return tp
-}
+module.exports = voluble_plugin;
