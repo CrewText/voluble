@@ -11,4 +11,4 @@ var voluble_plugin = {
 
     }
 }
-module.exports = voluble_plugin;
+module.exports = {voluble_plugin};

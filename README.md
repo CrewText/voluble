@@ -48,3 +48,6 @@ A plugin-oriented mass text communication system
 | MSG_DELIVERED_USER    | The message has been delivered to the user through a given service. Cannot confirm that the message has been read. Final state for SMS messages, unless they are replied to.
 | MSG_READ              | The message has been confirmed as read by the user. Does not apply to SMS messages.
 | MSG_REPLIED           | The user has sent a reply to the message through a given channel.
+
+## Data Storage Layout
+### SQL

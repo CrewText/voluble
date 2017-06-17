@@ -8,8 +8,9 @@ var ExamplePlugin = {
     api_key: "",
     api_secret: "",
 
-    send_message: function () {
+    send_message: function (message) {
         // This must be defined by *every* function. It will be called by the voluble when a message needs to be sent.
+        console.log("Sending the message: " + message)
         return true
     }
 }
@@ -22,3 +23,5 @@ var createExamplePlugin = function (api_key, api_secret) {
 
     return ex_plug
 }
+
+module.exports = {createExamplePlugin};
