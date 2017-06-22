@@ -1,0 +1,7 @@
+{
+  "npm_modules": [],
+  "data_fields": {
+    "contact": ["ExampleDataField1",
+    "ExampleDataField2"]
+  }
+}
