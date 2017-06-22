@@ -10,13 +10,13 @@ var ExamplePlugin = {
 
     send_message: function (message) {
         // This must be defined by *every* function. It will be called by the voluble when a message needs to be sent.
-        console.log("Sending the message: " + message)
-        return true
+        console.log("Sending the message: " + message).
+        return voluble_plugin_base.message_states.MESSAGE_SENT
     }
 }
 
 var createExamplePlugin = function (api_key, api_secret) {
-    let ex_plug = Object.assign(Object.create(voluble_plugin_base), ExamplePlugin)
+    let ex_plug = Object.assign(Object.create(voluble_plugin_base.voluble_plugin), ExamplePlugin)
 
     ex_plug.api_key = api_key
     ex_plug.api_secret = api_secret

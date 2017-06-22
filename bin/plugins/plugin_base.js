@@ -1,5 +1,6 @@
 // @ts-check
 var errors = require('common-errors')
+var message = require('../messages/message')
 
 var voluble_plugin = {
     name: 'plugin_base_name',
@@ -11,4 +12,4 @@ var voluble_plugin = {
 
     }
 }
-module.exports = {voluble_plugin};
+module.exports = {voluble_plugin, message.message_states};
