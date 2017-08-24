@@ -2,9 +2,21 @@ var express = require('express');
 var router = express.Router();
 var dbClient = require('mariasql');
 
+var client = new dbClient({
+  host: 'localhost',
+  user: 'root',
+  password: ''
+});
+
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.get('/', function(req,res,next){
   //res.render('contacts_list')
+  let prep = client.prepare("SELECT first_name, surname, email_address FROM `voluble`.`contacts` ORDER BY id ASC")
+  client.query(prep(), function(err, rows){
+    if (err){throw err}
+    console.dir(rows)
+    console.log("things!");
+  })
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
@@ -17,11 +29,6 @@ router.post('/', function(req, res, next){
   //res.render('contacts_create', {data: req.params}) // Is this right?
   
   // Add a random contact
-  let client = new dbClient({
-    host: 'localhost',
-    user: 'root',
-    password: ''
-  });
 
   let prep = client.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, '1')")
   client.query(prep([req.body.first_name, req.body.surname, req.body.email_address]), function(err, rows){
