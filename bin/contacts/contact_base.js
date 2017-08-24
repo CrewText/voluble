@@ -1,4 +1,3 @@
-// @ts-check
 var BaseContact = {
     first_name: null,
     last_name: null,
