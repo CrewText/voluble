@@ -12,11 +12,18 @@ var client = new dbClient({
 router.get('/', function(req,res,next){
   //res.render('contacts_list')
   let prep = client.prepare("SELECT first_name, surname, email_address FROM `voluble`.`contacts` ORDER BY id ASC")
-  client.query(prep(), null, {useArray: true}, function(err, rows){
-    if (err){throw err}
-    res.json(rows)
-    res.send()
-  })
+    let q = client.query(prep())
+    let contacts = []
+
+    q.on('result', function(result){
+      result.on('data', function (row){
+          contacts.push(row)
+      })
+    }).on('end', function(){
+      res.json(contacts)
+    })
+
+  
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
