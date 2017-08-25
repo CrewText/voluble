@@ -14,7 +14,7 @@ router.get('/', function(req,res,next){
   let prep = client.prepare("SELECT first_name, surname, email_address FROM `voluble`.`contacts` ORDER BY id ASC")
   client.query(prep(), null, {useArray: true}, function(err, rows){
     if (err){throw err}
-    console.dir(rows)
+    res.json(rows)
     res.send()
   })
 })
@@ -27,9 +27,7 @@ router.get('/:id', function(req, res, next){
   let query = client.prepare();
   client.query("SELECT * FROM voluble.contacts WHERE id = ?", [parseInt(req.params.id)], {useArray: true}, function (err, rows){
     if (err){throw err};
-
-    console.dir(rows);
-    res.send();
+    res.json(rows)
   })
 
 })
