@@ -9,6 +9,12 @@ var client = new dbClient({
   password: ''
 });
 
+
+/**
+ * 
+ * @param {string} id String to confirm is a valid integer
+ * @returns {Q.promise} containing value of the ID number as integer
+ */
 function verifyIdIsInteger(id) {
   let deferred = Q.defer()
 
@@ -24,6 +30,12 @@ function verifyIdIsInteger(id) {
   return deferred.promise
 }
 
+/**
+ * Removes a contact with ID `id` from the database
+ * @param {integer} id ID of contact to remove
+ * @returns {Q.promise}
+ */
+
 function deleteContactFromDB(id) {
   let deferred = Q.defer()
   client.query("DELETE FROM voluble.contacts WHERE id = ?", [id], true, function (err, rows) {
@@ -37,7 +49,12 @@ function deleteContactFromDB(id) {
   return deferred.promise
 }
 
-function checkContactExists(id) {
+/**
+ * Queries the database to make sure confirm that the contact with id `id` exists
+ * @param {integer} id Contact ID number
+ * @returns {Q.promise} with value `id` if contact exists
+ */
+function checkContactWithIDExists(id) {
   let deferred = Q.defer()
   client.query("SELECT id FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
     if (err) { deferred.reject(err) }
@@ -49,7 +66,12 @@ function checkContactExists(id) {
   return deferred.promise
 }
 
-function getUserWithId(id) {
+/**
+ * Queries the database to retrieve the info for contact with ID `id`
+ * @param {integer} id Contact ID number
+ * @returns {Q.promise} with JSON data containing user info
+ */
+function getContactWithId(id) {
   let deferred = Q.defer()
   client.query("SELECT * FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
     if (err) { deferred.reject(err) }
@@ -82,10 +104,10 @@ router.get('/:contact_id', function (req, res, next) {
 
   verifyIdIsInteger(req.params.contact_id)
     .then(function (id) {
-      return checkContactExists(id)
+      return checkContactWithIDExists(id)
     })
     .then(function (id) {
-      return getUserWithId(id)
+      return getContactWithId(id)
     }).then(function (user) {
       res.status(200).json(user)
     })
@@ -119,7 +141,6 @@ router.put('/{id}', function (req, res, next) {
   res.render('contacts_update', { group_id: id, data: req.params }) // Is this right?
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
 router.delete('/:contact_id', function (req, res, next) {
   verifyIdIsInteger(req.params.contact_id)
     .then(function (contact_id) {
