@@ -36,7 +36,6 @@ router.get('/:contact_id', function (req, res, next) {
   }
   
   // Make the DB request for contact with ID `contact_id`
-  let query = client.prepare();
   client.query("SELECT * FROM voluble.contacts WHERE id = ?", [contact_id], { useArray: true }, function (err, rows) {
     if (err) { throw err };
     
@@ -76,8 +75,22 @@ router.put('/{id}', function (req, res, next) {
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.delete('/{id}', function (req, res, next) {
-  res.render('contacts_delete', { group_id: id })
+router.delete('/:contact_id', function (req, res, next) {
+  let contact_id = parseInt(req.params.contact_id)
+  // Check that the supplied contact ID is a valid int
+  if (!contact_id){
+    let error = {error: "Supplied contact ID is not an integer!"}
+    res.status(200).json(error)
+    return
+  }
+
+  client.query("DELETE FROM voluble.contacts WHERE id = ?", [contact_id], true, function(err,rows){
+    if (err){throw err}
+    else{
+      res.status(200).end()
+    }
+  })
+  
 })
 
 module.exports = router;
