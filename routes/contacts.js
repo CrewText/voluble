@@ -118,21 +118,32 @@ router.get('/:contact_id', function (req, res, next) {
 
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
-router.post('/', function (req, res, next) {
-  //res.render('contacts_create', {data: req.params}) // Is this right?
-
-  // Add a random contact
+function addContactToDB(first_name, surname, email){
+  let deferred = Q.defer()
 
   let prep = client.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, '1')")
-  client.query(prep([req.body.first_name, req.body.surname, req.body.email_address]), function (err, rows) {
-    if (err)
-      throw err;
-
-    console.dir(rows);
+  client.query(prep([first_name, surname, email]), function (err, rows) {
+    if (err){
+      deferred.reject(err)
+    }
+    
+    deferred.resolve(client.lastInsertId())
   })
 
-  res.send(`Inserted ${req.body.first_name} ${req.body.surname}!`);
+  return deferred.promise
+}
+
+/* Note: this is boilerplate and has NOT been implemented yet */
+router.post('/', function (req, res, next) {
+  addContactToDB(req.body.first_name, req.body.surname, req.body.email_address)
+  .then(function(newContactID){
+    res.status(200).send("New contact: ID " + newContactID)
+  })
+  .catch(function(error){
+    console.log(error)
+    res.status(500).end()
+  })
+  .done()
 
 })
 
