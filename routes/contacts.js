@@ -37,6 +37,30 @@ function deleteContactFromDB(id) {
   return deferred.promise
 }
 
+function checkContactExists(id) {
+  let deferred = Q.defer()
+  client.query("SELECT id FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
+    if (err) { deferred.reject(err) }
+    else if (!rows.length) {
+      deferred.reject(new Error("Contact with this ID does not exist."))
+    }
+    else deferred.resolve(id)
+  })
+  return deferred.promise
+}
+
+function getUserWithId(id) {
+  let deferred = Q.defer()
+  client.query("SELECT * FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
+    if (err) { deferred.reject(err) }
+    else {
+      deferred.resolve(rows[0])
+    }
+  })
+
+  return deferred.promise
+}
+
 
 router.get('/', function (req, res, next) {
 
@@ -55,28 +79,20 @@ router.get('/', function (req, res, next) {
 })
 
 router.get('/:contact_id', function (req, res, next) {
-  let contact_id = parseInt(req.params.contact_id)
 
-  // Check that the supplied contact ID is a valid int
-  if (!contact_id) {
-    let error = { error: "Supplied contact ID is not an integer!" }
-    res.status(200).json(error)
-    return
-  }
-
-  // Make the DB request for contact with ID `contact_id`
-  client.query("SELECT * FROM voluble.contacts WHERE id = ?", [contact_id], { useArray: true }, function (err, rows) {
-    if (err) { throw err };
-
-    // Check that the contact actually exists
-    if (!rows.length) {
-      let error = { error: "Contact with this ID does not exist." }
-      res.status(200).json(error)
-    } else {
-      // And if it does, return it!
-      res.json(rows)
-    }
-  })
+  verifyIdIsInteger(req.params.contact_id)
+    .then(function (id) {
+      return checkContactExists(id)
+    })
+    .then(function (id) {
+      return getUserWithId(id)
+    }).then(function (user) {
+      res.status(200).json(user)
+    })
+    .catch(function (error) {
+      res.status(500).send(error.message)
+    })
+    .done()
 
 })
 
@@ -112,7 +128,7 @@ router.delete('/:contact_id', function (req, res, next) {
     .then(function () {
       res.send("Successfully deleted contact " + req.params.contact_id)
     })
-    .catch(function(error){
+    .catch(function (error) {
       console.log(error.message)
       res.status(500).end()
     })
