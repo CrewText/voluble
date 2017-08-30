@@ -83,6 +83,37 @@ function getContactWithId(id) {
   return deferred.promise
 }
 
+function updateSingleContactDetailWithId(id, field_name, new_value) {
+  let deferred = Q.defer()
+
+  client.query("UPDATE voluble.contacts SET " + field_name + " = ? WHERE id = ?", [new_value, id], function (err, rows) {
+    if (err) {
+      deferred.reject(err)
+    } else {
+      deferred.resolve()
+    }
+
+  })
+
+  return deferred.promise
+}
+
+function updateContactDetailsWithId(id, updatedDetails) {
+  /* Expect `updatedDetail` could be like:
+  {
+    first_name: "Derek",
+    email_address: "steve@apple.com"
+  }
+  */
+
+  promises = []
+
+  for (detail in updatedDetails){
+    promises.push(updateSingleContactDetailWithId(id, detail, updatedDetails[detail]))
+  }
+  return Q.allSettled(promises)
+}
+
 
 router.get('/', function (req, res, next) {
 
@@ -118,15 +149,15 @@ router.get('/:contact_id', function (req, res, next) {
 
 })
 
-function addContactToDB(first_name, surname, email){
+function addContactToDB(first_name, surname, email) {
   let deferred = Q.defer()
 
   let prep = client.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, '1')")
   client.query(prep([first_name, surname, email]), function (err, rows) {
-    if (err){
+    if (err) {
       deferred.reject(err)
     }
-    
+
     deferred.resolve(client.lastInsertId())
   })
 
@@ -136,20 +167,36 @@ function addContactToDB(first_name, surname, email){
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
   addContactToDB(req.body.first_name, req.body.surname, req.body.email_address)
-  .then(function(newContactID){
-    res.status(200).send("New contact: ID " + newContactID)
-  })
-  .catch(function(error){
-    console.log(error)
-    res.status(500).end()
-  })
-  .done()
+    .then(function (newContactID) {
+      res.status(200).send("New contact: ID " + newContactID)
+    })
+    .catch(function (error) {
+      console.log(error)
+      res.status(500).end()
+    })
+    .done()
 
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.put('/{id}', function (req, res, next) {
-  res.render('contacts_update', { group_id: id, data: req.params }) // Is this right?
+router.put('/:contact_id', function (req, res, next) {
+
+  verifyIdIsInteger(req.params.contact_id)
+    .then(function (id) {
+      return checkContactWithIDExists(id)
+    })
+    .then(function (id) {
+      return updateContactDetailsWithId(id, req.body)
+    })
+    .then(function(){
+      res.status(200).end()
+    })
+    .catch(function (err) {
+      console.log(err)
+      res.status(500).send(err)
+    })
+    .done()
+
 })
 
 router.delete('/:contact_id', function (req, res, next) {
