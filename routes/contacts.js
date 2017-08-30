@@ -105,13 +105,12 @@ function updateContactDetailsWithId(id, updatedDetails) {
     email_address: "steve@apple.com"
   }
   */
-
   promises = []
 
   for (detail in updatedDetails){
     promises.push(updateSingleContactDetailWithId(id, detail, updatedDetails[detail]))
   }
-  return Q.allSettled(promises)
+  return Q.all(promises)
 }
 
 
