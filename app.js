@@ -18,6 +18,11 @@ var routerBlasts = require('./routes/blasts');
 var routerServicechains = require('./routes/servicechains');
 
 var app = express();
+app.locals.db_credentials = {
+  host: 'localhost',
+  user: 'root',
+  password: ''
+}
 
 /**
  * Get port from environment and store in Express.
