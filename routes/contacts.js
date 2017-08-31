@@ -83,6 +83,12 @@ function getContactWithId(id) {
   return deferred.promise
 }
 
+/**
+ * Does UPDATE DB operation to update a Contact's detail. Usually called by `updateContactDetailsWithId`.
+ * @param {integer} id ID of contact to update
+ * @param {string} field_name Name of the parameter to update, e.g. first_name
+ * @param {string} new_value Value to insert at `field_name`
+ */
 function updateSingleContactDetailWithId(id, field_name, new_value) {
   let deferred = Q.defer()
 
@@ -98,6 +104,11 @@ function updateSingleContactDetailWithId(id, field_name, new_value) {
   return deferred.promise
 }
 
+/**
+ * Updates the details of a single Contact. Internally calls updateSingleContactDetailWithId for each detail change.
+ * @param {integer} id ID of the Contact whose details will be updated
+ * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g {first_name: 'Adam', surname: 'Smith'}
+ */
 function updateContactDetailsWithId(id, updatedDetails) {
   /* Expect `updatedDetail` could be like:
   {
