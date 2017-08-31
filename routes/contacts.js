@@ -9,9 +9,30 @@ var client = new dbClient({
   password: ''
 });
 
+/**
+ * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
+ * @param {string} first_name The first name of the new Contact.
+ * @param {string} surname The surname of the new Contact.
+ * @param {string} email The email address of the new Contact.
+ * @param {integer} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
+ */
+function addContactToDB(first_name, surname, email, default_servicechain) {
+  let deferred = Q.defer()
+
+  let prep = client.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, ?)")
+  client.query(prep([first_name, surname, email, default_servicechain]), function (err, rows) {
+    if (err) {
+      deferred.reject(err)
+    }
+
+    deferred.resolve(client.lastInsertId())
+  })
+
+  return deferred.promise
+}
 
 /**
- * 
+ * Confirms that the supplied ID is a valid number.
  * @param {string} id String to confirm is a valid integer
  * @returns {Q.promise} containing value of the ID number as integer
  */
@@ -84,9 +105,9 @@ function getContactWithId(id) {
 }
 
 /**
- * Does UPDATE DB operation to update a Contact's detail. Usually called by `updateContactDetailsWithId`.
+ * Does UPDATE DB operation to update a Contact's detail. Usually called by {@link updateContactDetailsWithId}.
  * @param {integer} id ID of contact to update
- * @param {string} field_name Name of the parameter to update, e.g. first_name
+ * @param {string} field_name Name of the parameter to update, e.g. `first_name`
  * @param {string} new_value Value to insert at `field_name`
  */
 function updateSingleContactDetailWithId(id, field_name, new_value) {
@@ -105,9 +126,9 @@ function updateSingleContactDetailWithId(id, field_name, new_value) {
 }
 
 /**
- * Updates the details of a single Contact. Internally calls updateSingleContactDetailWithId for each detail change.
+ * Updates the details of a single Contact. Internally calls {@link updateSingleContactDetailWithId} for each detail change.
  * @param {integer} id ID of the Contact whose details will be updated
- * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g {first_name: 'Adam', surname: 'Smith'}
+ * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`
  */
 function updateContactDetailsWithId(id, updatedDetails) {
   /* Expect `updatedDetail` could be like:
@@ -124,7 +145,10 @@ function updateContactDetailsWithId(id, updatedDetails) {
   return Q.all(promises)
 }
 
-
+/**
+ * Handles the route `GET /contacts`.
+ * Lists all of the contacts available to the user.
+ */
 router.get('/', function (req, res, next) {
 
   let prep = client.prepare("SELECT * FROM `voluble`.`contacts` ORDER BY id ASC")
@@ -141,6 +165,10 @@ router.get('/', function (req, res, next) {
   })
 })
 
+/**
+ * Handles the route `GET /contacts/{id}`.
+ * Lists all of the details available about the contact with a given ID.
+ */
 router.get('/:contact_id', function (req, res, next) {
 
   verifyIdIsInteger(req.params.contact_id)
@@ -159,22 +187,10 @@ router.get('/:contact_id', function (req, res, next) {
 
 })
 
-function addContactToDB(first_name, surname, email) {
-  let deferred = Q.defer()
-
-  let prep = client.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, '1')")
-  client.query(prep([first_name, surname, email]), function (err, rows) {
-    if (err) {
-      deferred.reject(err)
-    }
-
-    deferred.resolve(client.lastInsertId())
-  })
-
-  return deferred.promise
-}
-
-/* Note: this is boilerplate and has NOT been implemented yet */
+/**
+ * Handles the route `POST /contacts/`.
+ * Inserts a new Contact into the database with the details specified in the request body.
+ */
 router.post('/', function (req, res, next) {
   addContactToDB(req.body.first_name, req.body.surname, req.body.email_address)
     .then(function (newContactID) {
@@ -188,7 +204,10 @@ router.post('/', function (req, res, next) {
 
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
+/**
+ * Handles the route `PUT /contacts/{id}`.
+ * Updates the details for the Contact with the specified ID with the details provided in the request body.
+ */
 router.put('/:contact_id', function (req, res, next) {
 
   verifyIdIsInteger(req.params.contact_id)
@@ -209,6 +228,11 @@ router.put('/:contact_id', function (req, res, next) {
 
 })
 
+/**
+ * Handles the route `DELETE /contacts/{id}`.
+ * Removes the contact with the specified ID from the database.
+ * Returns 200 even if the contact does not exist, to ensure idempotence.
+ */
 router.delete('/:contact_id', function (req, res, next) {
   verifyIdIsInteger(req.params.contact_id)
     .then(function (contact_id) {
