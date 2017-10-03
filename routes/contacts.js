@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var dbClient = require('mariasql');
 var Q = require('q');
+var utils = require('./utilities.js')
 
 /**
  * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
@@ -25,25 +26,6 @@ function addContactToDB(db, first_name, surname, email, default_servicechain) {
   return deferred.promise
 }
 
-/**
- * Confirms that the supplied ID is a valid number.
- * @param {string} id String to confirm is a valid integer
- * @returns {Q.promise} containing value of the ID number as integer
- */
-function verifyIdIsInteger(id) {
-  let deferred = Q.defer()
-
-  let parsed_id = parseInt(id)
-  if (!parsed_id) {
-    deferred.reject(new Error("Supplied ID is not an integer"))
-  }
-  else {
-    console.log("ID is valid: " + parsed_id)
-    deferred.resolve(parsed_id)
-  }
-
-  return deferred.promise
-}
 
 /**
  * Removes a contact with ID `id` from the database
@@ -171,7 +153,7 @@ router.get('/:contact_id', function (req, res, next) {
 
   let client = new dbClient(req.app.locals.db_credentials);
 
-  verifyIdIsInteger(req.params.contact_id)
+  utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
       return checkContactWithIDExists(client, id)
     })
@@ -221,7 +203,7 @@ router.put('/:contact_id', function (req, res, next) {
 
   let client = new dbClient(req.app.locals.db_credentials);
   
-  verifyIdIsInteger(req.params.contact_id)
+  utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
       return checkContactWithIDExists(client, id)
     })
@@ -251,7 +233,7 @@ router.delete('/:contact_id', function (req, res, next) {
 
   let client = new dbClient(req.app.locals.db_credentials);
 
-  verifyIdIsInteger(req.params.contact_id)
+  utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
       return deleteContactFromDB(client, contact_id)
     })
