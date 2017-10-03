@@ -1,7 +1,16 @@
 {
+  "plugin_name": "My Example Plugin",
+  "plugin_description": "This is what my plugin does!",
   "npm_modules": [],
   "data_fields": {
-    "contact": ["ExampleDataField1",
-    "ExampleDataField2"]
+    "contact": [
+      "ExampleDataField1",
+      "ExampleDataField2",
+      "TelegramUsername"
+    ],
+    "custom": [
+      "api_key",
+      "api_secret"
+    ]
   }
 }
