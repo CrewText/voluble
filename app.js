@@ -17,12 +17,10 @@ var routerServices = require('./routes/services');
 var routerBlasts = require('./routes/blasts');
 var routerServicechains = require('./routes/servicechains');
 
+var user_settings = require('./user_settings.json')
+
 var app = express();
-app.locals.db_credentials = {
-  host: 'localhost',
-  user: 'root',
-  password: ''
-}
+app.locals.db_credentials = user_settings.db_credentials
 
 /**
  * Get port from environment and store in Express.
