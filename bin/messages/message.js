@@ -14,4 +14,5 @@ var Message = {
   servicechain: null
 }
 
-module.exports = {message_states, message}
+exports.message_states = message_states
+exports.Message = Message
