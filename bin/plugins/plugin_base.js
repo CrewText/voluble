@@ -7,22 +7,23 @@ var voluble_plugin = {
     plugin_uid: null,
 }
 
-voluble_plugin.init = function(){
+voluble_plugin.init = function () {
+    /* This is called by voluble when first initializing the message-sending plugin.
+    Plugins should scrutinize provided parameters and make sure that is possible to safely
+    init the plugin, then do so.
+    If the plugin can be initialized, then `init` should return an instance of the plugin.
+    If not, then return None. */
     throw new errors.NotImplementedError("Plugin " + this.name + " has not defined the function 'init'. Contact the plugin author for a fix.")
 }
 
-voluble_plugin.shutdown = function(){
+voluble_plugin.shutdown = function () {
+    // This is called by voluble when unloading a plugin (such as when voluble is shutting down.)
     throw new errors.NotImplementedError("Plugin " + this.name + "has not defined the function 'shutdown'. Contact the plugin author for a fix.")
 }
 
-voluble_plugin.get_message_status = function(message_id){
-    throw new errors.NotImplementedError("Plugin " + this.name + "has not defined the function 'get_message_status'. Contact the plugin author for a fix.")
-}
-
 voluble_plugin.send_message = function (message_content, contact) {
-    // This absolutely must be overridden by a plugin
+    // This is called by voluble when a message needs to be sent.`
     throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
-
 }
 
-module.exports = {voluble_plugin};
+module.exports = { voluble_plugin, message };

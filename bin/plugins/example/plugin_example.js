@@ -16,17 +16,12 @@ var ExamplePlugin = {
     */
 
     init: function(){
-        /* This is called by voluble when first initializing the message-sending plugin.
-        Plugins should scrutinize provided parameters and make sure that is possible to safely
-        init the plugin, then do so.
-        If the plugin can be initialized, then `init` should return an instance of the plugin.
-        If not, then return None. */
+    },
+
+    shutdown: function(){
     },
     
     send_message: function (message) {
-        // This is called by voluble when a plugin needs to be sent.
-        console.log("Sending the message: " + message)
-        return voluble_plugin_base.message_states.MESSAGE_SENT
     }
 }
 
