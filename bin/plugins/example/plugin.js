@@ -1,6 +1,7 @@
 var voluble_plugin_base = require('../plugin_base.js')
 var manifest = require('./manifest.json')
 
+
 var ExamplePlugin = {
     name: manifest.plugin_name,
     description: manifest.plugin_description,
@@ -9,7 +10,7 @@ var ExamplePlugin = {
     with the table name '`manifest.plugin_uid`_data'
     */
     api_key: manifest.data_fields.custom['api_key'],
-    api_secret: manifest.data_fields.custom['api_key'],
+    api_secret: manifest.data_fields.custom['api_secret'],
 
     /* Implement the functions required by `plugin_base`:
     init, send_message, shutdown

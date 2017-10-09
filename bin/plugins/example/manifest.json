@@ -8,9 +8,9 @@
       "ExampleDataField2",
       "TelegramUsername"
     ],
-    "custom": [
-      "api_key",
-      "api_secret"
-    ]
+    "custom": {
+      "api_key": "THISISTHEAPIKEY0123546789",
+      "api_secret": "VERYLONGOBFUSCATEDAPISECRET9876543210"
+    }
   }
 }

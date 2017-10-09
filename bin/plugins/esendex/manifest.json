@@ -1,0 +1,13 @@
+{
+  "plugin_name": "Esendex",
+  "plugin_description": "This is what my plugin does!",
+  "npm_modules": ["esendex"],
+  "data_fields": {
+    "contact": [],
+    "custom": {
+      "esendex_username": "iamauser",
+      "esendex_password": "correcthorsebatterystaple",
+      "esendex_accountref": "EX0000000"
+    }
+  }
+}

@@ -1,18 +1,21 @@
 // @ts-check
 var voluble_plugin_base = require('../plugin_base.js')
+var manifest = require('./manifest.json')
+
 var Q = require('Q')
+
 var esendex = require('esendex')({
-  username: "me@myemail.com",
-  password: "this_pass_is_secure"
+  username: manifest.esendex_username,
+  password: manifest.esendex_password
 }) // Add authentication info here
 
 var EsendexPlugin = {
   name: "Esendex",
   description: "A plugin allowing Esendex to be used a an SMS Service Provider",
 
-  username: null,
-  password: null,
-  account_ref: null
+  username: manifest.esendex_username,
+  password: manifest.esendex_password,
+  account_ref: manifest.esendex_accountref
 }
 
 EsendexPlugin.send_message = function (message) {
