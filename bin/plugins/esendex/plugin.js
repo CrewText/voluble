@@ -11,7 +11,7 @@ var esendex = require('esendex')({
 
 var EsendexPlugin = {
   name: "Esendex",
-  description: "A plugin allowing Esendex to be used a an SMS Service Provider",
+  description: "A plugin allowing Esendex to be used as an SMS Service Provider",
 
   username: manifest.esendex_username,
   password: manifest.esendex_password,
