@@ -6,9 +6,6 @@ var ExamplePlugin = {
     name: manifest.plugin_name,
     description: manifest.plugin_description,
 
-    /* This bit isn't right - the plugin will actually need to query the DB
-    with the table name '`manifest.plugin_uid`_data'
-    */
     api_key: manifest.data_fields.custom['api_key'],
     api_secret: manifest.data_fields.custom['api_secret'],
 
