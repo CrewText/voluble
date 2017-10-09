@@ -11,8 +11,8 @@ var voluble_plugin = {
  * This is called by voluble when first initializing the message-sending plugin.
  * Plugins should scrutinize provided parameters and make sure that is possible to safely
  * init the plugin, then do so.
- * If the plugin can be initialized, then `init` should return an instance of the plugin.
- * If not, then return None.
+ * If the plugin can be initialized, then `init` should return True.
+ * If not, then return False.
  */
 voluble_plugin.init = function () {
     throw new errors.NotImplementedError("Plugin " + this.name + " has not defined the function 'init'. Contact the plugin author for a fix.")
