@@ -12,7 +12,7 @@ var ExamplePlugin = {
     api_secret: manifest.data_fields.custom['api_key'],
 
     /* Implement the functions required by `plugin_base`:
-    init, get_message_status, send_message, shutdown
+    init, send_message, shutdown
     */
 
     init: function(){
