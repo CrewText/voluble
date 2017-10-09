@@ -45,14 +45,10 @@ EsendexPlugin.esendex_send_message = function (phone_number, message_text) {
   })
 }
 
-var createEsendexPlugin = function (username, password, account_ref) {
+var createPlugin = function (username, password, account_ref) {
   let es_plug = Object.assign(Object.create(voluble_plugin_base.voluble_plugin), EsendexPlugin)
-
-  es_plug.username = username
-  es_plug.password = password
-  es_plug.account_ref = account_ref
 
   return es_plug
 }
 
-module.exports = { createEsendexPlugin };
+module.exports = { createPlugin };
