@@ -25,13 +25,10 @@ var ExamplePlugin = {
     }
 }
 
-var createExamplePlugin = function (api_key, api_secret) {
+var createPlugin = function () {
     let ex_plug = Object.assign(Object.create(voluble_plugin_base.voluble_plugin), ExamplePlugin)
-
-    ex_plug.api_key = api_key
-    ex_plug.api_secret = api_secret
 
     return ex_plug
 }
 
-module.exports = {createExamplePlugin};
+module.exports = {createPlugin};
