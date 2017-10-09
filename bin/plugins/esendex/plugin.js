@@ -10,8 +10,8 @@ var esendex = require('esendex')({
 }) // Add authentication info here
 
 var EsendexPlugin = {
-  name: "Esendex",
-  description: "A plugin allowing Esendex to be used as an SMS Service Provider",
+  name: manifest.plugin_name,
+  description: manifest.plugin_description,
 
   username: manifest.esendex_username,
   password: manifest.esendex_password,
