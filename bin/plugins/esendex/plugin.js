@@ -4,10 +4,7 @@ var manifest = require('./manifest.json')
 
 var Q = require('Q')
 
-var esendex = require('esendex')({
-  username: manifest.esendex_username,
-  password: manifest.esendex_password
-}) // Add authentication info here
+var esendex = require('esendex')
 
 var EsendexPlugin = {
   name: manifest.plugin_name,
@@ -18,12 +15,30 @@ var EsendexPlugin = {
   account_ref: manifest.esendex_accountref
 }
 
+EsendexPlugin.init = function () {
+  try {
+    var esendex = esendex({
+      username: manifest.esendex_username,
+      password: manifest.esendex_password
+    })
+
+    return true
+  }
+
+  catch (e) {
+    return false
+  }
+}
+
 EsendexPlugin.send_message = function (message) {
   let deferred = Q.defer()
   // This must be defined by *every* plugin. It will be called by the voluble when a message needs to be sent.
   console.log("Sending the message: " + message)
   return this.esendex_send_message(message.phone_number, message.message_text)
+}
 
+EsendexPlugin.shutdown = function(){
+  return true
 }
 
 EsendexPlugin.esendex_send_message = function (phone_number, message_text) {
@@ -45,7 +60,7 @@ EsendexPlugin.esendex_send_message = function (phone_number, message_text) {
   })
 }
 
-var createPlugin = function (username, password, account_ref) {
+var createPlugin = function () {
   let es_plug = Object.assign(Object.create(voluble_plugin_base.voluble_plugin), EsendexPlugin)
 
   return es_plug
