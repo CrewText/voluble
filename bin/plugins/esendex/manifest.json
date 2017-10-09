@@ -1,7 +1,7 @@
 {
   "plugin_name": "Esendex",
   "plugin_description": "This is what my plugin does!",
-  "npm_modules": ["esendex"],
+  "npm_modules": ["esendex", "Q"],
   "data_fields": {
     "contact": [],
     "custom": {
