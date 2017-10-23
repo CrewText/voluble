@@ -1,11 +1,11 @@
 {
   "plugin_name": "Esendex",
   "plugin_description": "This is what my plugin does!",
-  // This plugin needs the Esendex API and Q for async operation
-  "npm_modules": ["esendex", "Q"],
+  "npm_modules": [
+    "esendex",
+    "Q"
+  ],
   "data_fields": {
-    
-    // This plugin only uses the contact's phone number, which is a basic requirement anyway
     "contact": [],
     "custom": {
       "esendex_username": "iamauser",
