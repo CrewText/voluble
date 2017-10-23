@@ -4,7 +4,7 @@ var manifest = require('./manifest.json')
 
 var Q = require('Q')
 
-var esendex = require('esendex')
+var esendex = null
 
 var EsendexPlugin = {
   name: manifest.plugin_name,
@@ -16,8 +16,9 @@ var EsendexPlugin = {
 }
 
 EsendexPlugin.init = function () {
+
   try {
-    var esendex = esendex({
+    var esendex = require('esendex')({
       username: manifest.esendex_username,
       password: manifest.esendex_password
     })
@@ -26,6 +27,7 @@ EsendexPlugin.init = function () {
   }
 
   catch (e) {
+    console.log(e)
     return false
   }
 }

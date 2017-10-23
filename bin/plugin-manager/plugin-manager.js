@@ -1,5 +1,4 @@
 const winston = require('winston')
-console.log(winston.level)
 
 var PluginManager = {
     plugin_dir: "",
@@ -10,6 +9,7 @@ var PluginManager = {
 PluginManager.initAllPlugins = function (plugin_dir) {
     winston.debug("Attempting to load plugins")
     this.plugin_dir = plugin_dir
+    this.loadAllPlugins()
 }
 
 PluginManager.loadAllPlugins = function () {
@@ -19,7 +19,7 @@ PluginManager.loadAllPlugins = function () {
 
     try {
         this.availablePlugins.forEach(function (plugin) {
-            plugin.init()
+            winston.debug(plugin.createPlugin().init())
         });
     } catch (e) {
         console.log(e)
