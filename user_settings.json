@@ -3,5 +3,7 @@
     "host": "localhost",
     "user": "root",
     "password": ""
-  }
+  },
+
+  "plugin_directory": "C:\\Users\\calmc\\Source\\Repos\\voluble\\bin\\plugins"
 }
