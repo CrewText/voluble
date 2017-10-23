@@ -2,11 +2,13 @@
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
-var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var debug = require('debug')('voluble:server');
+const winston = require('winston')
+winston.level = 'debug'
 var http = require('http');
+
+winston.info("Loading routes")
 
 var index = require('./routes/index');
 var users = require('./routes/users');
@@ -17,8 +19,12 @@ var routerServices = require('./routes/services');
 var routerBlasts = require('./routes/blasts');
 var routerServicechains = require('./routes/servicechains');
 
+winston.info("Loading plugin manager")
+var pluginManager = require("./bin/plugin-manager/plugin-manager")
+
 var user_settings = require('./user_settings.json')
 
+winston.info("Starting Express server")
 var app = express();
 app.locals.db_credentials = user_settings.db_credentials
 
@@ -75,7 +81,7 @@ server.on('error', onError);
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
+//app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
@@ -89,6 +95,11 @@ app.use('/messages', routerMessages)
 app.use('/services', routerServices)
 app.use('/blasts', routerBlasts)
 app.use('/servicechains', routerServicechains)
+
+// Set up plugin manager
+winston.info("Initing all plugins")
+pluginManager.initAllPlugins(user_settings.plugin_directory)
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
