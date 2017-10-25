@@ -14,6 +14,7 @@ PluginManager.initAllPlugins = function (plugin_dir) {
 
 PluginManager.loadAllPlugins = function () {
     // Cycle through plugin directory and try to init all available plugins
+    // TODO: make loadAllPlugins actually work, and loop through stuff! #1
     let esendexPlugin = require("../plugins/esendex/plugin")
     this.availablePlugins.push(esendexPlugin)
 
