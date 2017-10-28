@@ -3,6 +3,7 @@ const Q = require('Q')
 const dbClient = require('mariasql');
 const router = express.Router();
 const utils = require('./utilities.js')
+const messageManager = require('../bin/message-manager/message-manager')
 
 function getHundredMessageIds(db, offset = 0) {
   let deferred = Q.defer()
@@ -47,7 +48,7 @@ router.get('/{id}', function (req, res, next) {
 router.post('/', function (req, res, next) {
   // Create the message
   let messages = require('../bin/messages/message')
-  let m = messages.createNewMessage()
+  let m = messages.createEmptyMessage()
 
 
 

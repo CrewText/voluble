@@ -17,13 +17,5 @@ var Message = {
   contact: null
 }
 
-var createNewMessage = function () {
-  /* TODO: Should createNewMessage return a ready-to-go message with a new DB message ID?
-   Should it register in the DB? */
-  let m = Object.create(Message)
-  return m
-}
-
 exports.message_states = message_states
 exports.Message = Message
-exports.createNewMessage = createNewMessage
