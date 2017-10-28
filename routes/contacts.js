@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var dbClient = require('mariasql');
 var Q = require('q');
-var utils = require('./utilities.js')
+var utils = require('../utilities.js')
 
 /**
  * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
