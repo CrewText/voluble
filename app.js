@@ -1,31 +1,34 @@
 // @ts-check
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+const express = require('express');
+const path = require('path');
+const favicon = require('serve-favicon');
+const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 const winston = require('winston')
 winston.level = 'debug'
-var http = require('http');
+const http = require('http');
 
 winston.info("Loading routes")
 
-var index = require('./routes/index');
-var users = require('./routes/users');
-var routerGroups = require('./routes/groups');
-var routerContacts = require('./routes/contacts');
-var routerMessages = require('./routes/messages');
-var routerServices = require('./routes/services');
-var routerBlasts = require('./routes/blasts');
-var routerServicechains = require('./routes/servicechains');
+const index = require('./routes/index');
+const users = require('./routes/users');
+const routerGroups = require('./routes/groups');
+const routerContacts = require('./routes/contacts');
+const routerMessages = require('./routes/messages');
+const routerServices = require('./routes/services');
+const routerBlasts = require('./routes/blasts');
+const routerServicechains = require('./routes/servicechains');
 
 winston.info("Loading plugin manager")
-var pluginManager = require("./bin/plugin-manager/plugin-manager")
+const pluginManager = require("./bin/plugin-manager/plugin-manager")
 
-var user_settings = require('./user_settings.json')
+winston.info("Loading message manager")
+const messageManager = require('./bin/message-manager/message-manager')
+
+const user_settings = require('./user_settings.json')
 
 winston.info("Starting Express server")
-var app = express();
+const app = express();
 app.locals.db_credentials = user_settings.db_credentials
 
 /**

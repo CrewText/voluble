@@ -1,8 +1,8 @@
-var express = require('express');
-var Q = require('Q')
-var dbClient = require('mariasql');
-var router = express.Router();
-var utils = require('./utilities.js')
+const express = require('express');
+const Q = require('Q')
+const dbClient = require('mariasql');
+const router = express.Router();
+const utils = require('./utilities.js')
 
 function getHundredMessageIds(db, offset = 0) {
   let deferred = Q.defer()
@@ -43,11 +43,16 @@ router.get('/{id}', function (req, res, next) {
   res.render('message_info', { contact_id: id })
 })
 
-//function do_message_send()
-
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
-  console.log("ooh")
+  // Create the message
+  let messages = require('../bin/messages/message')
+  let m = messages.createNewMessage()
+
+
+
+  // Register the message in the database
+  // Send the message
 })
 
 module.exports = router;
