@@ -16,6 +16,5 @@ function makeTelegramContact(contact, telegram_id){
 }
 
 function createContact(){
-    let cont = Object.create(BaseContact)
-    return cont
+    return Object.create(BaseContact)
 }
