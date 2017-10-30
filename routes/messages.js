@@ -46,12 +46,21 @@ router.get('/{id}', function (req, res, next) {
 
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
+
+
+  // Get message details from request body
+  msg_body = req.body.msg_body
+  msg_contact_id = req.body.contact_id
+  msg_direction = req.body.direction
+  msg_is_reply_to = req.body.is_reply_to
+
   // Create the message
-  messageManager.c
-
-
-
-  // Register the message in the database
+  let message = messageManager.createNewMessage(msg_body,
+    msg_contact_id,
+    msg_direction,
+    contact.servicechain, //?
+    msg_is_reply_to
+  )
   // Send the message
 })
 
