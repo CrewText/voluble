@@ -5,6 +5,7 @@ var Q = require('q');
  * @param {string} id String to confirm is a valid integer
  * @returns {Q.promise} containing value of the ID number as integer
  */
+
 function verifyNumberIsInteger(id) {
     let deferred = Q.defer()
   
@@ -19,3 +20,10 @@ function verifyNumberIsInteger(id) {
   
     return deferred.promise
   }
+  module.exports.verifyNumberIsInteger = verifyNumberIsInteger
+
+function verifyContactExists(id){
+  let deferred = Q.defer()
+  // TODO: Make this actually work
+}
+module.exports.verifyContactExists = verifyContactExists
