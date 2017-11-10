@@ -68,6 +68,9 @@ router.post('/', function (req, res, next) {
       messageManager.sendMessage(message)
       res.status(200).json(message)
     })
+    .catch(function (error) {
+      res.status(500).send(error.message)
+    }).done()
 
 })
 
