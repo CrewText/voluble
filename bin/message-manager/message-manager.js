@@ -27,35 +27,40 @@ var MessageManager = {
     },
 
     createNewMessage: function (msg_body, msg_contact_id, msg_direction, msg_servicechain, msg_is_reply_to = null) {
-        /* TODO: Should createNewMessage return a ready-to-go message with a new DB message ID?
-     Should it register in the DB? --> Yes */
-        let m = this.createEmptyMessage()
-        m.state = this.message_states.MESSAGE_UNSENT
-        m.body = msg_body
-    
-        utils.verifyNumberIsInteger(msg_contact_id)
-            .then(function (parsed_contact_id) {
-                return utils.verifyContactExists(parsed_contact_id)
+        var m = Q.fcall(function () {
+            return MessageManager.createEmptyMessage()
+        })
+            .then(function (msg) {
+                msg.state = MessageManager.message_states.MESSAGE_UNSENT
+                msg.body = msg_body
+                return msg
             })
-            .then(function () {
-                // TODO: Make this resolve to an actual contact object?
-                m.contact = msg_contact_id
+            .then(function (msg) {
+                return utils.verifyNumberIsInteger(msg_contact_id)
+                    .then(function (parsed_cont_id) {
+                        return utils.verifyContactExists(parsed_cont_id)
+                    })
+                    .then(function (cont_id) {
+                        msg.contact = cont_id
+                        return msg
+                    })
             })
-            .then(function () {
+            .then(function (msg) {
                 // TODO: Validate all of these
-                m.servicechain = msg_servicechain,
-                    m.direction = msg_direction,
-                    m.is_reply_to = msg_is_reply_to
+                msg.servicechain = msg_servicechain
+                msg.direction = msg_direction
+                msg.is_reply_to = msg_is_reply_to
+                return msg
             })
-            .then(function () {
+            .then(function (msg) {
                 // TODO: Register message in the database
+                return msg
             })
-            .done()
-    
+
         return m
     },
 
-    sendMessage: function(message){
+    sendMessage: function (message) {
         // TODO: Make this work
     }
 
