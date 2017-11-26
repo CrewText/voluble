@@ -11,10 +11,9 @@ function verifyNumberIsInteger(id) {
   
     let parsed_id = parseInt(id)
     if (!parsed_id) {
-      deferred.reject(new Error("Supplied number is not an integer"))
+      deferred.reject(new Error("Supplied number is not an integer: " + id))
     }
     else {
-      console.log("Number is valid: " + parsed_id)
       deferred.resolve(parsed_id)
     }
   
