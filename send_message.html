@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+
+<head>This Is A Test Page</head>
+
+<body>
+    <h1>Send a test message</h1>
+
+    <form action="http://localhost:3000/messages" method="POST">
+        <p>
+            Message body
+            <input name="msg_body" type="text">
+        </p>
+        <p>
+            Contact ID
+            <input name="contact_id" type="number">
+        </p>
+        <p>
+            Message direction
+            <input name="direction" type="number">
+        </p>
+        <p>
+            Message is reply to
+            <input name="msg_is_reply_to" type="number">
+        </p>
+        <input type="submit">Send</input>
+    </form>
+</body>
+
+</html>
