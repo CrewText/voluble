@@ -13,7 +13,7 @@ router.get('/', function (req, res, next) {
 
   utils.verifyNumberIsInteger(offset)
     .then(function (offset) {
-      return messageManager.getHundredMessageIds(req.app.locals.db_credentials, offset)
+      return messageManager.getHundredMessageIds(offset)
     })
     .then(function (rows) {
       res.status(200).json(rows)

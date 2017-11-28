@@ -3,6 +3,7 @@ const Q = require('Q')
 const dbClient = require('mariasql');
 const message = require('../messages/message')
 const utils = require('../../utilities')
+const user_settings = require('../../user_settings')
 
 var MessageManager = {
     message_states: Object.freeze(
@@ -55,6 +56,7 @@ var MessageManager = {
             })
             .then(function (msg) {
                 // TODO: Register message in the database
+
                 return msg
             })
 
@@ -75,10 +77,10 @@ var MessageManager = {
 
     },
 
-    getHundredMessageIds: function (credentials, offset = 0) {
+    getHundredMessageIds: function (offset = 0) {
         let deferred = Q.defer()
 
-        let client = new dbClient(credentials);
+        let client = new dbClient(user_settings.db_credentials);
 
         let prep = client.prepare("CALL GetOneHundredMessages(?)")
         let query = client.query(prep([offset]), function (err, rows) {
@@ -94,7 +96,6 @@ var MessageManager = {
       
         return deferred.promise
       }
-
-}
+    }
 
 module.exports = MessageManager
