@@ -9,7 +9,7 @@ router.get('/', function (req, res, next) {
   
 
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-  let offset = req.query.offset == {} ? 0 : req.query.offset
+  let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
   utils.verifyNumberIsInteger(offset)
     .then(function (offset) {
