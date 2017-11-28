@@ -8,8 +8,13 @@ var Q = require('q');
 
 function verifyNumberIsInteger(id) {
     let deferred = Q.defer()
+
+    if (id == "0"){
+      deferred.resolve(0)
+      return deferred.promise
+    }
   
-    let parsed_id = parseInt(id)
+    let parsed_id = parseInt(id,10)
     if (!parsed_id) {
       deferred.reject(new Error("Supplied number is not an integer: " + id))
     }
