@@ -56,7 +56,6 @@ var MessageManager = {
                 return msg
             })
             .then(function (msg) {
-                // TODO: Register message in the database
                 return MessageManager.insertMessageIntoDatabase(msg)
             })
     },
