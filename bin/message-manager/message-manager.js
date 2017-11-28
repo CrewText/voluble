@@ -62,6 +62,14 @@ var MessageManager = {
 
     sendMessage: function (message) {
         // TODO: Make this work
+        /*
+        The `message` object has a property, `servicechain`, which holds the ID of the servicechain we should use
+        to send this message. We need to retrieve the servicechain from the database and iterate through all of
+        plugins until something returns True.
+
+        Promises can help us here - by chaining a series of promises together, we can automatically iterate through
+        plugin chains - is the idea!
+        */
     }
 
 }
