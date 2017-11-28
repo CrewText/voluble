@@ -59,7 +59,7 @@ router.post('/', function (req, res, next) {
     let message = messageManager.createNewMessage(msg_body,
       msg_contact_id,
       msg_direction,
-      //contact.servicechain, //?
+      //contact.servicechain, //TODO: Make this the ID of a real servicechain
       0,
       msg_is_reply_to)
 
