@@ -1,5 +1,6 @@
 const winston = require('winston')
 const Q = require('Q')
+const dbClient = require('mariasql');
 const message = require('../messages/message')
 const utils = require('../../utilities')
 
@@ -70,7 +71,27 @@ var MessageManager = {
         Promises can help us here - by chaining a series of promises together, we can automatically iterate through
         plugin chains - is the idea!
         */
-    }
+
+
+    },
+
+    getHundredMessageIds: function (credentials, offset = 0) {
+        let deferred = Q.defer()
+
+        let client = new dbClient(credentials);
+      
+        client.query("CALL GetOneHundredMessages(?)", offset, function (err, row) {
+          if (err) {
+            deferred.reject(err)
+          } else {
+            deferred.resolve(rows)
+          }
+        })
+
+        client.end()
+      
+        return deferred.promise
+      }
 
 }
 

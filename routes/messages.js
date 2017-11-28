@@ -1,41 +1,25 @@
 const express = require('express');
 const Q = require('Q')
-const dbClient = require('mariasql');
 const router = express.Router();
 const winston = require('winston')
 const utils = require('../utilities.js')
 const messageManager = require('../bin/message-manager/message-manager')
 
-function getHundredMessageIds(db, offset = 0) {
-  let deferred = Q.defer()
-
-  db.query("CALL GetOneHundredMessages(?)", offset, function (err, row) {
-    if (err) {
-      deferred.reject(err)
-    } else {
-      deferred.resolve(rows)
-    }
-  })
-
-
-  return deferred.promise
-}
-
 router.get('/', function (req, res, next) {
-  let client = new dbClient(req.app.locals.db_credentials);
+  
 
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = req.query.offset == {} ? 0 : req.query.offset
 
   utils.verifyNumberIsInteger(offset)
+    .then(function (offset) {
+      return messageManager.getHundredMessageIds(req.app.locals.db_credentials, offset)
+    })
     .then(function (rows) {
       res.status(200).json(rows)
     })
     .catch(function (error) {
       res.status(500).send(error.message)
-    })
-    .finally(function () {
-      client.end()
     })
     .done()
 })
@@ -67,17 +51,17 @@ router.post('/', function (req, res, next) {
   })
 
   Q.allSettled([msg_promise])
-  .then(function(msg_proms){
-    if (msg_proms[0].state === "rejected"){
-      throw new Error(msg_proms[0].reason)
-    }
-    return msg_proms[0].value
-  })
-  .then(function (message) {
-    // Send the message!
-    messageManager.sendMessage(message)
-    res.status(200).json(message)
-  })
+    .then(function (msg_proms) {
+      if (msg_proms[0].state === "rejected") {
+        throw new Error(msg_proms[0].reason)
+      }
+      return msg_proms[0].value
+    })
+    .then(function (message) {
+      // Send the message!
+      messageManager.sendMessage(message)
+      res.status(200).json(message)
+    })
     .catch(function (error) {
       res.status(500).json(error.message)
       winston.error(error.message)
