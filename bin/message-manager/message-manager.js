@@ -29,7 +29,7 @@ var MessageManager = {
     },
 
     createNewMessage: function (msg_body, msg_contact_id, msg_direction, msg_servicechain, msg_is_reply_to = null) {
-        var m = Q.fcall(function () {
+        return Q.fcall(function () {
             return MessageManager.createEmptyMessage()
         })
             .then(function (msg) {
@@ -56,11 +56,8 @@ var MessageManager = {
             })
             .then(function (msg) {
                 // TODO: Register message in the database
-
-                return msg
+                return MessageManager.insertMessageIntoDatabase(msg)
             })
-
-        return m
     },
 
     sendMessage: function (message) {
@@ -77,6 +74,24 @@ var MessageManager = {
 
     },
 
+    insertMessageIntoDatabase: function (msg) {
+        let deferred = Q.defer()
+
+        let client = new dbClient(user_settings.db_credentials)
+        let prep = client.prepare("INSERT into messages VALUES (null,?,?,?,?,?,?)")
+        let query = client.query(prep([msg.body, msg.servicechain, msg.contact, msg.is_reply_to, msg.direction, msg.state]), function (err, rows) {
+            if (err) {
+                deferred.reject(err)
+                winston.error(err.message)
+            } else {
+                err.resolve(msg)
+            }
+        })
+
+        client.end()
+        return deferred.promise
+    },
+
     getHundredMessageIds: function (offset = 0) {
         let deferred = Q.defer()
 
@@ -84,18 +99,18 @@ var MessageManager = {
 
         let prep = client.prepare("CALL GetOneHundredMessages(?)")
         let query = client.query(prep([offset]), function (err, rows) {
-          if (err) {
-            deferred.reject(err)
-            winston.error(err.message)
-          } else {
-            deferred.resolve(rows)
-          }
+            if (err) {
+                deferred.reject(err)
+                winston.error(err.message)
+            } else {
+                deferred.resolve(rows)
+            }
         })
 
         client.end()
-      
+
         return deferred.promise
-      }
     }
+}
 
 module.exports = MessageManager

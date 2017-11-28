@@ -44,7 +44,7 @@ router.post('/', function (req, res, next) {
       msg_contact_id,
       msg_direction,
       //contact.servicechain, //TODO: Make this the ID of a real servicechain
-      0,
+      1,
       msg_is_reply_to)
 
     return message
