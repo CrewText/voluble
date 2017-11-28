@@ -8,13 +8,14 @@ const user_settings = require('../../user_settings')
 var MessageManager = {
     message_states: Object.freeze(
         {
-            MESSAGE_FAILED: -1,
-            MESSAGE_UNSENT: 0,
-            MESSAGE_SENT: 1,
-            MESSAGE_DELIVERED_SERVICE: 2,
-            MESSAGE_DELIVERED_USER: 3,
-            MESSAGE_READ: 4,
-            MESSAGE_REPLIED: 5
+            MSG_PENDING: 1,
+            MSG_SENDING: 2,
+            MSG_SENT: 3,
+            MSG_DELIVERED_SERVICE: 4,
+            MSG_DELIVERED_USER: 5,
+            MSG_READ: 6,
+            MSG_REPLIED: 7,
+            MSG_FAILED: 8
         }
     ),
 
