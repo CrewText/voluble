@@ -34,7 +34,7 @@ var MessageManager = {
             return MessageManager.createEmptyMessage()
         })
             .then(function (msg) {
-                msg.state = MessageManager.message_states.MESSAGE_UNSENT
+                msg.state = MessageManager.message_states.MSG_PENDING
                 msg.body = msg_body
                 return msg
             })
@@ -79,13 +79,13 @@ var MessageManager = {
         let deferred = Q.defer()
 
         let client = new dbClient(user_settings.db_credentials)
-        let prep = client.prepare("INSERT into messages VALUES (null,?,?,?,?,?,?)")
+        let prep = client.prepare("INSERT into messages (body, servicechain, contact, is_reply_to, direction, message_state) VALUES (?,?,?,?,?,?)")
         let query = client.query(prep([msg.body, msg.servicechain, msg.contact, msg.is_reply_to, msg.direction, msg.state]), function (err, rows) {
             if (err) {
                 deferred.reject(err)
                 winston.error(err.message)
             } else {
-                err.resolve(msg)
+                deferred.resolve(msg)
             }
         })
 
