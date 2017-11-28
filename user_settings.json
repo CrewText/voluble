@@ -2,7 +2,8 @@
   "db_credentials": {
     "host": "localhost",
     "user": "root",
-    "password": ""
+    "password": "",
+    "db": "voluble"
   },
 
   "plugin_directory": "C:\\Users\\calmc\\Source\\Repos\\voluble\\bin\\plugins"
