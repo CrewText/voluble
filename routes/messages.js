@@ -77,10 +77,9 @@ router.post('/', function (req, res, next) {
     // Send the message!
     messageManager.sendMessage(message)
     res.status(200).json(message)
-
   })
     .catch(function (error) {
-      res.status(500).send(error.message)
+      res.status(500).json(error.message)
       winston.error(error.message)
     })
     .done()
