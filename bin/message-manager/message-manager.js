@@ -79,10 +79,12 @@ var MessageManager = {
         let deferred = Q.defer()
 
         let client = new dbClient(credentials);
-      
-        client.query("CALL GetOneHundredMessages(?)", offset, function (err, row) {
+
+        let prep = client.prepare("CALL GetOneHundredMessages(?)")
+        let query = client.query(prep([offset]), function (err, rows) {
           if (err) {
             deferred.reject(err)
+            winston.error(err.message)
           } else {
             deferred.resolve(rows)
           }
