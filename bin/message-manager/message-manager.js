@@ -79,6 +79,7 @@ var MessageManager = {
         let deferred = Q.defer()
 
         let client = new dbClient(user_settings.db_credentials)
+        // TODO: Make this into a stored procedure one day
         let prep = client.prepare("INSERT into messages (body, servicechain, contact, is_reply_to, direction, message_state) VALUES (?,?,?,?,?,?)")
         let query = client.query(prep([msg.body, msg.servicechain, msg.contact, msg.is_reply_to, msg.direction, msg.state]), function (err, rows) {
             if (err) {
