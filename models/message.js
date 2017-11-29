@@ -2,7 +2,7 @@ let message_model = function (sequelize, DataTypes) {
     var Message = sequelize.define('Message', {
 
         id: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.BIGINT,
             primaryKey: true,
             autoIncrement: true,
         },
