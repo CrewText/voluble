@@ -31,7 +31,8 @@ Object.keys(db).forEach(modelName => {
         db[modelName].associate(db);
     }
 });
-sequelize.sync({force:true}) //TODO: ARGH
+//sequelize.sync({force:true}) //TODO: ARGH
+sequelize.sync()
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;

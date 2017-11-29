@@ -5,15 +5,18 @@ const winston = require('winston')
 const utils = require('../utilities.js')
 const messageManager = require('../bin/message-manager/message-manager')
 
-router.get('/', function (req, res, next) {
-  
+const db = require('../models')
 
+router.get('/', function (req, res, next) {
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
   utils.verifyNumberIsInteger(offset)
     .then(function (offset) {
-      return messageManager.getHundredMessageIds(offset)
+      return db.sequelize.model('Message').findAll({
+        offset: offset,
+        limit: 100
+      })
     })
     .then(function (rows) {
       res.status(200).json(rows)

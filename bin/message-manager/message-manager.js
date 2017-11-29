@@ -4,6 +4,7 @@ const dbClient = require('mariasql');
 const message = require('../messages/message')
 const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
+const db = require('../../models')
 
 var MessageManager = {
     message_states: Object.freeze(
