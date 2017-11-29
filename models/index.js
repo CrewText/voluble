@@ -10,7 +10,7 @@ db = {
             user_settings.db_credentials.user,
             user_settings.db_credentials.password, {
                 host: user_settings.db_credentials.host,
-                dialect: 'mariadb'
+                dialect: 'mysql'
             })
 
         conn.authenticate()
@@ -25,6 +25,5 @@ db = {
         }).done()
     }
 }
-
 
 module.exports = db
