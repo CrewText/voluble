@@ -28,6 +28,8 @@ Object.keys(db).forEach(modelName => {
     if (db[modelName].associate) {
         db[modelName].associate(db);
     }
+
+    sequelize.sync({force:true}) //TODO: ARGH
 });
 
 db.sequelize = sequelize;

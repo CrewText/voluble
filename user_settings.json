@@ -3,7 +3,7 @@
     "host": "localhost",
     "user": "root",
     "password": "",
-    "db": "voluble"
+    "db": "voluble_test"
   },
 
   "plugin_directory": "C:\\Users\\calmc\\Source\\Repos\\voluble\\bin\\plugins"
