@@ -26,6 +26,10 @@ const messageManager = require('./bin/message-manager/message-manager')
 winston.info("Loading user settings")
 const user_settings = require('./user_settings.json')
 
+winston.info("Connecting to database")
+const db = require('./models')
+db.init_connection()
+
 
 winston.info("Starting Express server")
 const app = express();
