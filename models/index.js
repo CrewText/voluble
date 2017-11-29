@@ -3,6 +3,7 @@ const Sequelize = require('sequelize')
 const path = require('path');
 const basename = path.basename(__filename);
 const fs = require('fs')
+const winston = require('winston')
 
 var db = {}
 var sequelize = new Sequelize(user_settings.db_credentials.db,
@@ -10,7 +11,8 @@ var sequelize = new Sequelize(user_settings.db_credentials.db,
     user_settings.db_credentials.password,
     {
         host: user_settings.db_credentials.host,
-        dialect: 'mysql'
+        dialect: 'mysql',
+        benchmark: true
     }
 )
 
@@ -28,9 +30,8 @@ Object.keys(db).forEach(modelName => {
     if (db[modelName].associate) {
         db[modelName].associate(db);
     }
-
-    sequelize.sync({force:true}) //TODO: ARGH
 });
+sequelize.sync({force:true}) //TODO: ARGH
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
