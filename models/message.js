@@ -11,6 +11,7 @@ let message_model = function (sequelize, DataTypes) {
         contact: DataTypes.BIGINT,
         is_reply_to: DataTypes.BIGINT,
         direction: DataTypes.BOOLEAN,
+        sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',
             'MSG_SENDING',
             'MSG_SENT',
