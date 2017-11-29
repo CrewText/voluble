@@ -28,7 +28,6 @@ const user_settings = require('./user_settings.json')
 
 winston.info("Connecting to database")
 const db = require('./models')
-db.init_connection()
 
 
 winston.info("Starting Express server")

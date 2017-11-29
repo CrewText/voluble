@@ -1,29 +1,36 @@
 const user_settings = require('../user_settings')
 const Sequelize = require('sequelize')
-const Q = require('q')
+const path = require('path');
+const basename = path.basename(__filename);
+const fs = require('fs')
 
-db = {
-    db_conn: null,
-
-    init_connection: function () {
-        conn = new Sequelize(user_settings.db_credentials.db,
-            user_settings.db_credentials.user,
-            user_settings.db_credentials.password, {
-                host: user_settings.db_credentials.host,
-                dialect: 'mysql'
-            })
-
-        conn.authenticate()
-        .then(function(){
-            console.log("Connection established successfully")
-            db.db_conn = conn
-            return db.db_conn
-        })
-        .catch(function(err){
-            console.log("Could not connect to database! Reason:\n" + err.reason)
-            return null
-        }).done()
+var db = {}
+var sequelize = new Sequelize(user_settings.db_credentials.db,
+    user_settings.db_credentials.user,
+    user_settings.db_credentials.password,
+    {
+        host: user_settings.db_credentials.host,
+        dialect: 'mysql'
     }
-}
+)
 
-module.exports = db
+fs
+    .readdirSync(__dirname)
+    .filter(file => {
+        return (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js');
+    })
+    .forEach(file => {
+        var model = sequelize['import'](path.join(__dirname, file));
+        db[model.name] = model;
+    });
+
+Object.keys(db).forEach(modelName => {
+    if (db[modelName].associate) {
+        db[modelName].associate(db);
+    }
+});
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;
