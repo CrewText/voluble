@@ -12,6 +12,7 @@
     "esendex": "^0.1.8",
     "express": "^4.15.5",
     "mariasql": "^0.2.6",
+    "mysql2": "^1.5.1",
     "q": "^1.5.1",
     "sequelize": "^4.23.2",
     "winston": "^2.4.0"
