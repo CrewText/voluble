@@ -29,7 +29,6 @@ router.get('/', function (req, res, next) {
 
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.get('/:message_id', function (req, res, next) {
-  //res.render('message_info', { contact_id: id })
 
   utils.verifyNumberIsInteger(req.params.message_id)
   .then(function(id){
