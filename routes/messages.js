@@ -28,12 +28,32 @@ router.get('/', function (req, res, next) {
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.get('/{id}', function (req, res, next) {
-  res.render('message_info', { contact_id: id })
+router.get('/:message_id', function (req, res, next) {
+  //res.render('message_info', { contact_id: id })
+
+  utils.verifyNumberIsInteger(req.params.message_id)
+  .then(function(id){
+    return db.sequelize.model('Message').findOne({
+      where: {id: id}
+    })
+  })
+  .then(function(msg){
+    res.status(200).json(msg)
+  })
+  .catch(function(error){
+    res.status(500).json(error.message)
+    winston.error(error.message)
+  })
+  .done()
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
+
+  /*sequelization*/
+
+
+  /*orig below*/
 
   // Get message details from request body
   let msg_promise = Q.fcall(function () {
