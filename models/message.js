@@ -6,7 +6,7 @@ let message_model = function (sequelize, DataTypes) {
             primaryKey: true,
             autoIncrement: true,
         },
-        message_body: DataTypes.STRING(1024),
+        body: DataTypes.STRING(1024),
         servicechain: DataTypes.INTEGER,
         contact: DataTypes.BIGINT,
         is_reply_to: DataTypes.BIGINT,
