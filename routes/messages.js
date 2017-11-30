@@ -31,19 +31,19 @@ router.get('/', function (req, res, next) {
 router.get('/:message_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.message_id)
-  .then(function(id){
-    return db.sequelize.model('Message').findOne({
-      where: {id: id}
+    .then(function (id) {
+      return db.sequelize.model('Message').findOne({
+        where: { id: id }
+      })
     })
-  })
-  .then(function(msg){
-    res.status(200).json(msg)
-  })
-  .catch(function(error){
-    res.status(500).json(error.message)
-    winston.error(error.message)
-  })
-  .done()
+    .then(function (msg) {
+      res.status(200).json(msg)
+    })
+    .catch(function (error) {
+      res.status(500).json(error.message)
+      winston.error(error.message)
+    })
+    .done()
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
@@ -51,25 +51,24 @@ router.post('/', function (req, res, next) {
 
   /*sequelization*/
 
+  winston.info(req.body)
 
-  /*orig below*/
-
-  // Get message details from request body
   let msg_promise = Q.fcall(function () {
-    msg_body = req.body.msg_body
-    msg_contact_id = req.body.contact_id
-    msg_direction = req.body.direction
-    msg_is_reply_to = req.body.is_reply_to
+    let msg_body = req.body.msg_body
+    let msg_contact_id = req.body.contact_id // TODO: Validate me!
+    let msg_direction = req.body.direction
+    let msg_is_reply_to = req.body.is_reply_to
 
-    // Create the message
-    let message = messageManager.createNewMessage(msg_body,
-      msg_contact_id,
-      msg_direction,
-      //contact.servicechain, //TODO: Make this the ID of a real servicechain
-      1,
-      msg_is_reply_to)
+    let msg = db.sequelize.model('Message').create({
+      body: msg_body,
+      servicechain: 1,//TODO: Make this the ID of a real servicechain
+      contact: msg_contact_id, // TODO: Validate this
+      is_reply_to: msg_is_reply_to,
+      direction: true,
+      message_state: 'MSG_PENDING'
+    })
 
-    return message
+    return msg
   })
 
   Q.allSettled([msg_promise])
@@ -79,17 +78,15 @@ router.post('/', function (req, res, next) {
       }
       return msg_proms[0].value
     })
-    .then(function (message) {
-      // Send the message!
-      messageManager.sendMessage(message)
-      res.status(200).json(message)
+    .then(function (msg) {
+      messageManager.sendMessage(msg)
+      res.status(200).json(msg)
     })
-    .catch(function (error) {
-      res.status(500).json(error.message)
+    .catch(function (err) {
+      res.status(500).json(err.message)
       winston.error(error.message)
     })
     .done()
-
 })
 
 module.exports = router;
