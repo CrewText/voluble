@@ -49,10 +49,6 @@ router.get('/:message_id', function (req, res, next) {
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
 
-  /*sequelization*/
-
-  winston.info(req.body)
-
   let msg_promise = Q.fcall(function () {
     let msg_body = req.body.msg_body
     let msg_contact_id = req.body.contact_id // TODO: Validate me!
