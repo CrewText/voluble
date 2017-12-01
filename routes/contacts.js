@@ -12,7 +12,7 @@ const db = require('../models')
  * @param {string} email The email address of the new Contact.
  * @param {integer} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
  */
-function addContactToDB(first_name, surname, email, default_servicechain) {
+function createContact(first_name, surname, email, default_servicechain) {
 
   return db.sequelize.model('Contact').create({
     first_name: first_name,
@@ -20,21 +20,6 @@ function addContactToDB(first_name, surname, email, default_servicechain) {
     email_address: email,
     default_servicechain: default_servicechain
   })
-
-  /* *** NON-SEQUELIZED ***
-  let deferred = Q.defer()
-
-  let prep = db.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, ?)")
-  db.query(prep([first_name, surname, email, default_servicechain]), function (err, rows) {
-    if (err) {
-      deferred.reject(err)
-    }
-
-    deferred.resolve(db.lastInsertId())
-  })
-
-  return deferred.promise
-  */
 }
 
 
@@ -193,7 +178,7 @@ router.post('/', function (req, res, next) {
 
   Q.fcall(function () {
     console.log("sname: " + req.body.surname)
-    return addContactToDB(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
+    return createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
   })
     .then(function (newContactID) {
       res.status(200).send("New contact: ID " + newContactID)
