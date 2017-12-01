@@ -1,6 +1,6 @@
 const winston = require('winston')
 const Q = require('Q')
-const dbClient = require('mariasql');
+const bluebird = require('bluebird')
 const message = require('../messages/message')
 const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
@@ -28,6 +28,20 @@ var MessageManager = {
     createEmptyMessage: function () {
         let m = Object.create(message.Message)
         return m
+    },
+
+    createMessage: function(body, contact_id, direction, is_reply_to = null){
+        console.log("Creating a message:\n" + body + "\n" + contact_id + "\n" +
+    direction + "\n" + is_reply_to)
+
+        return db.sequelize.model('Message').create({
+            body: body,
+            servicechain: 1,//TODO: Make this the ID of a real servicechain,
+            contact: contact_id,
+            is_reply_to: is_reply_to,
+            direction: true, // Make this correct
+            message_state: 'MSG_PENDING'
+        })
     },
 
     createNewMessage: function (msg_body, msg_contact_id, msg_direction, msg_servicechain, msg_is_reply_to = null) {
