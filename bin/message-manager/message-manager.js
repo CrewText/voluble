@@ -31,8 +31,6 @@ var MessageManager = {
     },
 
     createMessage: function(body, contact_id, direction, is_reply_to = null){
-        console.log("Creating a message:\n" + body + "\n" + contact_id + "\n" +
-    direction + "\n" + is_reply_to)
 
         return db.sequelize.model('Message').create({
             body: body,
