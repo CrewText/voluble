@@ -1,5 +1,6 @@
 const express = require('express');
 const Q = require('Q')
+const bluebird = require('bluebird')
 const router = express.Router();
 const winston = require('winston')
 const utils = require('../utilities.js')
@@ -49,38 +50,21 @@ router.get('/:message_id', function (req, res, next) {
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
 
-  let msg_promise = Q.fcall(function () {
-    let msg_body = req.body.msg_body
-    let msg_contact_id = req.body.contact_id // TODO: Validate me!
-    let msg_direction = req.body.direction
-    let msg_is_reply_to = req.body.is_reply_to
-
-    let msg = db.sequelize.model('Message').create({
-      body: msg_body,
-      servicechain: 1,//TODO: Make this the ID of a real servicechain
-      contact: msg_contact_id, // TODO: Validate this
-      is_reply_to: msg_is_reply_to,
-      direction: true,
-      message_state: 'MSG_PENDING'
-    })
-
-    return msg
+  console.log(req.body.direction)
+  Q.fcall(function(){
+  return messageManager.createMessage(
+    req.body.msg_body,
+    req.body.contact_id,// TODO: Validate me!
+    req.body.direction)
   })
-
-  Q.allSettled([msg_promise])
-    .then(function (msg_proms) {
-      if (msg_proms[0].state === "rejected") {
-        throw new Error(msg_proms[0].reason)
-      }
-      return msg_proms[0].value
-    })
     .then(function (msg) {
+      console.log("Message created: " + msg)
       messageManager.sendMessage(msg)
       res.status(200).json(msg)
     })
     .catch(function (err) {
       res.status(500).json(err.message)
-      winston.error(error.message)
+      winston.error(err.message)
     })
     .done()
 })
