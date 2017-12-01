@@ -26,10 +26,17 @@ function createContact(first_name, surname, email, default_servicechain) {
 /**
  * Removes a contact with ID `id` from the database
  * @param {integer} id ID of contact to remove
- * @returns {Q.promise}
+ * @returns {Bluebird promise}
  */
 
-function deleteContactFromDB(db, id) {
+function deleteContactFromDB(id) {
+  return db.sequelize.model('Contact').destroy({
+    where: {
+      id: id
+    }
+  })
+  
+  /* *** NON SEQUELIZE ***
   let deferred = Q.defer()
   db.query("DELETE FROM voluble.contacts WHERE id = ?", [id], true, function (err, rows) {
     if (err) { deferred.reject(err) }
@@ -40,6 +47,7 @@ function deleteContactFromDB(db, id) {
   })
 
   return deferred.promise
+  */
 }
 
 /**
@@ -230,21 +238,14 @@ router.put('/:contact_id', function (req, res, next) {
  */
 router.delete('/:contact_id', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
-      return deleteContactFromDB(client, contact_id)
-    })
-    .then(function () {
-      res.send("Successfully deleted contact " + req.params.contact_id)
+      return Q.fcall(function(){return deleteContactFromDB(contact_id)
+      })
     })
     .catch(function (error) {
       console.log(error.message)
       res.status(500).end()
-    })
-    .finally(function () {
-      client.end()
     })
     .done()
 })
