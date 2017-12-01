@@ -44,37 +44,6 @@ var MessageManager = {
         })
     },
 
-    createNewMessage: function (msg_body, msg_contact_id, msg_direction, msg_servicechain, msg_is_reply_to = null) {
-        return Q.fcall(function () {
-            return MessageManager.createEmptyMessage()
-        })
-            .then(function (msg) {
-                msg.state = MessageManager.message_states.MSG_PENDING
-                msg.body = msg_body
-                return msg
-            })
-            .then(function (msg) {
-                return utils.verifyNumberIsInteger(msg_contact_id)
-                    .then(function (parsed_cont_id) {
-                        return utils.verifyContactExists(parsed_cont_id)
-                    })
-                    .then(function (cont_id) {
-                        msg.contact = cont_id
-                        return msg
-                    })
-            })
-            .then(function (msg) {
-                // TODO: Validate all of these
-                msg.servicechain = msg_servicechain
-                msg.direction = msg_direction
-                msg.is_reply_to = msg_is_reply_to
-                return msg
-            })
-            .then(function (msg) {
-                return MessageManager.insertMessageIntoDatabase(msg)
-            })
-    },
-
     sendMessage: function (message) {
         // TODO: Make this work
         /*
@@ -87,25 +56,6 @@ var MessageManager = {
         */
 
 
-    },
-
-    insertMessageIntoDatabase: function (msg) {
-        let deferred = Q.defer()
-
-        let client = new dbClient(user_settings.db_credentials)
-        // TODO: Make this into a stored procedure one day
-        let prep = client.prepare("INSERT into messages (body, servicechain, contact, is_reply_to, direction, message_state) VALUES (?,?,?,?,?,?)")
-        let query = client.query(prep([msg.body, msg.servicechain, msg.contact, msg.is_reply_to, msg.direction, msg.state]), function (err, rows) {
-            if (err) {
-                deferred.reject(err)
-                winston.error(err.message)
-            } else {
-                deferred.resolve(msg)
-            }
-        })
-
-        client.end()
-        return deferred.promise
     },
 
     getHundredMessageIds: function (offset = 0) {
