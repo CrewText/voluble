@@ -58,7 +58,6 @@ router.post('/', function (req, res, next) {
     req.body.direction)
   })
     .then(function (msg) {
-      console.log("Message created: " + msg)
       messageManager.sendMessage(msg)
       res.status(200).json(msg)
     })
