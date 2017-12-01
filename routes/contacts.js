@@ -3,6 +3,7 @@ var router = express.Router();
 var dbClient = require('mariasql');
 var Q = require('q');
 var utils = require('../utilities.js')
+const db = require('../models')
 
 /**
  * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
@@ -11,7 +12,16 @@ var utils = require('../utilities.js')
  * @param {string} email The email address of the new Contact.
  * @param {integer} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
  */
-function addContactToDB(db, first_name, surname, email, default_servicechain) {
+function addContactToDB(first_name, surname, email, default_servicechain) {
+
+  return db.sequelize.model('Contact').create({
+    first_name: first_name,
+    surname: surname,
+    email_address: email,
+    default_servicechain: default_servicechain
+  })
+
+  /* *** NON-SEQUELIZED ***
   let deferred = Q.defer()
 
   let prep = db.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, ?)")
@@ -24,6 +34,7 @@ function addContactToDB(db, first_name, surname, email, default_servicechain) {
   })
 
   return deferred.promise
+  */
 }
 
 
@@ -115,7 +126,7 @@ function updateContactDetailsWithId(db, id, updatedDetails) {
   */
   promises = []
 
-  for (detail in updatedDetails){
+  for (detail in updatedDetails) {
     promises.push(updateSingleContactDetailWithId(db, id, detail, updatedDetails[detail]))
   }
   return Q.all(promises)
@@ -165,7 +176,7 @@ router.get('/:contact_id', function (req, res, next) {
     .catch(function (error) {
       res.status(500).send(error.message)
     })
-    .finally(function(){
+    .finally(function () {
       client.end()
     })
     .done()
@@ -180,7 +191,10 @@ router.post('/', function (req, res, next) {
 
   let client = new dbClient(req.app.locals.db_credentials);
 
-  addContactToDB(client, req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
+  Q.fcall(function () {
+    console.log("sname: " + req.body.surname)
+    return addContactToDB(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
+  })
     .then(function (newContactID) {
       res.status(200).send("New contact: ID " + newContactID)
     })
@@ -188,7 +202,7 @@ router.post('/', function (req, res, next) {
       console.log(error)
       res.status(500).end()
     })
-    .finally(function(){
+    .finally(function () {
       client.end()
     })
     .done()
@@ -202,7 +216,7 @@ router.post('/', function (req, res, next) {
 router.put('/:contact_id', function (req, res, next) {
 
   let client = new dbClient(req.app.locals.db_credentials);
-  
+
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
       return checkContactWithIDExists(client, id)
@@ -210,14 +224,14 @@ router.put('/:contact_id', function (req, res, next) {
     .then(function (id) {
       return updateContactDetailsWithId(client, id, req.body)
     })
-    .then(function(){
+    .then(function () {
       res.status(200).end()
     })
     .catch(function (err) {
       console.log(err)
       res.status(500).send(err)
     })
-    .finally(function(){
+    .finally(function () {
       client.end()
     })
     .done()
@@ -244,7 +258,7 @@ router.delete('/:contact_id', function (req, res, next) {
       console.log(error.message)
       res.status(500).end()
     })
-    .finally(function(){
+    .finally(function () {
       client.end()
     })
     .done()
