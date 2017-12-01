@@ -35,19 +35,6 @@ function deleteContactFromDB(id) {
       id: id
     }
   })
-  
-  /* *** NON SEQUELIZE ***
-  let deferred = Q.defer()
-  db.query("DELETE FROM voluble.contacts WHERE id = ?", [id], true, function (err, rows) {
-    if (err) { deferred.reject(err) }
-    else {
-      console.log("Successfully deleted contact " + id)
-      deferred.resolve()
-    }
-  })
-
-  return deferred.promise
-  */
 }
 
 /**
