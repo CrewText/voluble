@@ -59,18 +59,16 @@ function checkContactWithIDExists(id) {
 /**
  * Queries the database to retrieve the info for contact with ID `id`
  * @param {integer} id Contact ID number
- * @returns {Q.promise} with JSON data containing user info
+ * @returns {Promise} with JSON data containing user info
  */
-function getContactWithId(db, id) {
-  let deferred = Q.defer()
-  db.query("SELECT * FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
-    if (err) { deferred.reject(err) }
-    else {
-      deferred.resolve(rows[0])
+function getContactWithId(id) {
+
+  return db.sequelize.model('Contact').findOne({
+    where: {
+      id: id
     }
   })
 
-  return deferred.promise
 }
 
 /**
@@ -115,22 +113,17 @@ router.get('/', function (req, res, next) {
  */
 router.get('/:contact_id', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return Q.fcall(function () { return checkContactWithIDExists(client, id) })
+      return Q.fcall(function () { return checkContactWithIDExists(id) })
     })
     .then(function (id) {
-      return getContactWithId(client, id)
+      return Q.fcall(function(){return getContactWithId(id)})
     }).then(function (user) {
       res.status(200).json(user)
     })
     .catch(function (error) {
       res.status(500).send(error.message)
-    })
-    .finally(function () {
-      client.end()
     })
     .done()
 
