@@ -1,6 +1,5 @@
 var express = require('express');
 var router = express.Router();
-var Q = require('q');
 const promise = require('bluebird')
 var utils = require('../utilities.js')
 const db = require('../models')
@@ -133,9 +132,7 @@ router.get('/:contact_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
 
-  Q.fcall(function () {
-    return createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
-  })
+  return createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
     .then(function (newContactID) {
       res.status(200).send("New contact: ID " + newContactID)
     })
@@ -143,8 +140,6 @@ router.post('/', function (req, res, next) {
       console.log(error)
       res.status(500).end()
     })
-    .done()
-
 })
 
 /**
@@ -155,14 +150,10 @@ router.put('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return Q.fcall(function () {
-        return checkContactWithIDExists(id)
+      return checkContactWithIDExists(id)
       })
-    })
     .then(function (id) {
-      return Q.fcall(function () {
         return updateContactDetailsWithId(id, req.body)
-      })
     })
     .then(function () {
       res.status(200).end()
@@ -182,15 +173,12 @@ router.delete('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
-      return Q.fcall(function () {
         return deleteContactFromDB(contact_id)
-      })
     })
     .catch(function (error) {
       console.log(error.message)
       res.status(500).end()
     })
-    .done()
 })
 
 module.exports = router;
