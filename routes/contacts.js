@@ -39,7 +39,7 @@ function deleteContactFromDB(id) {
 /**
  * Queries the database to make sure confirm that the contact with id `id` exists
  * @param {integer} id Contact ID number
- * @returns {Q.promise} with value `id` if contact exists
+ * @returns {Bluebird promise} with value `id` if contact exists
  */
 function checkContactWithIDExists(id) {
   return new Promise(function (resolve, reject) {
@@ -57,7 +57,7 @@ function checkContactWithIDExists(id) {
 /**
  * Queries the database to retrieve the info for contact with ID `id`
  * @param {integer} id Contact ID number
- * @returns {Promise} with JSON data containing user info
+ * @returns {Bluebird Promise} with JSON data containing user info
  */
 function getContactWithId(id) {
 
@@ -70,9 +70,9 @@ function getContactWithId(id) {
 }
 
 /**
- * Updates the details of a single Contact. Internally calls {@link updateSingleContactDetailWithId} for each detail change.
+ * Updates the details of a single Contact.
  * @param {integer} id ID of the Contact whose details will be updated
- * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`
+ * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
  */
 function updateContactDetailsWithId(id, updatedDetails) {
   return db.sequelize.model('Contact').update(updatedDetails,
@@ -174,6 +174,9 @@ router.delete('/:contact_id', function (req, res, next) {
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
         return deleteContactFromDB(contact_id)
+    })
+    .then(function(resp){
+      res.status(200).json(resp)
     })
     .catch(function (error) {
       console.log(error.message)
