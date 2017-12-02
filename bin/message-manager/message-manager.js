@@ -30,9 +30,7 @@ var MessageManager = {
         return m
     },
 
-    createMessage: function(body, contact_id, direction, is_reply_to = null){
-        console.log("Creating a message:\n" + body + "\n" + contact_id + "\n" +
-    direction + "\n" + is_reply_to)
+    createMessage: function (body, contact_id, direction, is_reply_to = null) {
 
         return db.sequelize.model('Message').create({
             body: body,
@@ -54,28 +52,22 @@ var MessageManager = {
         Promises can help us here - by chaining a series of promises together, we can automatically iterate through
         plugin chains - is the idea!
         */
-
-
+        return new Promise(function(resolve, reject){
+            resolve(message)
+        })
     },
 
-    getHundredMessageIds: function (offset = 0) {
-        let deferred = Q.defer()
-
-        let client = new dbClient(user_settings.db_credentials);
-
-        let prep = client.prepare("CALL GetOneHundredMessages(?)")
-        let query = client.query(prep([offset]), function (err, rows) {
-            if (err) {
-                deferred.reject(err)
-                winston.error(err.message)
-            } else {
-                deferred.resolve(rows)
-            }
+    getHundredMessageIds: function (offset) {
+        return db.sequelize.model('Message').findAll({
+            offset: offset,
+            limit: 100
         })
+    },
 
-        client.end()
-
-        return deferred.promise
+    getMessageFromId: function (id) {
+        return db.sequelize.model('Message').findOne({
+            where: { id: id }
+        })
     }
 }
 

@@ -1,8 +1,8 @@
 var express = require('express');
 var router = express.Router();
-var dbClient = require('mariasql');
-var Q = require('q');
+const promise = require('bluebird')
 var utils = require('../utilities.js')
+const db = require('../models')
 
 /**
  * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
@@ -11,39 +11,29 @@ var utils = require('../utilities.js')
  * @param {string} email The email address of the new Contact.
  * @param {integer} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
  */
-function addContactToDB(db, first_name, surname, email, default_servicechain) {
-  let deferred = Q.defer()
+function createContact(first_name, surname, email, default_servicechain) {
 
-  let prep = db.prepare("INSERT INTO `voluble`.`contacts` (`first_name`, `surname`, `email_address`, `default_servicechain`) VALUES (?, ?, ?, ?)")
-  db.query(prep([first_name, surname, email, default_servicechain]), function (err, rows) {
-    if (err) {
-      deferred.reject(err)
-    }
-
-    deferred.resolve(db.lastInsertId())
+  return db.sequelize.model('Contact').create({
+    first_name: first_name,
+    surname: surname,
+    email_address: email,
+    default_servicechain: default_servicechain
   })
-
-  return deferred.promise
 }
 
 
 /**
  * Removes a contact with ID `id` from the database
  * @param {integer} id ID of contact to remove
- * @returns {Q.promise}
+ * @returns {Bluebird promise}
  */
 
-function deleteContactFromDB(db, id) {
-  let deferred = Q.defer()
-  db.query("DELETE FROM voluble.contacts WHERE id = ?", [id], true, function (err, rows) {
-    if (err) { deferred.reject(err) }
-    else {
-      console.log("Successfully deleted contact " + id)
-      deferred.resolve()
+function deleteContactFromDB(id) {
+  return db.sequelize.model('Contact').destroy({
+    where: {
+      id: id
     }
   })
-
-  return deferred.promise
 }
 
 /**
@@ -51,54 +41,32 @@ function deleteContactFromDB(db, id) {
  * @param {integer} id Contact ID number
  * @returns {Q.promise} with value `id` if contact exists
  */
-function checkContactWithIDExists(db, id) {
-  let deferred = Q.defer()
-  db.query("SELECT id FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
-    if (err) { deferred.reject(err) }
-    else if (!rows.length) {
-      deferred.reject(new Error("Contact with this ID does not exist."))
-    }
-    else deferred.resolve(id)
+function checkContactWithIDExists(id) {
+  return new Promise(function (resolve, reject) {
+    return db.sequelize.model('Contact').count({ where: { id: id } })
+      .then(function (count) {
+        if (count == "0") {
+          reject("No contact with ID " + id + fount)
+        } else {
+          resolve(id)
+        }
+      })
   })
-  return deferred.promise
 }
 
 /**
  * Queries the database to retrieve the info for contact with ID `id`
  * @param {integer} id Contact ID number
- * @returns {Q.promise} with JSON data containing user info
+ * @returns {Promise} with JSON data containing user info
  */
-function getContactWithId(db, id) {
-  let deferred = Q.defer()
-  db.query("SELECT * FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
-    if (err) { deferred.reject(err) }
-    else {
-      deferred.resolve(rows[0])
+function getContactWithId(id) {
+
+  return db.sequelize.model('Contact').findOne({
+    where: {
+      id: id
     }
   })
 
-  return deferred.promise
-}
-
-/**
- * Does UPDATE DB operation to update a Contact's detail. Usually called by {@link updateContactDetailsWithId}.
- * @param {integer} id ID of contact to update
- * @param {string} field_name Name of the parameter to update, e.g. `first_name`
- * @param {string} new_value Value to insert at `field_name`
- */
-function updateSingleContactDetailWithId(db, id, field_name, new_value) {
-  let deferred = Q.defer()
-
-  db.query("UPDATE voluble.contacts SET " + field_name + " = ? WHERE id = ?", [new_value, id], function (err, rows) {
-    if (err) {
-      deferred.reject(err)
-    } else {
-      deferred.resolve()
-    }
-
-  })
-
-  return deferred.promise
 }
 
 /**
@@ -106,19 +74,11 @@ function updateSingleContactDetailWithId(db, id, field_name, new_value) {
  * @param {integer} id ID of the Contact whose details will be updated
  * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`
  */
-function updateContactDetailsWithId(db, id, updatedDetails) {
-  /* Expect `updatedDetail` could be like:
-  {
-    first_name: "Derek",
-    email_address: "steve@apple.com"
-  }
-  */
-  promises = []
-
-  for (detail in updatedDetails){
-    promises.push(updateSingleContactDetailWithId(db, id, detail, updatedDetails[detail]))
-  }
-  return Q.all(promises)
+function updateContactDetailsWithId(id, updatedDetails) {
+  return db.sequelize.model('Contact').update(updatedDetails,
+    {
+      where: { id: id }
+    })
 }
 
 /**
@@ -127,22 +87,22 @@ function updateContactDetailsWithId(db, id, updatedDetails) {
  */
 router.get('/', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-  let prep = client.prepare("SELECT * FROM `voluble`.`contacts` ORDER BY id ASC")
-  let query = client.query(prep())
-  let contacts = []
+  // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
+  let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-  query.on('result', function (result) {
-    result.on('data', function (row) {
-      row.url = req.protocol + '://' + req.get('host') + "/contacts/" + row.id
-      contacts.push(row)
+
+  return utils.verifyNumberIsInteger(offset)
+    .then(function (offset) {
+      return db.sequelize.model('Contact').findAll({
+        offset: offset, limit: 100
+      })
     })
-  }).on('end', function () {
-    res.json(contacts).status(200)
-  })
-
-  client.end()
-
+    .then(function (rows) {
+      res.status(200).json(rows)
+    })
+    .catch(function (err) {
+      res.status(500).json(err.message)
+    })
 })
 
 /**
@@ -151,24 +111,18 @@ router.get('/', function (req, res, next) {
  */
 router.get('/:contact_id', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return checkContactWithIDExists(client, id)
+      return checkContactWithIDExists(id)
     })
     .then(function (id) {
-      return getContactWithId(client, id)
+      return getContactWithId(id)
     }).then(function (user) {
       res.status(200).json(user)
     })
     .catch(function (error) {
       res.status(500).send(error.message)
     })
-    .finally(function(){
-      client.end()
-    })
-    .done()
 
 })
 
@@ -178,9 +132,7 @@ router.get('/:contact_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
-  addContactToDB(client, req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
+  return createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
     .then(function (newContactID) {
       res.status(200).send("New contact: ID " + newContactID)
     })
@@ -188,11 +140,6 @@ router.post('/', function (req, res, next) {
       console.log(error)
       res.status(500).end()
     })
-    .finally(function(){
-      client.end()
-    })
-    .done()
-
 })
 
 /**
@@ -201,27 +148,20 @@ router.post('/', function (req, res, next) {
  */
 router.put('/:contact_id', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-  
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return checkContactWithIDExists(client, id)
-    })
+      return checkContactWithIDExists(id)
+      })
     .then(function (id) {
-      return updateContactDetailsWithId(client, id, req.body)
+        return updateContactDetailsWithId(id, req.body)
     })
-    .then(function(){
+    .then(function () {
       res.status(200).end()
     })
-    .catch(function (err) {
+    .catch(function () {
       console.log(err)
       res.status(500).send(err)
     })
-    .finally(function(){
-      client.end()
-    })
-    .done()
-
 })
 
 /**
@@ -231,23 +171,14 @@ router.put('/:contact_id', function (req, res, next) {
  */
 router.delete('/:contact_id', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
-      return deleteContactFromDB(client, contact_id)
-    })
-    .then(function () {
-      res.send("Successfully deleted contact " + req.params.contact_id)
+        return deleteContactFromDB(contact_id)
     })
     .catch(function (error) {
       console.log(error.message)
       res.status(500).end()
     })
-    .finally(function(){
-      client.end()
-    })
-    .done()
 })
 
 module.exports = router;
