@@ -30,7 +30,7 @@ var MessageManager = {
         return m
     },
 
-    createMessage: function(body, contact_id, direction, is_reply_to = null){
+    createMessage: function (body, contact_id, direction, is_reply_to = null) {
 
         return db.sequelize.model('Message').create({
             body: body,
@@ -60,7 +60,13 @@ var MessageManager = {
         return db.sequelize.model('Message').findAll({
             offset: offset,
             limit: 100
-          })
+        })
+    },
+
+    getMessageFromId: function (id) {
+        return db.sequelize.model('Message').findOne({
+            where: { id: id }
+        })
     }
 }
 
