@@ -16,7 +16,7 @@ router.get('/', function (req, res, next) {
     .then(function (offset) {
       return db.sequelize.model('Message').findAll({
         offset: offset,
-        limit: 100
+        limit: 100 // TODO: MOVE ME TO MessageManager
       })
     })
     .then(function (rows) {
@@ -32,7 +32,7 @@ router.get('/', function (req, res, next) {
 router.get('/:message_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.message_id)
-    .then(function (id) {
+    .then(function (id) { // TODO: MOVE ME TO MessageManager
       return db.sequelize.model('Message').findOne({
         where: { id: id }
       })
