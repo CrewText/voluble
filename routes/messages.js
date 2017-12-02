@@ -10,9 +10,7 @@ router.get('/', function (req, res, next) {
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-  Promise.try(function () {
-    return utils.verifyNumberIsInteger(offset)
-  })
+  utils.verifyNumberIsInteger(offset)
     .then(function (offset) {
       return messageManager.getHundredMessageIds(offset)
     })
@@ -27,9 +25,7 @@ router.get('/', function (req, res, next) {
 
 router.get('/:message_id', function (req, res, next) {
 
-  Promise.try(function () {
-    return utils.verifyNumberIsInteger(req.params.message_id)
-  })
+  return utils.verifyNumberIsInteger(req.params.message_id)
     .then(function (id) {
       return messageManager.getMessageFromId(id)
     })
@@ -57,6 +53,6 @@ router.post('/', function (req, res, next) {
       res.status(500).json(err.message)
       winston.error(err.message)
     })
-  })
+})
 
-  module.exports = router;
+module.exports = router;
