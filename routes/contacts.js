@@ -88,22 +88,22 @@ function updateContactDetailsWithId(id, updatedDetails) {
  */
 router.get('/', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-  let prep = client.prepare("SELECT * FROM `voluble`.`contacts` ORDER BY id ASC")
-  let query = client.query(prep())
-  let contacts = []
+  // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
+  let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-  query.on('result', function (result) {
-    result.on('data', function (row) {
-      row.url = req.protocol + '://' + req.get('host') + "/contacts/" + row.id
-      contacts.push(row)
+
+  return utils.verifyNumberIsInteger(offset)
+    .then(function (offset) {
+      return db.sequelize.model('Contact').findAll({
+        offset: offset, limit: 100
+      })
     })
-  }).on('end', function () {
-    res.json(contacts).status(200)
-  })
-
-  client.end()
-
+    .then(function (rows) {
+      res.status(200).json(rows)
+    })
+    .catch(function (err) {
+      res.status(500).json(err.message)
+    })
 })
 
 /**
@@ -114,17 +114,16 @@ router.get('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return Q.fcall(function () { return checkContactWithIDExists(id) })
+      return checkContactWithIDExists(id)
     })
     .then(function (id) {
-      return Q.fcall(function(){return getContactWithId(id)})
+      return getContactWithId(id)
     }).then(function (user) {
       res.status(200).json(user)
     })
     .catch(function (error) {
       res.status(500).send(error.message)
     })
-    .done()
 
 })
 
