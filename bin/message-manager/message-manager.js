@@ -57,23 +57,10 @@ var MessageManager = {
     },
 
     getHundredMessageIds: function (offset = 0) {
-        let deferred = Q.defer()
-
-        let client = new dbClient(user_settings.db_credentials);
-
-        let prep = client.prepare("CALL GetOneHundredMessages(?)")
-        let query = client.query(prep([offset]), function (err, rows) {
-            if (err) {
-                deferred.reject(err)
-                winston.error(err.message)
-            } else {
-                deferred.resolve(rows)
-            }
-        })
-
-        client.end()
-
-        return deferred.promise
+        return db.sequelize.model('Message').findAll({
+            offset: offset,
+            limit: 100
+          })
     }
 }
 

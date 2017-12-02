@@ -1,6 +1,6 @@
 const express = require('express');
 const Q = require('Q')
-const bluebird = require('bluebird')
+const Promise = require('bluebird')
 const router = express.Router();
 const winston = require('winston')
 const utils = require('../utilities.js')
@@ -12,23 +12,22 @@ router.get('/', function (req, res, next) {
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-  utils.verifyNumberIsInteger(offset)
-    .then(function (offset) {
-      return db.sequelize.model('Message').findAll({
-        offset: offset,
-        limit: 100 // TODO: MOVE ME TO MessageManager
-      })
-    })
-    .then(function (rows) {
-      res.status(200).json(rows)
-    })
-    .catch(function (error) {
-      res.status(500).send(error.message)
-    })
-    .done()
+  Promise.try(function(){
+    return utils.verifyNumberIsInteger(offset)
+  })
+  .then(function(offset){
+    console.log("Got bb request for 100 ids")
+    return messageManager.getHundredMessageIds(offset)
+  })
+  .then(function(rows){
+    res.status(200).json(rows)
+  })
+  .catch(function (error) {
+    res.status(500).send(error.message)
+  })
+
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
 router.get('/:message_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.message_id)
@@ -47,10 +46,7 @@ router.get('/:message_id', function (req, res, next) {
     .done()
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
 router.post('/', function (req, res, next) {
-
-  console.log(req.body.direction)
   Q.fcall(function(){
   return messageManager.createMessage(
     req.body.msg_body,
