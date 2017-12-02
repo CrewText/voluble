@@ -52,8 +52,9 @@ var MessageManager = {
         Promises can help us here - by chaining a series of promises together, we can automatically iterate through
         plugin chains - is the idea!
         */
-
-
+        return new Promise(function(resolve, reject){
+            resolve(message)
+        })
     },
 
     getHundredMessageIds: function (offset = 0) {
