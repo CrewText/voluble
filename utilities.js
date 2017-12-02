@@ -21,12 +21,5 @@ function verifyNumberIsInteger(id) {
     }
   })
 }
-module.exports.verifyNumberIsInteger = verifyNumberIsInteger
 
-function verifyContactExists(id) {
-  let deferred = Q.defer()
-  // TODO: Make this actually work
-  deferred.resolve(id)
-  return deferred.promise
-}
-module.exports.verifyContactExists = verifyContactExists
+module.exports.verifyNumberIsInteger = verifyNumberIsInteger
