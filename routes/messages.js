@@ -1,11 +1,9 @@
 const express = require('express');
-const Q = require('Q')
 const Promise = require('bluebird')
 const router = express.Router();
 const winston = require('winston')
 const utils = require('../utilities.js')
 const messageManager = require('../bin/message-manager/message-manager')
-
 const db = require('../models')
 
 router.get('/', function (req, res, next) {
@@ -45,12 +43,12 @@ router.get('/:message_id', function (req, res, next) {
 })
 
 router.post('/', function (req, res, next) {
-  
+
   messageManager.createMessage(
-      req.body.msg_body,
-      req.body.contact_id,// TODO: Validate me!
-      req.body.direction)
-  })
+    req.body.msg_body,
+    req.body.contact_id,// TODO: Validate me!
+    req.body.direction
+  )
     .then(function (msg) {
       messageManager.sendMessage(msg)
       res.status(200).json(msg)
@@ -59,6 +57,6 @@ router.post('/', function (req, res, next) {
       res.status(500).json(err.message)
       winston.error(err.message)
     })
-    .done()
+  })
 
-module.exports = router;
+  module.exports = router;
