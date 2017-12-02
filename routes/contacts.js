@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var dbClient = require('mariasql');
 var Q = require('q');
+const promise = require('bluebird')
 var utils = require('../utilities.js')
 const db = require('../models')
 
@@ -42,16 +43,17 @@ function deleteContactFromDB(id) {
  * @param {integer} id Contact ID number
  * @returns {Q.promise} with value `id` if contact exists
  */
-function checkContactWithIDExists(db, id) {
-  let deferred = Q.defer()
-  db.query("SELECT id FROM voluble.contacts WHERE id = ?", [id], { useArray: true }, function (err, rows) {
-    if (err) { deferred.reject(err) }
-    else if (!rows.length) {
-      deferred.reject(new Error("Contact with this ID does not exist."))
-    }
-    else deferred.resolve(id)
+function checkContactWithIDExists(id) {
+  return new Promise(function (resolve, reject) {
+    return db.sequelize.model('Contact').count({ where: { id: id } })
+      .then(function (count) {
+        if (count == "0") {
+          reject("No contact with ID " + id + fount)
+        } else {
+          resolve(id)
+        }
+      })
   })
-  return deferred.promise
 }
 
 /**
@@ -72,44 +74,15 @@ function getContactWithId(db, id) {
 }
 
 /**
- * Does UPDATE DB operation to update a Contact's detail. Usually called by {@link updateContactDetailsWithId}.
- * @param {integer} id ID of contact to update
- * @param {string} field_name Name of the parameter to update, e.g. `first_name`
- * @param {string} new_value Value to insert at `field_name`
- */
-function updateSingleContactDetailWithId(db, id, field_name, new_value) {
-  let deferred = Q.defer()
-
-  db.query("UPDATE voluble.contacts SET " + field_name + " = ? WHERE id = ?", [new_value, id], function (err, rows) {
-    if (err) {
-      deferred.reject(err)
-    } else {
-      deferred.resolve()
-    }
-
-  })
-
-  return deferred.promise
-}
-
-/**
  * Updates the details of a single Contact. Internally calls {@link updateSingleContactDetailWithId} for each detail change.
  * @param {integer} id ID of the Contact whose details will be updated
  * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`
  */
-function updateContactDetailsWithId(db, id, updatedDetails) {
-  /* Expect `updatedDetail` could be like:
-  {
-    first_name: "Derek",
-    email_address: "steve@apple.com"
-  }
-  */
-  promises = []
-
-  for (detail in updatedDetails) {
-    promises.push(updateSingleContactDetailWithId(db, id, detail, updatedDetails[detail]))
-  }
-  return Q.all(promises)
+function updateContactDetailsWithId(id, updatedDetails) {
+  return db.sequelize.model('Contact').update(updatedDetails,
+    {
+      where: { id: id }
+    })
 }
 
 /**
@@ -146,7 +119,7 @@ router.get('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return checkContactWithIDExists(client, id)
+      return Q.fcall(function () { return checkContactWithIDExists(client, id) })
     })
     .then(function (id) {
       return getContactWithId(client, id)
@@ -169,10 +142,7 @@ router.get('/:contact_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
   Q.fcall(function () {
-    console.log("sname: " + req.body.surname)
     return createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.default_servicechain)
   })
     .then(function (newContactID) {
@@ -181,9 +151,6 @@ router.post('/', function (req, res, next) {
     .catch(function (error) {
       console.log(error)
       res.status(500).end()
-    })
-    .finally(function () {
-      client.end()
     })
     .done()
 
@@ -195,27 +162,24 @@ router.post('/', function (req, res, next) {
  */
 router.put('/:contact_id', function (req, res, next) {
 
-  let client = new dbClient(req.app.locals.db_credentials);
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return checkContactWithIDExists(client, id)
+      return Q.fcall(function () {
+        return checkContactWithIDExists(id)
+      })
     })
     .then(function (id) {
-      return updateContactDetailsWithId(client, id, req.body)
+      return Q.fcall(function () {
+        return updateContactDetailsWithId(id, req.body)
+      })
     })
     .then(function () {
       res.status(200).end()
     })
-    .catch(function (err) {
+    .catch(function () {
       console.log(err)
       res.status(500).send(err)
     })
-    .finally(function () {
-      client.end()
-    })
-    .done()
-
 })
 
 /**
@@ -227,7 +191,8 @@ router.delete('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
-      return Q.fcall(function(){return deleteContactFromDB(contact_id)
+      return Q.fcall(function () {
+        return deleteContactFromDB(contact_id)
       })
     })
     .catch(function (error) {
