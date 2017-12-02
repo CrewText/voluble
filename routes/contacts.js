@@ -46,7 +46,7 @@ function checkContactWithIDExists(id) {
     return db.sequelize.model('Contact').count({ where: { id: id } })
       .then(function (count) {
         if (count == "0") {
-          reject("No contact with ID " + id + fount)
+          reject(new Error("No contact with ID " + count))
         } else {
           resolve(id)
         }
