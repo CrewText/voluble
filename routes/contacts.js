@@ -1,6 +1,5 @@
 var express = require('express');
 var router = express.Router();
-var dbClient = require('mariasql');
 var Q = require('q');
 const promise = require('bluebird')
 var utils = require('../utilities.js')
