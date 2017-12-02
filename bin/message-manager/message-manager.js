@@ -57,7 +57,7 @@ var MessageManager = {
         })
     },
 
-    getHundredMessageIds: function (offset = 0) {
+    getHundredMessageIds: function (offset) {
         return db.sequelize.model('Message').findAll({
             offset: offset,
             limit: 100
