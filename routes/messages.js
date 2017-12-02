@@ -45,8 +45,8 @@ router.get('/:message_id', function (req, res, next) {
 })
 
 router.post('/', function (req, res, next) {
-  Q.fcall(function () {
-    return messageManager.createMessage(
+  
+  messageManager.createMessage(
       req.body.msg_body,
       req.body.contact_id,// TODO: Validate me!
       req.body.direction)
@@ -60,6 +60,5 @@ router.post('/', function (req, res, next) {
       winston.error(err.message)
     })
     .done()
-})
 
 module.exports = router;
