@@ -1,4 +1,4 @@
-var Q = require('q');
+const Promise = require('bluebird')
 
 /**
  * Confirms that the supplied ID is a valid number.
@@ -7,26 +7,23 @@ var Q = require('q');
  */
 
 function verifyNumberIsInteger(id) {
-    let deferred = Q.defer()
-
-    if (id == "0"){
-      deferred.resolve(0)
-      return deferred.promise
+  return new Promise(function (resolve, reject) {
+    if (id == "0") {
+      resolve(0)
     }
-  
-    let parsed_id = parseInt(id,10)
+
+    let parsed_id = parseInt(id, 10)
     if (!parsed_id) {
-      deferred.reject(new Error("Supplied number is not an integer: " + id))
+      reject(new Error("Supplied number is not an integer: " + id))
     }
     else {
-      deferred.resolve(parsed_id)
+      resolve(parsed_id)
     }
-  
-    return deferred.promise
-  }
-  module.exports.verifyNumberIsInteger = verifyNumberIsInteger
+  })
+}
+module.exports.verifyNumberIsInteger = verifyNumberIsInteger
 
-function verifyContactExists(id){
+function verifyContactExists(id) {
   let deferred = Q.defer()
   // TODO: Make this actually work
   deferred.resolve(id)
