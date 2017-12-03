@@ -16,6 +16,8 @@ var sequelize = new Sequelize(user_settings.db_credentials.db,
     }
 )
 
+// TODO: Set up associations between models, reduce the need for validation
+
 fs
     .readdirSync(__dirname)
     .filter(file => {
