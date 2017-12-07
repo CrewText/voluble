@@ -4,6 +4,8 @@ const promise = require('bluebird')
 var utils = require('../utilities.js')
 const db = require('../models')
 
+// TODO: Most of these helper functions should be abstracted away into a ContactManager...
+
 /**
  * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
  * @param {string} first_name The first name of the new Contact.
