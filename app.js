@@ -20,8 +20,6 @@ const routerServicechains = require('./routes/servicechains');
 winston.info("Loading plugin manager")
 const pluginManager = require("./bin/plugin-manager/plugin-manager")
 
-winston.info("Loading message manager")
-const messageManager = require('./bin/message-manager/message-manager')
 
 winston.info("Loading user settings")
 const user_settings = require('./user_settings.json')
