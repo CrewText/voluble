@@ -1,5 +1,4 @@
 const winston = require('winston')
-const Q = require('Q')
 const bluebird = require('bluebird')
 const message = require('../messages/message')
 const utils = require('../../utilities')
