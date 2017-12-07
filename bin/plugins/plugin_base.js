@@ -1,5 +1,6 @@
 var errors = require('common-errors')
-var message = require('../messages/message')
+var db = require('../../models')
+var message = db.sequelize.model('Message')
 
 var voluble_plugin = {
     name: null,

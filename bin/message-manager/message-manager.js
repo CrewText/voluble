@@ -1,6 +1,5 @@
 const winston = require('winston')
 const bluebird = require('bluebird')
-const message = require('../messages/message')
 const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
 const db = require('../../models')
@@ -18,16 +17,6 @@ var MessageManager = {
             MSG_FAILED: 8
         }
     ),
-
-    message_directions: Object.freeze({
-        DIRECTION_INBOUND: 0,
-        DIRECTION_OUTBOUND: 1
-    }),
-
-    createEmptyMessage: function () {
-        let m = Object.create(message.Message)
-        return m
-    },
 
     createMessage: function (body, contact_id, direction, is_reply_to = null) {
 
