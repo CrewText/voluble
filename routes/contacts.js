@@ -6,7 +6,7 @@ const contactManager = require('../bin/contact-manager/contact-manager')
 
 /**
  * Handles the route `GET /contacts`.
- * Lists all of the contacts available to the user.
+ * Lists the first 100 of the contacts available to the user, with a given offset
  */
 router.get('/', function (req, res, next) {
 
@@ -72,9 +72,9 @@ router.put('/:contact_id', function (req, res, next) {
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
       return contactManager.checkContactWithIDExists(id)
-      })
+    })
     .then(function (id) {
-        return contactManager.updateContactDetailsWithId(id, req.body)
+      return contactManager.updateContactDetailsWithId(id, req.body)
     })
     .then(function () {
       res.status(200).end()
@@ -88,15 +88,15 @@ router.put('/:contact_id', function (req, res, next) {
 /**
  * Handles the route `DELETE /contacts/{id}`.
  * Removes the contact with the specified ID from the database.
- * Returns 200 even if the contact does not exist, to ensure idempotence.
+ * Returns 200 even if the contact does not exist, to ensure idempotence. This is why there is no validation that the contact exists first.
  */
 router.delete('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
-        return contactManager.deleteContactFromDB(contact_id)
+      return contactManager.deleteContactFromDB(contact_id)
     })
-    .then(function(resp){
+    .then(function (resp) {
       res.status(200).json(resp)
     })
     .catch(function (error) {

@@ -6,6 +6,10 @@ const utils = require('../utilities.js')
 const messageManager = require('../bin/message-manager/message-manager')
 const db = require('../models')
 
+/**
+ * Handles the route GET /messages
+ * Lists the first 100 messages available to the user, with a given offset.
+ */
 router.get('/', function (req, res, next) {
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
@@ -23,6 +27,10 @@ router.get('/', function (req, res, next) {
 
 })
 
+/**
+ * Handles the route GET /messages/{id}
+ * Lists all of the details about the contact with the specified ID.
+ */
 router.get('/:message_id', function (req, res, next) {
 
   return utils.verifyNumberIsInteger(req.params.message_id)
@@ -38,6 +46,11 @@ router.get('/:message_id', function (req, res, next) {
     })
 })
 
+
+/**
+ * Handles the route POST /messages
+ * Creates a new message, adds it to the database and attempts to send it.
+ */
 router.post('/', function (req, res, next) {
 
   messageManager.createMessage(
