@@ -39,3 +39,4 @@ jspm_packages
 # Docs
 docs
 /.vscode/settings.json
+/.vscode/tasks.json
