@@ -74,6 +74,7 @@ var MessageManager = {
                             .then(function (plugin) {
                                 // Now that we have the plugin, use it to send the message.
                                 Promise.try(function () {
+                                    winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
                                     return plugin.send_message(msg)
                                 })
                                     .catch(function (err) {
