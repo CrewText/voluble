@@ -60,6 +60,8 @@ router.post('/', function (req, res, next) {
   )
     .then(function (msg) {
       messageManager.sendMessage(msg)
+    })
+    .then(function (msg){
       res.status(200).json(msg)
     })
     .catch(function (err) {
