@@ -4,11 +4,10 @@ const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
 const db = require('../../models')
 
-/* TODO: Figure out how to deal with incoming messages - will need to register them...?
+/* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
 Will this be done from the plugin end?
 */
 
-// TODO: MessageManager.message_states potentially redundant
 var MessageManager = {
     /**
      * Attempts to create a new Message in the database with the supplied details.
@@ -22,7 +21,7 @@ var MessageManager = {
 
         return db.sequelize.model('Message').create({
             body: body,
-            servicechain: 1,//TODO: Make this the ID of a real servicechain,
+            servicechain: 1, //TODO: #3 Make this the ID of a real servicechain
             contact: contact_id,
             is_reply_to: is_reply_to,
             direction: true, // Make this correct
@@ -33,11 +32,11 @@ var MessageManager = {
     /**
      * Does what it says on the tin - attempts to send a message by looping through the services in the servicechain associated with the message.
      * @param {Sequelize Message model} A Message object (TODO: or id?) representing the message to send.
-     * @returns {Bluebird Promise} Promise resolving to the sequelize Message model that has been sent.
+     * @returns {Bluebird Promise} Promise reso lving to the sequelize Message model that has been sent.
      */
 
     sendMessage: function (message) {
-        // TODO: Make this work
+        // TODO: #4 Make this work
         /*
         The `message` object has a property, `servicechain`, which holds the ID of the servicechain we should use
         to send this message. We need to retrieve the servicechain from the database and iterate through all of
