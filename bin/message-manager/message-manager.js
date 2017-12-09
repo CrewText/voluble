@@ -8,7 +8,8 @@ const db = require('../../models')
 Will this be done from the plugin end?
 */
 
-
+// TODO: MessageManager.message_states potentially redundant
+var MessageManager = {
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
@@ -45,7 +46,54 @@ Will this be done from the plugin end?
         Promises can help us here - by chaining a series of promises together, we can automatically iterate through
         plugin chains - is the idea!
         */
-        return new Promise(function(resolve, reject){
+
+        // Step 1 - get the list of services we're going to send the message by
+        // TODO: Implement ServicechainManager
+        // TODO: Implement ServicechainManager.getServicesInServicechain
+        let service_ids = ServicechainManager.getServicesInServicechain(message.servicechain)
+
+        /**
+         *  THIS BIT IS HERE SO THE CODE DOESN'T ACTUALLY RUN UNTIL EVERYTHING IS BUILT
+         */
+        if (false) {
+            return Promise.mapSeries(service_ids, function (service_id) {
+                // Make sure that the message has not been sent:
+                return message.reload()
+                    .then(function (msg) {
+                        if (msg.message_state == "MSG_PENDING" ||
+                            msg.message_state == "MSG_FAILED") {
+                            return msg
+                        } else {
+                            throw new Error("Message " + msg.id + " has already been sent. Not sending.")
+                        }
+                    })
+                    // We know that the message has not been sent, so try and send it.
+                    .then(function (msg) {
+                        // Get the plugin associated with a given service ID.
+                        return pluginManager.getPluginFromId(service_id)
+                            .then(function (plugin) {
+                                // Now that we have the plugin, use it to send the message.
+                                Promise.try(function () {
+                                    return plugin.send_message(msg)
+                                })
+                                    .catch(function (err) {
+                                        /* Something went wrong with the message-sending.
+                                        Mark the message as failed and re-throw.
+                                        */
+                                        msg.message_state = "MSG_FAILED"
+                                        msg.save({ fields: ['message_state'] })
+                                        throw err
+                                    })
+                            })
+                    })
+            })
+        }
+
+        /**
+         * IGNORE THIS FOR NOW - IT'S MAKING THE CODE WORK
+         */
+
+        return new Promise(function (resolve, reject) {
             resolve(message)
         })
     },
