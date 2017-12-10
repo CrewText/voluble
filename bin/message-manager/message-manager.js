@@ -49,7 +49,7 @@ var MessageManager = {
 
         // Step 1 - get the list of services we're going to send the message by
         // TODO: Implement ServicechainManager.getServicesInServicechain
-        let service_ids = ServicechainManager.getServicesInServicechain(message.servicechain)
+        let service_ids = servicechainManager.getServicesInServicechain(message.servicechain)
 
         /**
          *  THIS BIT IS HERE SO THE CODE DOESN'T ACTUALLY RUN UNTIL EVERYTHING IS BUILT
