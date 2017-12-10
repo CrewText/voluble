@@ -4,6 +4,7 @@ const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
 const db = require('../../models')
 const servicechainManager = require('../servicechain-manager/servicechain-manager')
+const pluginManager = require("../plugin-manager/plugin-manager")
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
 Will this be done from the plugin end?
@@ -47,55 +48,66 @@ var MessageManager = {
         plugin chains - is the idea!
         */
 
-        // Step 1 - get the list of services we're going to send the message by
-        // TODO: Implement ServicechainManager.getServicesInServicechain
-        let service_ids = servicechainManager.getServicesInServicechain(message.servicechain)
-
         /**
          *  THIS BIT IS HERE SO THE CODE DOESN'T ACTUALLY RUN UNTIL EVERYTHING IS BUILT
          */
-        if (false) {
-            return Promise.mapSeries(service_ids, function (service_id) {
-                // Make sure that the message has not been sent:
-                return message.reload()
-                    .then(function (msg) {
-                        if (msg.message_state == "MSG_PENDING" ||
-                            msg.message_state == "MSG_FAILED") {
-                            return msg
-                        } else {
-                            throw new Error("Message " + msg.id + " has already been sent. Not sending.")
-                        }
+        //if (false) {
+            console.log("Attempting to send message\n\t" + message.body)
+            // Step 1 - get the list of services we're going to send the message by
+            return servicechainManager.getServicesInServicechain(message.servicechain)
+                .then(function (rows) {
+                    // We've got the array of full rows, but we just want the service ids
+                    return Promise.map(rows, function (row) {
+                        return row.service_id
                     })
-                    // We know that the message has not been sent, so try and send it.
-                    .then(function (msg) {
-                        // Get the plugin associated with a given service ID.
-                        return pluginManager.getPluginFromId(service_id)
-                            .then(function (plugin) {
-                                // Now that we have the plugin, use it to send the message.
-                                Promise.try(function () {
-                                    winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
-                                    return plugin.send_message(msg)
-                                })
-                                    .catch(function (err) {
-                                        /* Something went wrong with the message-sending.
-                                        Mark the message as failed and re-throw.
-                                        */
-                                        msg.message_state = "MSG_FAILED"
-                                        msg.save({ fields: ['message_state'] })
-                                        throw err
+                })
+                .then(function (service_ids) {
+                    console.log("We have the following service IDs\n\t" + service_ids)
+                    // Now we have a row of service ids, so for each id:
+                    return Promise.mapSeries(service_ids, function (service_id) {
+                        // Make sure that the message has not been sent:
+                        return message.reload()
+                            .then(function (msg) {
+                                console.log("Message state:\n\t" + msg.message_state)
+                                if (msg.message_state == "MSG_PENDING" ||
+                                    msg.message_state == "MSG_FAILED") {
+                                    return msg
+                                } else {
+                                    throw new Error("Message " + msg.id + " has already been sent. Not sending.")
+                                }
+                            })
+                            // We know that the message has not been sent, so try and send it.
+                            .then(function (msg) {
+                                // Get the plugin associated with a given service ID.
+                                return pluginManager.getPluginFromId(service_id) // TODO: Implement getPluginFromID
+                                    .then(function (plugin) {
+                                        // Now that we have the plugin, use it to send the message.
+                                        Promise.try(function () {
+                                            winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
+                                            return plugin.send_message(msg)
+                                        })
+                                            .catch(function (err) {
+                                                /* Something went wrong with the message-sending.
+                                                Mark the message as failed and re-throw.
+                                                */
+                                                msg.message_state = "MSG_FAILED"
+                                                msg.save({ fields: ['message_state'] })
+                                                throw err
+                                            })
                                     })
                             })
                     })
-            })
-        }
+                })
+        //}
 
         /**
          * IGNORE THIS FOR NOW - IT'S MAKING THE CODE WORK
          */
-
+if (false){
         return new Promise(function (resolve, reject) {
             resolve(message)
         })
+    }
     },
 
     /**
