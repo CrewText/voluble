@@ -82,6 +82,7 @@ var MessageManager = {
                                         */
                                         msg.message_state = "MSG_FAILED"
                                         msg.save({ fields: ['message_state'] })
+                                        //TODO: update message_sent param
                                         throw err
                                     })
                             })
