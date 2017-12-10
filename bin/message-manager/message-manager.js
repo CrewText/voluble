@@ -3,6 +3,7 @@ const Promise = require('bluebird')
 const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
 const db = require('../../models')
+const servicechainManager = require('../servicechain-manager/servicechain-manager')
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
 Will this be done from the plugin end?
@@ -47,7 +48,6 @@ var MessageManager = {
         */
 
         // Step 1 - get the list of services we're going to send the message by
-        // TODO: Implement ServicechainManager
         // TODO: Implement ServicechainManager.getServicesInServicechain
         let service_ids = ServicechainManager.getServicesInServicechain(message.servicechain)
 
