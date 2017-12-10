@@ -3,7 +3,7 @@ const Promise = require('bluebird')
 const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
 const db = require('../../models')
-const servicechainManager = require('../servicechain-manager/servicechain-manager')
+sconst servicechainManager = require('../servicechain-manager/servicechain-manager')
 const pluginManager = require("../plugin-manager/plugin-manager")
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
@@ -96,6 +96,7 @@ var MessageManager = {
                                             console.log("Something went wrong: " + err.message)
                                             msg.message_state = "MSG_FAILED"
                                             msg.save({ fields: ['message_state'] })
+                                        //TODO: update message_sent param
                                             throw err
                                         })
                                 })
