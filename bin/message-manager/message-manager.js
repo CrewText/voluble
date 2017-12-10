@@ -59,14 +59,11 @@ var MessageManager = {
                 })
             })
             .then(function (service_ids) {
-                console.log("We have the following service IDs\n\t" + service_ids)
                 // Now we have a row of service ids, so for each id:
                 return Promise.mapSeries(service_ids, function (service_id) {
-                    winston.info("Using service #:\n\t" + service_id)
                     // Make sure that the message has not been sent:
                     return message.reload()
                         .then(function (msg) {
-                            console.log("Message state:\n\t" + msg.message_state)
                             if (msg.message_state == "MSG_PENDING" ||
                                 msg.message_state == "MSG_FAILED") {
                                 return msg
@@ -85,7 +82,6 @@ var MessageManager = {
                                         return plugin.send_message(msg)
                                     })
                                         .then(function () {
-                                            console.log("Message appears to have been sent, marking message sent")
                                             msg.message_state = "MSG_SENDING"
                                             msg.sent_time = db.sequelize.fn('NOW')
                                             msg.save({ fields: ['message_state', 'sent_time'] })
@@ -94,7 +90,7 @@ var MessageManager = {
                                             /* Something went wrong with the message-sending.
                                             Mark the message as failed and re-throw.
                                             */
-                                            console.log("Something went wrong: " + err.message)
+                                            winston.error(err)
                                             msg.message_state = "MSG_FAILED"
                                             throw err
                                         })
