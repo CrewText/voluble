@@ -48,66 +48,70 @@ var MessageManager = {
         plugin chains - is the idea!
         */
 
-        /**
-         *  THIS BIT IS HERE SO THE CODE DOESN'T ACTUALLY RUN UNTIL EVERYTHING IS BUILT
-         */
         //if (false) {
-            console.log("Attempting to send message\n\t" + message.body)
-            // Step 1 - get the list of services we're going to send the message by
-            return servicechainManager.getServicesInServicechain(message.servicechain)
-                .then(function (rows) {
-                    // We've got the array of full rows, but we just want the service ids
-                    return Promise.map(rows, function (row) {
-                        return row.service_id
-                    })
+        console.log("Attempting to send message\n\t" + message.body)
+        // Step 1 - get the list of services we're going to send the message by
+        return servicechainManager.getServicesInServicechain(message.servicechain)
+            .then(function (rows) {
+                // We've got the array of full rows, but we just want the service ids
+                return Promise.map(rows, function (row) {
+                    return row.service_id
                 })
-                .then(function (service_ids) {
-                    console.log("We have the following service IDs\n\t" + service_ids)
-                    // Now we have a row of service ids, so for each id:
-                    return Promise.mapSeries(service_ids, function (service_id) {
-                        // Make sure that the message has not been sent:
-                        return message.reload()
-                            .then(function (msg) {
-                                console.log("Message state:\n\t" + msg.message_state)
-                                if (msg.message_state == "MSG_PENDING" ||
-                                    msg.message_state == "MSG_FAILED") {
-                                    return msg
-                                } else {
-                                    throw new Error("Message " + msg.id + " has already been sent. Not sending.")
-                                }
-                            })
-                            // We know that the message has not been sent, so try and send it.
-                            .then(function (msg) {
-                                // Get the plugin associated with a given service ID.
-                                return pluginManager.getPluginFromId(service_id) // TODO: Implement getPluginFromID
-                                    .then(function (plugin) {
-                                        // Now that we have the plugin, use it to send the message.
-                                        Promise.try(function () {
-                                            winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
-                                            return plugin.send_message(msg)
-                                        })
-                                            .catch(function (err) {
-                                                /* Something went wrong with the message-sending.
-                                                Mark the message as failed and re-throw.
-                                                */
-                                                msg.message_state = "MSG_FAILED"
-                                                msg.save({ fields: ['message_state'] })
-                                                throw err
-                                            })
+            })
+            .then(function (service_ids) {
+                console.log("We have the following service IDs\n\t" + service_ids)
+                // Now we have a row of service ids, so for each id:
+                return Promise.mapSeries(service_ids, function (service_id) {
+                    winston.info("Using service #:\n\t" + service_id)
+                    // Make sure that the message has not been sent:
+                    return message.reload()
+                        .then(function (msg) {
+                            console.log("Message state:\n\t" + msg.message_state)
+                            if (msg.message_state == "MSG_PENDING" ||
+                                msg.message_state == "MSG_FAILED") {
+                                return msg
+                            } else {
+                                throw new Error("Message " + msg.id + " has already been sent. Not sending.")
+                            }
+                        })
+                        // We know that the message has not been sent, so try and send it.
+                        .then(function (msg) {
+                            // Get the plugin associated with a given service ID.
+                            return pluginManager.getPluginById(service_id) // TODO: Implement getPluginFromID properly
+                                .then(function (plugin) {
+                                    // Now that we have the plugin, use it to send the message.
+                                    Promise.try(function () {
+                                        winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
+                                        return plugin.send_message(msg)
                                     })
-                            })
-                    })
+                                        .then(function () {
+                                            console.log("Message appears to have been sent, marking message sent")
+                                            msg.message_state = "MSG_SENDING"
+                                            msg.save({ fields: ['message_state'] })
+                                        })
+                                        .catch(function (err) {
+                                            /* Something went wrong with the message-sending.
+                                            Mark the message as failed and re-throw.
+                                            */
+                                            console.log("Something went wrong: " + err.message)
+                                            msg.message_state = "MSG_FAILED"
+                                            msg.save({ fields: ['message_state'] })
+                                            throw err
+                                        })
+                                })
+                        })
                 })
+            })
         //}
 
         /**
          * IGNORE THIS FOR NOW - IT'S MAKING THE CODE WORK
          */
-if (false){
-        return new Promise(function (resolve, reject) {
-            resolve(message)
-        })
-    }
+        if (false) {
+            return new Promise(function (resolve, reject) {
+                resolve(message)
+            })
+        }
     },
 
     /**

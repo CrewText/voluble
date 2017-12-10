@@ -1,9 +1,19 @@
 const winston = require('winston')
+const Promise = require('bluebird')
 
 var PluginManager = {
     plugin_dir: "",
     totalPluginsList: [],
     availablePlugins: [],
+
+    getPluginById: function (id){
+        return Promise.try(function(){
+            //return PluginManager.availablePlugins[id]
+            if (id == 1){
+                return PluginManager.availablePlugins[0]}
+            else{throw new Error("Plugin with id "+id+" does not exist")}
+        })
+    }
 }
 
 /**
@@ -24,15 +34,18 @@ PluginManager.loadAllPlugins = function () {
     // Cycle through plugin directory and try to init all available plugins
     // FIXME: make loadAllPlugins actually work, and loop through stuff! #1
     let esendexPlugin = require("../plugins/esendex/plugin")
-    this.availablePlugins.push(esendexPlugin)
+    let plug = esendexPlugin.createPlugin()
+    this.availablePlugins.push(plug)
+    plug.init()
 
-    try {
+    /*try {
         this.availablePlugins.forEach(function (plugin) {
             winston.debug(plugin.createPlugin().init())
         });
     } catch (e) {
         console.log(e)
     }
+    */
 }
 
 /**

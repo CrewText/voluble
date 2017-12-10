@@ -2,8 +2,6 @@
 var voluble_plugin_base = require('../plugin_base.js')
 var manifest = require('./manifest.json')
 
-var Q = require('Q')
-
 var esendex = null
 
 var EsendexPlugin = {
@@ -33,10 +31,10 @@ EsendexPlugin.init = function () {
 }
 
 EsendexPlugin.send_message = function (message) {
-  let deferred = Q.defer()
   // This must be defined by *every* plugin. It will be called by the voluble when a message needs to be sent.
   console.log("Sending the message: " + message)
-  return this.esendex_send_message(message.phone_number, message.message_text)
+  //return this.esendex_send_message(message.phone_number, message.message_text)
+  return true
 }
 
 EsendexPlugin.shutdown = function(){
@@ -44,8 +42,7 @@ EsendexPlugin.shutdown = function(){
 }
 
 EsendexPlugin.esendex_send_message = function (phone_number, message_text) {
-  let deferred = Q.defer()
-  let message = {
+  /*let message = {
     accountreference: this.account_ref,
     message: [{
       to: phone_number,
@@ -57,9 +54,11 @@ EsendexPlugin.esendex_send_message = function (phone_number, message_text) {
     if (err) {
       console.log('Error sending message: ', err)
       console.log(response);
-      deferred.reject(voluble_plugin_base.message.message_states.MESSAGE_FAILED)
+      //deferred.reject(voluble_plugin_base.message.message_states.MESSAGE_FAILED)
     }
   })
+  */
+  return true
 }
 
 var createPlugin = function () {
