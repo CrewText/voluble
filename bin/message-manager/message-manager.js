@@ -3,7 +3,7 @@ const Promise = require('bluebird')
 const utils = require('../../utilities')
 const user_settings = require('../../user_settings')
 const db = require('../../models')
-sconst servicechainManager = require('../servicechain-manager/servicechain-manager')
+const servicechainManager = require('../servicechain-manager/servicechain-manager')
 const pluginManager = require("../plugin-manager/plugin-manager")
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
@@ -87,7 +87,8 @@ var MessageManager = {
                                         .then(function () {
                                             console.log("Message appears to have been sent, marking message sent")
                                             msg.message_state = "MSG_SENDING"
-                                            msg.save({ fields: ['message_state'] })
+                                            msg.sent_time = db.sequelize.fn('NOW')
+                                            msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
                                         .catch(function (err) {
                                             /* Something went wrong with the message-sending.
@@ -95,8 +96,6 @@ var MessageManager = {
                                             */
                                             console.log("Something went wrong: " + err.message)
                                             msg.message_state = "MSG_FAILED"
-                                            msg.save({ fields: ['message_state'] })
-                                        //TODO: update message_sent param
                                             throw err
                                         })
                                 })
