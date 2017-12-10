@@ -13,4 +13,4 @@ let svc_in_sc_model = function (sequelize, DataTypes) {
     return ServicesInSC
 }
 
-module.exports = sc_model
+module.exports = svc_in_sc_model
