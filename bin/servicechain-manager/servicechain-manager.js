@@ -6,7 +6,7 @@ var ServicechainManager = {
      * @param servicechain_id {integer} The ID of the servicechain that we want to retrieve the services for.
      */
     getServicesInServicechain: function(servicechain_id){
-        return db.sequelize.Model('ServicesInSC').findAll({
+        return db.sequelize.model('ServicesInSC').findAll({
             where: {
                 servicechain_id: servicechain_id
             },
