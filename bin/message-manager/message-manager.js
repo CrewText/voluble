@@ -96,8 +96,7 @@ var MessageManager = {
                                             throw err
                                         })
                                 })
-                        })
-
+                        })// TODO: Find a way of mapSeries iterating when we have completed the message-sending.
                         .catch(volubleErrors.MessageAlreadySentError, function (e) {
                             winston.info("Message " + message.id + " has already been sent. Not trying again.")
                         })
