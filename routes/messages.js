@@ -59,9 +59,10 @@ router.post('/', function (req, res, next) {
     true //req.body.direction - TODO: Make this correct, since the test page gets it wrong
   )
     .then(function (msg) {
-      messageManager.sendMessage(msg)
+      return messageManager.sendMessage(msg)
     })
     .then(function (msg){
+      console.log("Got back: " + msg)
       res.status(200).json(msg)
     })
     .catch(function (err) {

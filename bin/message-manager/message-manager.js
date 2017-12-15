@@ -26,7 +26,7 @@ var MessageManager = {
             .then(function (servicechain) {
                 return db.sequelize.model('Message').create({
                     body: body,
-                    servicechain: servicechain.id, //TODO: #3 Make this the ID of a real servicechain
+                    servicechain: servicechain.id,
                     contact: contact_id,
                     is_reply_to: is_reply_to,
                     direction: direction, // Make this correct - is
@@ -42,7 +42,6 @@ var MessageManager = {
      */
 
     sendMessage: function (message) {
-        // TODO: #4 Make this work
         /*
         The `message` object has a property, `servicechain`, which holds the ID of the servicechain we should use
         to send this message. We need to retrieve the servicechain from the database and iterate through all of
@@ -52,8 +51,6 @@ var MessageManager = {
         plugin chains - is the idea!
         */
 
-        //if (false) {
-        console.log("Attempting to send message\n\t" + message.body)
         // Step 1 - get the list of services we're going to send the message by
         return servicechainManager.getServicesInServicechain(message.servicechain)
             .then(function (rows) {
@@ -81,7 +78,7 @@ var MessageManager = {
                             return pluginManager.getPluginById(service_id)
                                 .then(function (plugin) {
                                     // Now that we have the plugin, use it to send the message.
-                                    Promise.try(function () {
+                                    return Promise.try(function () {
                                         winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
                                         return plugin.send_message(msg)
                                     })
@@ -105,16 +102,6 @@ var MessageManager = {
                         })
                 })
             })
-        //}
-
-        /**
-         * IGNORE THIS FOR NOW - IT'S MAKING THE CODE WORK
-         */
-        if (false) {
-            return new Promise(function (resolve, reject) {
-                resolve(message)
-            })
-        }
     },
 
     /**
