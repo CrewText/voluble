@@ -56,7 +56,7 @@ router.post('/', function (req, res, next) {
   messageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!
-    req.body.direction
+    true //req.body.direction - TODO: Make this correct, since the test page gets it wrong
   )
     .then(function (msg) {
       messageManager.sendMessage(msg)

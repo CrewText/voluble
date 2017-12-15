@@ -22,14 +22,17 @@ var MessageManager = {
      */
     createMessage: function (body, contact_id, direction, is_reply_to = null) {
 
-        return db.sequelize.model('Message').create({
-            body: body,
-            servicechain: 1, //TODO: #3 Make this the ID of a real servicechain
-            contact: contact_id,
-            is_reply_to: is_reply_to,
-            direction: true, // Make this correct
-            message_state: 'MSG_PENDING'
-        })
+        return servicechainManager.getServicechainFromContactId(contact_id)
+            .then(function (servicechain) {
+                return db.sequelize.model('Message').create({
+                    body: body,
+                    servicechain: servicechain.id, //TODO: #3 Make this the ID of a real servicechain
+                    contact: contact_id,
+                    is_reply_to: is_reply_to,
+                    direction: direction, // Make this correct - is
+                    message_state: 'MSG_PENDING'
+                })
+            })
     },
 
     /**
@@ -75,7 +78,7 @@ var MessageManager = {
                         // We know that the message has not been sent, so try and send it.
                         .then(function (msg) {
                             // Get the plugin associated with a given service ID.
-                            return pluginManager.getPluginById(service_id) // TODO: Implement getPluginFromID properly
+                            return pluginManager.getPluginById(service_id)
                                 .then(function (plugin) {
                                     // Now that we have the plugin, use it to send the message.
                                     Promise.try(function () {

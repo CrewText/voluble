@@ -7,9 +7,10 @@ var PluginManager = {
     availablePlugins: [],
 
     getPluginById: function (id){
+        // TODO: Implement getPluginFromID properly
         return Promise.try(function(){
             //return PluginManager.availablePlugins[id]
-            if (id == 1){
+            if (id == 0){
                 return PluginManager.availablePlugins[0]}
             else{throw new Error("Plugin with id "+id+" does not exist")}
         })
