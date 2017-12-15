@@ -32,7 +32,7 @@ EsendexPlugin.init = function () {
 
 EsendexPlugin.send_message = function (message) {
   // This must be defined by *every* plugin. It will be called by the voluble when a message needs to be sent.
-  console.log("Sending the message: " + message)
+  console.log("Sending the message: " + message.body)
   //return this.esendex_send_message(message.phone_number, message.message_text)
   return true
 }

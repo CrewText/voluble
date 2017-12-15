@@ -5,6 +5,7 @@ const user_settings = require('../../user_settings')
 const db = require('../../models')
 const servicechainManager = require('../servicechain-manager/servicechain-manager')
 const pluginManager = require("../plugin-manager/plugin-manager")
+const volubleErrors = require('../voluble-errors')
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
 Will this be done from the plugin end?
@@ -68,7 +69,7 @@ var MessageManager = {
                                 msg.message_state == "MSG_FAILED") {
                                 return msg
                             } else {
-                                throw new Error("Message " + msg.id + " has already been sent. Not sending.")
+                                throw new volubleErrors.MessageAlreadySentError("Message " + msg.id + " has already been sent. Not sending.")
                             }
                         })
                         // We know that the message has not been sent, so try and send it.
@@ -84,7 +85,7 @@ var MessageManager = {
                                         .then(function () {
                                             msg.message_state = "MSG_SENDING"
                                             msg.sent_time = db.sequelize.fn('NOW')
-                                            msg.save({ fields: ['message_state', 'sent_time'] })
+                                            return msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
                                         .catch(function (err) {
                                             /* Something went wrong with the message-sending.
@@ -95,6 +96,10 @@ var MessageManager = {
                                             throw err
                                         })
                                 })
+                        })
+
+                        .catch(volubleErrors.MessageAlreadySentError, function (e) {
+                            winston.info("Message " + message.id + " has already been sent. Not trying again.")
                         })
                 })
             })
