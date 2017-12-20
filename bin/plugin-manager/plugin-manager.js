@@ -11,14 +11,11 @@ var PluginManager = {
     availablePlugins: [],
 
     getPluginById: function (id) {
-        // TODO: #8 - Implement getPluginFromID properly
-        return Promise.try(function () {
-            //return PluginManager.availablePlugins[id]
-            if (id == 0) {
-                return PluginManager.availablePlugins[0]
-            }
-            else { throw new Error("Plugin with id " + id + " does not exist") }
-        })
+        return db.sequelize.model('Plugin').findOne({ where: { id: id } })
+            .then(function (row) {
+                if (row) { return row }
+                else { throw new Error("Plugin with id " + id + " does not exist") }
+            })
     },
 
 
