@@ -7,13 +7,16 @@ const voluble_errors = require('../voluble-errors')
 
 var PluginManager = {
     plugin_dir: "",
-//TODO: FIXME: NO YOU FUCKWIT, RETURN THE PLUGIN OBJECT!
+    loaded_plugins: [],
+
     getPluginById: function (id) {
-        return db.sequelize.model('Plugin').findOne({ where: { id: id } })
-            .then(function (row) {
-                if (row) { return row }
-                else { throw new Error("Plugin with id " + id + " does not exist") }
-            })
+        loaded_plugins.forEach(function (plugin) {
+            if (plugin.id = id) {
+                return plugin
+            }
+        })
+
+        throw new Error("Plugin with ID " + id + " does not exist.")
     },
 
 
@@ -65,6 +68,7 @@ var PluginManager = {
                         // So now that the plugin exists in the database, let's try and make it work
                         .then(function (row) {
                             if (plug_obj.init()) {
+                                PluginManager.loaded_plugins.push(plug_obj)
                                 row.initialized = true
                                 return row.save()
                             } else {
@@ -99,21 +103,23 @@ var PluginManager = {
      * For each loaded plugin, call it's `shutdown()` function.
      */
     shutdownAllPlugins: function () {
-     
+
         db.sequelize.model('Plugin').findAll({
-            where: {initialized: true}
+            where: { initialized: true }
         })
-        .then(function(rows){
-            Promise.map(rows, function(row){
-                let plugin = PluginManager.getPluginById(row.id)
-                plugin.shutdown()
-                row.initialized = false
-                return row.save()
+            .then(function (rows) {
+                Promise.map(rows, function (row) {
+                    let plugin = PluginManager.getPluginById(row.id)
+                    plugin.shutdown()
+                    let index = PluginManager.loaded_plugins.indexOf(plugin)
+                    if (index > -1) { PluginManager.loaded_plugins.splice(index, 1) }
+                    row.initialized = false
+                    return row.save()
+                })
             })
-        })
-        .catch(function(err){
-            winston.error(err.message)
-        })
+            .catch(function (err) {
+                winston.error(err.message)
+            })
     }
 }
 
