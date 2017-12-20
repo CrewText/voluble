@@ -29,4 +29,4 @@ var createPlugin = function () {
     return ex_plug
 }
 
-module.exports = {createPlugin};
+module.exports = createPlugin;
