@@ -7,9 +7,7 @@ const voluble_errors = require('../voluble-errors')
 
 var PluginManager = {
     plugin_dir: "",
-    totalPluginsList: [],
-    availablePlugins: [],
-
+//TODO: FIXME: NO YOU FUCKWIT, RETURN THE PLUGIN OBJECT!
     getPluginById: function (id) {
         return db.sequelize.model('Plugin').findOne({ where: { id: id } })
             .then(function (row) {
@@ -101,14 +99,21 @@ var PluginManager = {
      * For each loaded plugin, call it's `shutdown()` function.
      */
     shutdownAllPlugins: function () {
-        // TODO: #9 - Make shutdownAllPlugins work properly!
-        try {
-            this.availablePlugins.forEach(function (plugin) {
+     
+        db.sequelize.model('Plugin').findAll({
+            where: {initialized: true}
+        })
+        .then(function(rows){
+            Promise.map(rows, function(row){
+                let plugin = PluginManager.getPluginById(row.id)
                 plugin.shutdown()
+                row.initialized = false
+                return row.save()
             })
-        } catch (e) {
-            console.log(e)
-        }
+        })
+        .catch(function(err){
+            winston.error(err.message)
+        })
     }
 }
 
