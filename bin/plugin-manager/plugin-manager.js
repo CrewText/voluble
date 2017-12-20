@@ -11,7 +11,7 @@ var PluginManager = {
     availablePlugins: [],
 
     getPluginById: function (id) {
-        // TODO: Implement getPluginFromID properly
+        // TODO: #8 - Implement getPluginFromID properly
         return Promise.try(function () {
             //return PluginManager.availablePlugins[id]
             if (id == 0) {
@@ -104,6 +104,7 @@ var PluginManager = {
      * For each loaded plugin, call it's `shutdown()` function.
      */
     shutdownAllPlugins: function () {
+        // TODO: #9 - Make shutdownAllPlugins work properly!
         try {
             this.availablePlugins.forEach(function (plugin) {
                 plugin.shutdown()
