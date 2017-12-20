@@ -49,8 +49,7 @@ var PluginManager = {
             let plugin_file_abs = path.join(PluginManager.plugin_dir, plugin_subir_rel, "plugin.js")
             if (fs.existsSync(plugin_file_abs)) {
                 try {
-                    let plug = require(plugin_file_abs)
-                    let plug_obj = plug.createPlugin()
+                    let plug_obj = require(plugin_file_abs)()
                     winston.info("Loaded plugin:\n\t" + plug_obj.name)
                     PluginManager.totalPluginsList.push(plug_obj)
                     plug_obj.init()

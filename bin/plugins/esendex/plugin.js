@@ -67,4 +67,4 @@ var createPlugin = function () {
   return es_plug
 }
 
-module.exports = { createPlugin };
+module.exports = createPlugin;
