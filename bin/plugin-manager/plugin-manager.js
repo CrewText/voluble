@@ -1,3 +1,4 @@
+const fs = require('fs')
 const winston = require('winston')
 const Promise = require('bluebird')
 
@@ -39,6 +40,14 @@ PluginManager.loadAllPlugins = function () {
     this.availablePlugins.push(plug)
     plug.init()
 
+
+    /**
+     * Logic - the plugin's directory is something we should be able to identify it by.
+     * SO: We should loop through all of the directories under the plugin directory and see if a plugin exists in the database with that directory.
+     * If so, update it's status to not initialized. Otherwise, create it as not initialized.
+     * The point of this is so that when plugins are added, they aren't removed and re-added on startup, which could likely lead to a change in ID number in the database when a new plugin is added or an existing one removed.
+     */
+
     /*try {
         this.availablePlugins.forEach(function (plugin) {
             winston.debug(plugin.createPlugin().init())
@@ -48,6 +57,7 @@ PluginManager.loadAllPlugins = function () {
     }
     */
 }
+
 
 /**
  * For each loaded plugin, call it's `shutdown()` function.
