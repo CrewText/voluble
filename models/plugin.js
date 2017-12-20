@@ -6,7 +6,7 @@ let plugin_model = function (sequelize, DataTypes) {
             autoIncrement: true,
         },
         name: DataTypes.STRING,
-        directory: DataTypes.STRING,
+        directory_name: DataTypes.STRING,
         initialized: DataTypes.BOOLEAN
     })
 
