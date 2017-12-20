@@ -17,16 +17,14 @@ const routerServices = require('./routes/services');
 const routerBlasts = require('./routes/blasts');
 const routerServicechains = require('./routes/servicechains');
 
-winston.info("Loading plugin manager")
-const pluginManager = require("./bin/plugin-manager/plugin-manager")
-
-
 winston.info("Loading user settings")
 const user_settings = require('./user_settings.json')
 
 winston.info("Connecting to database")
 const db = require('./models')
 
+winston.info("Loading plugin manager")
+const pluginManager = require("./bin/plugin-manager/plugin-manager")
 
 winston.info("Starting Express server")
 const app = express();
