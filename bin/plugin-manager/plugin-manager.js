@@ -26,7 +26,6 @@ var PluginManager = {
 
     loadAllPlugins: function () {
         // Cycle through plugin directory and try to init all available plugins
-        // FIXME: make loadAllPlugins actually work, and loop through stuff! #1
 
         /**
          * Logic - the plugin's directory is something we should be able to identify it by.
