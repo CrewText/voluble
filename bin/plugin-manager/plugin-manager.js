@@ -10,13 +10,18 @@ var PluginManager = {
     loaded_plugins: [],
 
     getPluginById: function (id) {
-        loaded_plugins.forEach(function (plugin) {
-            if (plugin.id = id) {
-                return plugin
+        let p = null
+        PluginManager.loaded_plugins.forEach(function (plugin) {
+            if (plugin[0] == id) {
+                p = plugin[1]
             }
         })
 
-        throw new Error("Plugin with ID " + id + " does not exist.")
+        if (!p){
+            throw new Error("Plugin with ID " + id + " does not exist.")
+        } else {
+            return p
+        }
     },
 
 
@@ -68,7 +73,8 @@ var PluginManager = {
                         // So now that the plugin exists in the database, let's try and make it work
                         .then(function (row) {
                             if (plug_obj.init()) {
-                                PluginManager.loaded_plugins.push(plug_obj)
+                                PluginManager.loaded_plugins.push([row.id, plug_obj])
+                                console.log("Inited plugin " + row.id + ": " + plug_obj.name)
                                 row.initialized = true
                                 return row.save()
                             } else {

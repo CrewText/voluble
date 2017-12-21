@@ -75,7 +75,9 @@ var MessageManager = {
                         // We know that the message has not been sent, so try and send it.
                         .then(function (msg) {
                             // Get the plugin associated with a given service ID.
-                            return pluginManager.getPluginById(service_id)
+                            return Promise.try(function(){
+                                return pluginManager.getPluginById(service_id)
+                            })
                                 .then(function (plugin) {
                                     // Now that we have the plugin, use it to send the message.
                                     return Promise.try(function () {

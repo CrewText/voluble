@@ -56,14 +56,18 @@ router.post('/', function (req, res, next) {
   messageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!
-    true //req.body.direction - TODO: Make this correct, since the test page gets it wrong
+    req.body.direction
   )
     .then(function (msg) {
       return messageManager.sendMessage(msg)
     })
-    .then(function (msg){
-      console.log("Got back: " + msg)
+    .then(function (msg_arr){
+      let msg = null
+      msg_arr.forEach(function(element) {
+        if (element){msg = element}
+      });
       res.status(200).json(msg)
+      winston.info("Sent message 84:\n\t" + msg)
     })
     .catch(function (err) {
       res.status(500).json(err.message)
