@@ -67,7 +67,7 @@ router.post('/', function (req, res, next) {
         if (element){msg = element}
       });
       res.status(200).json(msg)
-      winston.info("Sent message 84:\n\t" + msg)
+      winston.info("Sent message " + msg.id + ":\n\t" + msg)
     })
     .catch(function (err) {
       res.status(500).json(err.message)
