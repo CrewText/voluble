@@ -10,7 +10,7 @@ let message_model = function (sequelize, DataTypes) {
         servicechain: DataTypes.INTEGER,
         contact: DataTypes.BIGINT,
         is_reply_to: DataTypes.BIGINT,
-        direction: DataTypes.BOOLEAN,
+        direction: DataTypes.BOOLEAN, // TODO: Can we make this an ENUM? (INBOUND, OUTBOUND)
         sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',
             'MSG_SENDING',
