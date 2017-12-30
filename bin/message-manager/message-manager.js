@@ -87,16 +87,17 @@ var MessageManager = {
                                             msg.sent_time = db.sequelize.fn('NOW')
                                             return msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
-                                        .catch(function (err) {
-                                            /* Something went wrong with the message-sending.
-                                            Mark the message as failed and re-throw.
-                                            */
-                                            winston.error(err)
-                                            msg.message_state = "MSG_FAILED"
-                                            throw err
-                                        })
                                 })
-                        })// TODO: Find a way of mapSeries iterating when we have completed the message-sending.
+                        }) 
+                        .catch(function (err) {
+                            /* Something went wrong with the message-sending.
+                            Mark the message as failed and re-throw.
+                            */
+                            winston.error(err)
+                            msg.message_state = "MSG_FAILED"
+                            throw err
+                        })
+                        // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
                         .catch(volubleErrors.MessageAlreadySentError, function (e) {
                             winston.info("Message " + message.id + " has already been sent. Not trying again.")
                         })
