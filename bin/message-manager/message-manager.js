@@ -114,7 +114,8 @@ var MessageManager = {
     getHundredMessageIds: function (offset) {
         return db.sequelize.model('Message').findAll({
             offset: offset,
-            limit: 100
+            limit: 100,
+            order: [['id', 'DESC']]
         })
     },
 
