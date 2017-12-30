@@ -32,8 +32,14 @@ var ServicechainManager = {
             })
     },
 
-    getAllServicechains: function(){
+    getAllServicechains: function () {
         return db.sequelize.model('Servicechain').findAll()
+    },
+
+    getServicechainById: function (id) {
+        return db.sequelize.model('Servicechain').findOne(
+            { where: { id: id } } // TODO: Validate me!
+        )
     }
 }
 
