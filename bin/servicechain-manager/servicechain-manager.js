@@ -30,6 +30,10 @@ var ServicechainManager = {
                     }
                 })
             })
+    },
+
+    getAllServicechains: function(){
+        return db.sequelize.model('Servicechain').findAll()
     }
 }
 

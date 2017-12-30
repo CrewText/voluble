@@ -1,9 +1,18 @@
 var express = require('express');
 var router = express.Router();
+const winston = require('winston')
 
-/* Note: this is boilerplate and has NOT been implemented yet */
+const scManager = require('../bin/servicechain-manager/servicechain-manager')
+
 router.get('/', function(req,res,next){
-  res.render('servicechains_list')
+  scManager.getAllServicechains()
+  .then(function(rows){
+    res.status(200).json(rows)
+  })
+  .catch(function(err){
+    res.status(500).json(err)
+    winston.error(err)
+  })
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
