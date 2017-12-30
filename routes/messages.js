@@ -61,9 +61,13 @@ router.post('/', function (req, res, next) {
     .then(function (msg) {
       return messageManager.sendMessage(msg)
     })
-    .then(function (msg){
-      console.log("Got back: " + msg)
+    .then(function (msg_arr){
+      let msg = null
+      msg_arr.forEach(function(element) {
+        if (element){msg = element}
+      });
       res.status(200).json(msg)
+      winston.info("Sent message " + msg.id + ":\n\t" + msg)
     })
     .catch(function (err) {
       res.status(500).json(err.message)

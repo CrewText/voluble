@@ -8,6 +8,7 @@ let contact_model = function (sequelize, DataTypes) {
         first_name: DataTypes.STRING,
         surname: DataTypes.STRING,
         email_address: DataTypes.STRING,
+        phone_number: DataTypes.STRING,
         default_servicechain: DataTypes.INTEGER
     })
 
