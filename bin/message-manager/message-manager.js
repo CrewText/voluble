@@ -90,7 +90,12 @@ var MessageManager = {
                                             return msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
                                 })
-                        }) 
+                        })
+                        
+                        // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
+                        .catch(volubleErrors.MessageAlreadySentError, function (e) {
+                            winston.info("Message " + message.id + " has already been sent. Not trying again.")
+                        })
                         .catch(function (err) {
                             /* Something went wrong with the message-sending.
                             Mark the message as failed and re-throw.
@@ -99,10 +104,6 @@ var MessageManager = {
                             message.message_state = "MSG_FAILED"
                             message.save()
                             throw err
-                        })
-                        // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
-                        .catch(volubleErrors.MessageAlreadySentError, function (e) {
-                            winston.info("Message " + message.id + " has already been sent. Not trying again.")
                         })
                 })
             })
