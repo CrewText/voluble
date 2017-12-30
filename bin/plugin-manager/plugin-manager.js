@@ -126,9 +126,14 @@ var PluginManager = {
      * Gets the list of plugins from the DB with their status
      */
 
-     getAllPlugins: function(){
-         return db.sequelize.model('Plugin').findAll()
-     }
+    getAllPlugins: function () {
+        return db.sequelize.model('Plugin').findAll()
+    },
+
+    getPluginInfoById: function (id) {
+        return db.sequelize.model('Plugin').findOne({ where: { id: id } })
+    }
+
 }
 
 module.exports = PluginManager
