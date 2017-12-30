@@ -120,7 +120,15 @@ var PluginManager = {
             .catch(function (err) {
                 winston.error(err.message)
             })
-    }
+    },
+
+    /**
+     * Gets the list of plugins from the DB with their status
+     */
+
+     getAllPlugins: function(){
+         return db.sequelize.model('Plugin').findAll()
+     }
 }
 
 module.exports = PluginManager
