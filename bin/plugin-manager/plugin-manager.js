@@ -132,6 +132,7 @@ var PluginManager = {
 
     getPluginInfoById: function (id) {
         return db.sequelize.model('Plugin').findOne({ where: { id: id } })
+        // TODO: Validate plugin exists, fail otherwise
     }
 
 }
