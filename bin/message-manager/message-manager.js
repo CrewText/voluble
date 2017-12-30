@@ -94,7 +94,8 @@ var MessageManager = {
                             Mark the message as failed and re-throw.
                             */
                             winston.error(err)
-                            msg.message_state = "MSG_FAILED"
+                            message.message_state = "MSG_FAILED"
+                            message.save()
                             throw err
                         })
                         // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
