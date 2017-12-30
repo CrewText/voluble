@@ -105,4 +105,8 @@ router.delete('/:contact_id', function (req, res, next) {
     })
 })
 
+router.get('/:contact_id/messages', function(req,res,next){
+  //TODO: #11 - Make this work!
+})
+
 module.exports = router;
