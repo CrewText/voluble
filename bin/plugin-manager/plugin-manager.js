@@ -10,7 +10,7 @@ var PluginManager = {
     loaded_plugins: [],
 
     getPluginById: function (id) {
-        loaded_plugins.forEach(function (plugin) {
+        PluginManager.loaded_plugins.forEach(function (plugin) {
             if (plugin.id = id) {
                 return plugin
             }
