@@ -100,7 +100,7 @@ var PluginManager = {
  */
     initAllPlugins: function (plugin_dir) {
         winston.debug("Attempting to load plugins")
-        this.plugin_dir = plugin_dir || path.join(__dirname, "../plugins")
+        this.plugin_dir = path.resolve(plugin_dir || path.join(__dirname, "../plugins"))
         winston.info("Loading plugins from\n\t"+ this.plugin_dir)
         this.loadAllPlugins()
     },
