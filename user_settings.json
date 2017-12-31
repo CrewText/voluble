@@ -1,0 +1,10 @@
+{
+  "db_credentials": {
+    "host": "jnc6n3xpbgc3kek2.chr7pe7iynqr.eu-west-1.rds.amazonaws.com",
+    "user": "leqi81531zdoqocx",
+    "password": "y3ea73udiv72f9rn",
+    "db": "yvhd8s4h9nllpngt"
+  },
+
+  "plugin_directory": "C:\\Users\\calmc\\Source\\Repos\\voluble\\bin\\plugins"
+}
