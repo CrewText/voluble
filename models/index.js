@@ -1,4 +1,3 @@
-const user_settings = require('../user_settings')
 const Sequelize = require('sequelize')
 const path = require('path');
 const basename = path.basename(__filename);
@@ -6,15 +5,7 @@ const fs = require('fs')
 const winston = require('winston')
 
 var db = {}
-var sequelize = new Sequelize(user_settings.db_credentials.db,
-    user_settings.db_credentials.user,
-    user_settings.db_credentials.password,
-    {
-        host: user_settings.db_credentials.host,
-        dialect: 'mysql',
-        benchmark: true
-    }
-)
+var sequelize = new Sequelize(process.env.JAWSDB_MARIA_URL)
 
 // TODO: #5 Set up associations between models, reduce the need for validation
 

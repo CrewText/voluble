@@ -18,7 +18,6 @@ const routerBlasts = require('./routes/blasts');
 const routerServicechains = require('./routes/servicechains');
 
 winston.info("Loading user settings")
-const user_settings = require('./user_settings.json')
 
 winston.info("Connecting to database")
 const db = require('./models')
@@ -28,7 +27,6 @@ const pluginManager = require("./bin/plugin-manager/plugin-manager")
 
 winston.info("Starting Express server")
 const app = express();
-app.locals.db_credentials = user_settings.db_credentials
 
 /**
  * Get port from environment and store in Express.
@@ -99,7 +97,7 @@ app.use('/servicechains', routerServicechains)
 
 // Set up plugin manager
 winston.info("Initing all plugins")
-pluginManager.initAllPlugins(user_settings.plugin_directory)
+pluginManager.initAllPlugins(process.env.PLUGIN_DIR)
 
 
 // catch 404 and forward to error handler

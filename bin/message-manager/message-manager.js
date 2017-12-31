@@ -1,7 +1,6 @@
 const winston = require('winston')
 const Promise = require('bluebird')
 const utils = require('../../utilities')
-const user_settings = require('../../user_settings')
 const db = require('../../models')
 const servicechainManager = require('../servicechain-manager/servicechain-manager')
 const pluginManager = require("../plugin-manager/plugin-manager")
