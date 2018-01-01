@@ -53,9 +53,9 @@ router.get('/:contact_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
 
-  return contactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_no, req.body.default_servicechain)
-    .then(function (newContactID) {
-      res.status(200).send("New contact: ID " + newContactID)
+  return contactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
+    .then(function (newContact) {
+      res.status(200).json(newContact)
     })
     .catch(function (error) {
       console.log(error)
