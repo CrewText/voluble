@@ -52,7 +52,6 @@ router.get('/:message_id', function (req, res, next) {
  * Creates a new message, adds it to the database and attempts to send it.
  */
 router.post('/', function (req, res, next) {
-
   messageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!

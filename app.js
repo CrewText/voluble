@@ -13,9 +13,10 @@ if (!process.env.IS_PRODUCTION) {
 }
 const http = require('http');
 
-winston.info("Loading routes")
-winston.info("Plugin dir: " + process.env.PLUGIN_DIR)
+winston.info("Connecting to database")
+const db = require('./models')
 
+winston.info("Loading routes")
 const index = require('./routes/index');
 const users = require('./routes/users');
 const routerGroups = require('./routes/groups');
@@ -24,11 +25,6 @@ const routerMessages = require('./routes/messages');
 const routerServices = require('./routes/services');
 const routerBlasts = require('./routes/blasts');
 const routerServicechains = require('./routes/servicechains');
-
-winston.info("Loading user settings")
-
-winston.info("Connecting to database")
-const db = require('./models')
 
 winston.info("Loading plugin manager")
 const pluginManager = require("./bin/plugin-manager/plugin-manager")
