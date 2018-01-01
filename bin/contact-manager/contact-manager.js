@@ -10,12 +10,13 @@ var ContactManager = {
      * @param {string} email The email address of the new Contact.
      * @param {integer} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
-    createContact: function (first_name, surname, email, default_servicechain) {
+    createContact: function (first_name, surname, email, phone_num, default_servicechain) {
 
         return db.sequelize.model('Contact').create({
             first_name: first_name,
             surname: surname,
             email_address: email,
+            phone_number: phone_num,
             default_servicechain: default_servicechain
         })
     },
