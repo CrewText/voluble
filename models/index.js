@@ -5,7 +5,8 @@ const fs = require('fs')
 const winston = require('winston')
 
 var db = {}
-var sequelize = new Sequelize(process.env.JAWSDB_MARIA_URL)
+console.log("MariaDB: " + process.env.JAWSDB_MARIA_URL)
+var sequelize = new Sequelize(process.env.JAWSDB_MARIA_URL,{dialect: 'mysql'})
 
 // TODO: #5 Set up associations between models, reduce the need for validation
 

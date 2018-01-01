@@ -1,7 +1,8 @@
 {
   "name": "voluble",
-  "version": "0.0.0a1",
+  "version": "0.0.0-a1",
   "private": true,
+  "main": "app.js",
   "scripts": {
     "start": "node app.js"
   },
@@ -17,5 +18,22 @@
     "q": "^1.5.1",
     "sequelize": "^4.23.2",
     "winston": "^2.4.0"
-  }
+  },
+  "description": "A plugin-oriented mass text communication system",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/calmcl1/voluble.git"
+  },
+  "keywords": [
+    "messaging",
+    "contact",
+    "sms"
+  ],
+  "author": "Cal McLean",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/calmcl1/voluble/issues"
+  },
+  "homepage": "https://github.com/calmcl1/voluble#readme"
 }
