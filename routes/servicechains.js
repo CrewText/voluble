@@ -56,12 +56,22 @@ router.post('/', function(req, res, next){
 
 /* Note: this is boilerplate and has NOT been implemented yet */
 router.put('/{id}', function(req, res, next){
-  res.render('servicechains_update', {group_id: id, data: req.params}) // Is this right?
+  res.render('servicechains_update', {group_id: id, data: req.params}) //TODO: Make PUT/servicechains/ID work
 })
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.delete('/{id}', function(req, res, next){
-  res.render('servicechains_delete', {group_id: id})
+router.delete('/:sc_id', function(req, res, next){
+  utils.verifyNumberIsInteger(req.params.sc_id)
+  .then(function(sc_id){
+    return scManager.deleteServicechain(sc_id)
+  })
+  .then(function(row){
+    res.status(200).json(row)
+  })
+  .catch(function(err){
+    res.status(500).json(err)
+    winston.error(err)
+  })
 })
 
 module.exports = router;

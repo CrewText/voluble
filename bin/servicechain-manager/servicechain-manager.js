@@ -40,6 +40,10 @@ var ServicechainManager = {
         return db.sequelize.model('Servicechain').findOne(
             { where: { id: id } } // TODO: Validate me!
         )
+    },
+
+    deleteServicechain: function (id) {
+        return db.Servicechain.destroy({ where: { id: id } }) // TODO: Validate me!
     }
 }
 
