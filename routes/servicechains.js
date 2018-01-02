@@ -7,71 +7,83 @@ const utils = require('../utilities')
 const scManager = require('../bin/servicechain-manager/servicechain-manager')
 const pluginManager = require('../bin/plugin-manager/plugin-manager')
 
-router.get('/', function(req,res,next){
+router.get('/', function (req, res, next) {
   scManager.getAllServicechains()
-  .then(function(rows){
-    res.status(200).json(rows)
-  })
-  .catch(function(err){
-    res.status(500).json(err)
-    winston.error(err)
-  })
-})
-
-router.get('/:sc_id', function(req, res, next){
-  utils.verifyNumberIsInteger(req.params.sc_id)
-  .then(function(sc_id){
-    // First, get the servicechain itself
-    return scManager.getServicechainById(sc_id)
-  })
-  .then(function(sc){
-    // Then, find out which services are in the chain
-    return scManager.getServicesInServicechain(sc.id)
-    .then(function(svcs_in_sc){
-      // We only have the IDs of the services - get their names too!
-      return Promise.map(svcs_in_sc, function(svc_in_sc){
-        return pluginManager.getPluginInfoById(svc_in_sc.service_id)
-      })
-      .then(function(full_svcs){
-        // And now we have all of the info for the services, add them into
-        // the SC object so we have one big object to return.
-        return Object.assign(sc.dataValues, {services: full_svcs})
-      })
-      
+    .then(function (rows) {
+      res.status(200).json(rows)
     })
-  })
-  .then(function(sc_with_svcs){
-    res.status(200).json(sc_with_svcs)
-  })
-  .catch(function (err){
-    res.status(500).json(err)
-    winston.error(err)
-  })
+    .catch(function (err) {
+      res.status(500).json(err)
+      winston.error(err)
+    })
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
-router.post('/', function(req, res, next){
-  res.render('servicechains_create', {data: req.params}) // Is this right?
+
+router.post('/', function (req, res, next) {
+  let services_list = req.body.services
+  winston.debug("Request for new SC: " + req.body.name + ", with services:")
+  winston.debug(services_list)
+
+  scManager.createNewServicechain(req.body.name, services_list)
+    .then(function (sc) {
+      res.status(200).json(sc)
+    })
+    .catch(function (err) {
+      res.status(500).json(err)
+      winston.error(err)
+    })
+    
 })
 
-/* Note: this is boilerplate and has NOT been implemented yet */
-router.put('/{id}', function(req, res, next){
-  res.render('servicechains_update', {group_id: id, data: req.params}) //TODO: Make PUT/servicechains/ID work
-})
-
-/* Note: this is boilerplate and has NOT been implemented yet */
-router.delete('/:sc_id', function(req, res, next){
+router.get('/:sc_id', function (req, res, next) {
   utils.verifyNumberIsInteger(req.params.sc_id)
-  .then(function(sc_id){
-    return scManager.deleteServicechain(sc_id)
-  })
-  .then(function(row){
-    res.status(200).json(row)
-  })
-  .catch(function(err){
-    res.status(500).json(err)
-    winston.error(err)
-  })
+    .then(function (sc_id) {
+      // First, get the servicechain itself
+      return scManager.getServicechainById(sc_id)
+    })
+    .then(function (sc) {
+      // Then, find out which services are in the chain
+      return scManager.getServicesInServicechain(sc.id)
+        .then(function (svcs_in_sc) {
+          // We only have the IDs of the services - get their names too!
+          return Promise.map(svcs_in_sc, function (svc_in_sc) {
+            return pluginManager.getPluginInfoById(svc_in_sc.service_id)
+          })
+            .then(function (full_svcs) {
+              // And now we have all of the info for the services, add them into
+              // the SC object so we have one big object to return.
+              return Object.assign(sc.dataValues, { services: full_svcs })
+            })
+
+        })
+    })
+    .then(function (sc_with_svcs) {
+      res.status(200).json(sc_with_svcs)
+    })
+    .catch(function (err) {
+      res.status(500).json(err)
+      winston.error(err)
+    })
+})
+
+
+/* Note: this is boilerplate and has NOT been implemented yet */
+router.put('/{id}', function (req, res, next) {
+  res.render('servicechains_update', { group_id: id, data: req.params }) //TODO: Make PUT/servicechains/ID work
+})
+
+router.delete('/:sc_id', function (req, res, next) {
+  utils.verifyNumberIsInteger(req.params.sc_id)
+    .then(function (sc_id) {
+      return scManager.deleteServicechain(sc_id)
+    })
+    .then(function (row) {
+      res.status(200).json(row)
+    })
+    .catch(function (err) {
+      res.status(500).json(err)
+      winston.error(err)
+    })
 })
 
 module.exports = router;

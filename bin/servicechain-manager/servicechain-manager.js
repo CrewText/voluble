@@ -1,5 +1,7 @@
 const db = require('../../models')
 const contactManager = require('../contact-manager/contact-manager')
+const winston = require('winston')
+const Promise = require('bluebird')
 
 var ServicechainManager = {
     /**
@@ -42,6 +44,45 @@ var ServicechainManager = {
         )
     },
 
+    /**
+     * Creates a new Servicechain from the name and service IDs provided. Returns a Promise for the Sequelize object representing the new Servicechain.
+     * Services must be in the format: [ [priority_num , service_id] , [ priority_num , service_id ] , ... ]
+     * @param {string} name The name of the new Servicechain
+     * @param {array} services The list of priority/service doubles to add
+     */
+    createNewServicechain: function (name, services) {
+        winston.debug("Creating new SC - " + name)
+        // First, create the new SC itself
+        return db.Servicechain.create({
+            name: name
+        })
+        // Then add services to it!
+        .then(function(sc){
+            winston.debug("Created new SC:")
+            winston.debug(sc)
+            return Promise.map(services, function(svc){
+                return ServicechainManager.addServiceToServicechain(sc.id, svc[1], svc[0])
+            })
+            .then(function(svcs_in_scs){
+                return sc
+            })
+        })
+
+    },
+
+
+    addServiceToServicechain: function (sc_id, service_id, priority) {
+        return db.ServicesInSC.create({
+            servicechain_id: sc_id,
+            service_id: service_id,
+            priority: priority
+        })
+    },
+
+    /**
+     * Removes a Servicechain from the database. Returns the ID number of the servicechain removed.
+     * @param {integer} id ID number of the Servicechain to remove.
+     */
     deleteServicechain: function (id) {
         return db.Servicechain.destroy({ where: { id: id } }) // TODO: Validate me!
     }
