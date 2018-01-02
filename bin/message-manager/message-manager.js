@@ -74,7 +74,7 @@ var MessageManager = {
                         // We know that the message has not been sent, so try and send it.
                         .then(function (msg) {
                             // Get the plugin associated with a given service ID.
-                            return Promise.try(function(){
+                            return Promise.try(function () {
                                 return pluginManager.getPluginById(service_id)
                             })
                                 .then(function (plugin) {
@@ -89,8 +89,17 @@ var MessageManager = {
                                             return msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
                                 })
+                                .catch(volubleErrors.PluginDoesNotExistError, function (e) {
+                                    winston.error("Failed message send attempt for " + message.id + ": " + e.message)
+                                    message.message_state = "MSG_FAILED"
+                                    message.save()
+                                    // Don't explicitly reject this promise, as this will call mapSeries to be rejected altogether,
+                                    // which will cause everything to fail. Just let this pass through and mapSeries will continue
+                                    // to iterate.
+                                    return null
+                                })
                         })
-                        
+
                         // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
                         .catch(volubleErrors.MessageAlreadySentError, function (e) {
                             winston.info("Message " + message.id + " has already been sent. Not trying again.")
@@ -99,12 +108,30 @@ var MessageManager = {
                             /* Something went wrong with the message-sending.
                             Mark the message as failed and re-throw.
                             */
+                            winston.debug("generic error with sending, re-throwing...")
                             winston.error(err)
                             message.message_state = "MSG_FAILED"
                             message.save()
                             throw err
                         })
                 })
+                    .then(function (promise_arr) {
+                        // See if any of these actually sent the message
+                        return Promise.reduce(promise_arr, function (total, promise_in_arr, idx, len) {
+                            if (!!promise_in_arr) {
+                                return promise_in_arr
+                            } else { return total}
+                        }, null)
+                    })
+                    .then(function(total){
+                        if (total) { return total }
+                        else { throw new Error("Message could not be sent with any service in the servicechain") }
+                    })
+            })
+            .catch(function (err) {
+                winston.debug("Caught message send error, throwing MessageFailedError")
+                winston.error(err)
+                throw new volubleErrors.MessageFailedError(err.message)
             })
     },
 

@@ -5,6 +5,7 @@ const winston = require('winston')
 const utils = require('../utilities.js')
 const messageManager = require('../bin/message-manager/message-manager')
 const db = require('../models')
+const volubleErrors = require('../bin/voluble-errors')
 
 /**
  * Handles the route GET /messages
@@ -52,6 +53,7 @@ router.get('/:message_id', function (req, res, next) {
  * Creates a new message, adds it to the database and attempts to send it.
  */
 router.post('/', function (req, res, next) {
+  winston.info("Creating new message")
   messageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!
@@ -60,13 +62,12 @@ router.post('/', function (req, res, next) {
     .then(function (msg) {
       return messageManager.sendMessage(msg)
     })
-    .then(function (msg_arr){
-      let msg = null
-      msg_arr.forEach(function(element) {
-        if (element){msg = element}
-      });
+    .then(function (msg) {
       res.status(200).json(msg)
-      winston.info("Sent message " + msg.id + ":\n\t" + msg)
+    })
+    .catch(volubleErrors.MessageFailedError, function (err) {
+      res.status(500).json(err.message)
+      winston.error("Failed to send message: " + err)
     })
     .catch(function (err) {
       res.status(500).json(err.message)
