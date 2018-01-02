@@ -18,7 +18,7 @@ var PluginManager = {
         })
 
         if (!p){
-            throw new Error("Plugin with ID " + id + " does not exist.")
+            throw new voluble_errors.PluginDoesNotExistError("Plugin with ID " + id + " does not exist.")
         } else {
             return p
         }
