@@ -1,11 +1,19 @@
 var errors = require('common-errors')
+var voluble_errors = require('../../bin/voluble-errors')
 var db = require('../../models')
 var message = db.sequelize.model('Message')
+const events = require('events')
+
 
 var voluble_plugin = {
     name: null,
     description: null,
     plugin_uid: null,
+    _eventEmitter: new events.EventEmitter(),
+
+    message_state_update: function (msg, message_state) {
+        voluble_plugin._eventEmitter.emit('message-state-update', msg, message_state)
+    }
 }
 
 /**
@@ -33,4 +41,4 @@ voluble_plugin.send_message = function (message_content, contact) {
     throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
 }
 
-module.exports = { voluble_plugin, message };
+module.exports = { voluble_plugin, message, voluble_errors };

@@ -3,6 +3,7 @@ const path = require('path');
 const winston = require('winston')
 const Promise = require('bluebird')
 const db = require('../../models')
+var messageManager = require('../message-manager/message-manager')
 const voluble_errors = require('../voluble-errors')
 
 var PluginManager = {
@@ -76,6 +77,12 @@ var PluginManager = {
                                 PluginManager.loaded_plugins.push([row.id, plug_obj])
                                 console.log("Inited plugin " + row.id + ": " + plug_obj.name)
                                 row.initialized = true
+
+                                // Add a listener for the message-state-update event, so messageManager can handle it
+                                plug_obj._eventEmitter.on('message-state-update', function(msg, message_state){
+                                    messageManager.updateMessageState(msg, message_state, plug_obj)
+                                })
+
                                 return row.save()
                             } else {
                                 throw new voluble_errors.PluginInitFailedError("Failed to init " + plug_obj.name)

@@ -3,7 +3,6 @@ const Promise = require('bluebird')
 const utils = require('../../utilities')
 const db = require('../../models')
 const servicechainManager = require('../servicechain-manager/servicechain-manager')
-const pluginManager = require("../plugin-manager/plugin-manager")
 const volubleErrors = require('../voluble-errors')
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
@@ -50,6 +49,8 @@ var MessageManager = {
         plugin chains - is the idea!
         */
 
+        let pluginManager = require("../plugin-manager/plugin-manager")
+
         // Step 1 - get the list of services we're going to send the message by
         return servicechainManager.getServicesInServicechain(message.servicechain)
             .then(function (rows) {
@@ -88,6 +89,9 @@ var MessageManager = {
                                             msg.sent_time = db.sequelize.fn('NOW')
                                             return msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
+                                        .catch(volubleErrors.PluginFailedToSendError, function(err){
+                                            winston.error("Plugin " + plugin.name + " failed to send message " + msg.id + ": " + err.message)
+                                        })
                                 })
                                 .catch(volubleErrors.PluginDoesNotExistError, function (e) {
                                     winston.error("Failed message send attempt for " + message.id + ": " + e.message)
@@ -103,6 +107,9 @@ var MessageManager = {
                         // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
                         .catch(volubleErrors.MessageAlreadySentError, function (e) {
                             winston.info("Message " + message.id + " has already been sent. Not trying again.")
+                        })
+                        .catch(volubleErrors.PluginFailedToSendError, function(err){
+                            winston.info("Caught PFTS err")
                         })
                         .catch(function (err) {
                             /* Something went wrong with the message-sending.
@@ -158,6 +165,13 @@ var MessageManager = {
             where: { id: id }
         })
     }
+}
+
+MessageManager.updateMessageState = function(msg, message_state, plugin){
+    winston.info(plugin.name + " updating message state for message " + msg.id + " to " + message_state)
+    msg.message_state = message_state
+    msg.save()
+    // FIXME: NOW WE SHOULD MOVE DOWN THE SERVICECHAIN
 }
 
 module.exports = MessageManager
