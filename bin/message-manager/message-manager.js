@@ -94,11 +94,15 @@ var MessageManager = {
                     .then(function (nextSvc) {
                         return MessageManager.sendMessageWithService(msg, nextSvc)
                     })
-        break
+                break
 
-    }
+            case "MSG_SENT":
+                msg.sent_time = db.Sequelize.fn('NOW')
+                msg.save()
 
-},
+        }
+
+    },
 
     sendMessageWithService: function (msg, service) {
         winston.debug("Attempting to send message " + msg.id + " with plugin " + service.name)
