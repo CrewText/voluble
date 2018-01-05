@@ -89,7 +89,7 @@ var MessageManager = {
                                             msg.sent_time = db.sequelize.fn('NOW')
                                             return msg.save({ fields: ['message_state', 'sent_time'] })
                                         })
-                                        .catch(volubleErrors.PluginFailedToSendError, function(err){
+                                        .catch(volubleErrors.PluginFailedToSendError, function (err) {
                                             winston.error("Plugin " + plugin.name + " failed to send message " + msg.id + ": " + err.message)
                                         })
                                 })
@@ -108,7 +108,7 @@ var MessageManager = {
                         .catch(volubleErrors.MessageAlreadySentError, function (e) {
                             winston.info("Message " + message.id + " has already been sent. Not trying again.")
                         })
-                        .catch(volubleErrors.PluginFailedToSendError, function(err){
+                        .catch(volubleErrors.PluginFailedToSendError, function (err) {
                             winston.info("Caught PFTS err")
                         })
                         .catch(function (err) {
@@ -127,10 +127,10 @@ var MessageManager = {
                         return Promise.reduce(promise_arr, function (total, promise_in_arr, idx, len) {
                             if (!!promise_in_arr) {
                                 return promise_in_arr
-                            } else { return total}
+                            } else { return total }
                         }, null)
                     })
-                    .then(function(total){
+                    .then(function (total) {
                         if (total) { return total }
                         else { throw new Error("Message could not be sent with any service in the servicechain") }
                     })
@@ -140,6 +140,42 @@ var MessageManager = {
                 winston.error(err)
                 throw new volubleErrors.MessageFailedError(err.message)
             })
+    },
+
+    updateMessageStateAndContinue: function (msg, message_state, plugin) {
+        winston.info(plugin.name + " updating message state for message " + msg.id + " to " + message_state)
+        msg.message_state = message_state
+        msg.save()
+
+        switch (message_state) {
+            case "MESSAGE_FAILED":
+                // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
+                // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
+                servicechainManager.getServicesInServicechain(msg.servicechain)
+                    .then(function (plugins) {
+                        let priorityOfCurrentPlugin
+                        plugins.forEach(function (plug) {
+                            if (plug.id == plugin.id) {
+                                priorityOfCurrentPlugin = plug.id
+                            }
+
+                            if (priorityOfCurrentPlugin && plug.id == priorityOfCurrentPlugin + 1) {
+                                MessageManager.sendMessageWithService(msg, plug)
+                            }
+                        })
+                    })
+                break
+
+        }
+
+
+
+
+    },
+
+    sendMessageWithService: function (msg, plugin) {
+        winston.debug("Using SMWS to send message " + msg.id + " with plugin " + plugin.name)
+        plugin.send_message(msg)
     },
 
     /**
@@ -165,13 +201,6 @@ var MessageManager = {
             where: { id: id }
         })
     }
-}
-
-MessageManager.updateMessageState = function(msg, message_state, plugin){
-    winston.info(plugin.name + " updating message state for message " + msg.id + " to " + message_state)
-    msg.message_state = message_state
-    msg.save()
-    // FIXME: NOW WE SHOULD MOVE DOWN THE SERVICECHAIN
 }
 
 module.exports = MessageManager
