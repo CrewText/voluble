@@ -80,7 +80,7 @@ var PluginManager = {
 
                                 // Add a listener for the message-state-update event, so messageManager can handle it
                                 plug_obj._eventEmitter.on('message-state-update', function(msg, message_state){
-                                    messageManager.updateMessageState(msg, message_state, plug_obj)
+                                    messageManager.updateMessageStateAndContinue(msg, message_state, plug_obj)
                                 })
 
                                 return row.save()
@@ -127,6 +127,7 @@ var PluginManager = {
                     plugin.shutdown()
                     let index = PluginManager.loaded_plugins.indexOf(plugin)
                     if (index > -1) { PluginManager.loaded_plugins.splice(index, 1) }
+                    plugin._eventEmitter.removeAllListeners('message-state-update')
                     row.initialized = false
                     return row.save()
                 })
