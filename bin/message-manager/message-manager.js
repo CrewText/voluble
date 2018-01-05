@@ -4,6 +4,7 @@ const utils = require('../../utilities')
 const db = require('../../models')
 const servicechainManager = require('../servicechain-manager/servicechain-manager')
 const volubleErrors = require('../voluble-errors')
+const errors = require('common-errors')
 
 /* TODO: #2 Figure out how to deal with incoming messages - will need to register them...?
 Will this be done from the plugin end?
@@ -39,143 +40,85 @@ var MessageManager = {
      * @returns {Bluebird Promise} Promise reso lving to the sequelize Message model that has been sent.
      */
 
-    sendMessage: function (message) {
-        /*
-        The `message` object has a property, `servicechain`, which holds the ID of the servicechain we should use
-        to send this message. We need to retrieve the servicechain from the database and iterate through all of
-        plugins until something returns True.
+    sendMessage: function (msg) {
+        return Promise.filter(servicechainManager.getServicesInServicechain(msg.servicechain), function (svcInSC) {
+            return svcInSC.priority == 1
+        })
+            .then(function (servicesInSC) {
+                if (!servicesInSC || servicesInSC.length < 1) {
+                    return Promise.reject(volubleErrors.MessageFailedError("No plugins in servicechain with priority 1"))
+                }
 
-        Promises can help us here - by chaining a series of promises together, we can automatically iterate through
-        plugin chains - is the idea!
-        */
+                let svcInSC = servicesInSC[0]
+                let pluginManager = require('../plugin-manager/plugin-manager')
 
-        let pluginManager = require("../plugin-manager/plugin-manager")
-
-        // Step 1 - get the list of services we're going to send the message by
-        return servicechainManager.getServicesInServicechain(message.servicechain)
-            .then(function (rows) {
-                // We've got the array of full rows, but we just want the service ids
-                return Promise.map(rows, function (row) {
-                    return row.service_id
-                })
-            })
-            .then(function (service_ids) {
-                // Now we have a row of service ids, so for each id:
-                return Promise.mapSeries(service_ids, function (service_id) {
-                    // Make sure that the message has not been sent:
-                    return message.reload()
-                        .then(function (msg) {
-                            if (msg.message_state == "MSG_PENDING" ||
-                                msg.message_state == "MSG_FAILED") {
-                                return msg
-                            } else {
-                                throw new volubleErrors.MessageAlreadySentError("Message " + msg.id + " has already been sent. Not sending.")
-                            }
-                        })
-                        // We know that the message has not been sent, so try and send it.
-                        .then(function (msg) {
-                            // Get the plugin associated with a given service ID.
-                            return Promise.try(function () {
-                                return pluginManager.getPluginById(service_id)
-                            })
-                                .then(function (plugin) {
-                                    // Now that we have the plugin, use it to send the message.
-                                    return Promise.try(function () {
-                                        winston.info("Attempting to send message " + msg.id + " with plugin " + plugin.name)
-                                        return plugin.send_message(msg)
-                                    })
-                                        .then(function () {
-                                            msg.message_state = "MSG_SENDING"
-                                            msg.sent_time = db.sequelize.fn('NOW')
-                                            return msg.save({ fields: ['message_state', 'sent_time'] })
-                                        })
-                                        .catch(volubleErrors.PluginFailedToSendError, function (err) {
-                                            winston.error("Plugin " + plugin.name + " failed to send message " + msg.id + ": " + err.message)
-                                        })
-                                })
-                                .catch(volubleErrors.PluginDoesNotExistError, function (e) {
-                                    winston.error("Failed message send attempt for " + message.id + ": " + e.message)
-                                    message.message_state = "MSG_FAILED"
-                                    message.save()
-                                    // Don't explicitly reject this promise, as this will call mapSeries to be rejected altogether,
-                                    // which will cause everything to fail. Just let this pass through and mapSeries will continue
-                                    // to iterate.
-                                    return null
-                                })
-                        })
-
-                        // TODO: Find a way of mapSeries iterating when we have completed the message-sending.
-                        .catch(volubleErrors.MessageAlreadySentError, function (e) {
-                            winston.info("Message " + message.id + " has already been sent. Not trying again.")
-                        })
-                        .catch(volubleErrors.PluginFailedToSendError, function (err) {
-                            winston.info("Caught PFTS err")
-                        })
-                        .catch(function (err) {
-                            /* Something went wrong with the message-sending.
-                            Mark the message as failed and re-throw.
-                            */
-                            winston.debug("generic error with sending, re-throwing...")
-                            winston.error(err)
-                            message.message_state = "MSG_FAILED"
-                            message.save()
-                            throw err
-                        })
-                })
-                    .then(function (promise_arr) {
-                        // See if any of these actually sent the message
-                        return Promise.reduce(promise_arr, function (total, promise_in_arr, idx, len) {
-                            if (!!promise_in_arr) {
-                                return promise_in_arr
-                            } else { return total }
-                        }, null)
+                return pluginManager.getServiceById(svcInSC.service_id)
+                    .then(function (svc) {
+                        return MessageManager.sendMessageWithService(msg, svc)
                     })
-                    .then(function (total) {
-                        if (total) { return total }
-                        else { throw new Error("Message could not be sent with any service in the servicechain") }
-                    })
+
             })
-            .catch(function (err) {
-                winston.debug("Caught message send error, throwing MessageFailedError")
-                winston.error(err)
-                throw new volubleErrors.MessageFailedError(err.message)
+            .then(function () {
+                return msg.reload()
             })
     },
 
-    updateMessageStateAndContinue: function (msg, message_state, plugin) {
-        winston.info(plugin.name + " updating message state for message " + msg.id + " to " + message_state)
+    updateMessageStateAndContinue: function (msg, message_state, svc) {
+        winston.info("Updating message state for message " + msg.id + " to " + message_state)
         msg.message_state = message_state
         msg.save()
 
         switch (message_state) {
-            case "MESSAGE_FAILED":
+            case "MSG_FAILED":
                 // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
                 // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
-                servicechainManager.getServicesInServicechain(msg.servicechain)
-                    .then(function (plugins) {
-                        let priorityOfCurrentPlugin
-                        plugins.forEach(function (plug) {
-                            if (plug.id == plugin.id) {
-                                priorityOfCurrentPlugin = plug.id
-                            }
-
-                            if (priorityOfCurrentPlugin && plug.id == priorityOfCurrentPlugin + 1) {
-                                MessageManager.sendMessageWithService(msg, plug)
+                db.ServicesInSC.findOne({
+                    where: {
+                        servicechain_id: msg.servicechain,
+                        service_id: svc.id
+                    }
+                })
+                    .then(function (currentSvcInSC) {
+                        return db.ServicesInSC.findOne({
+                            where: {
+                                servicechain_id: msg.servicechain,
+                                priority: currentSvcInSC.priority + 1
                             }
                         })
                     })
-                break
+                    .then(function (nextSvcInSC) {
+                        if (!nextSvcInSC) { return Promise.reject(errors.NotFoundError("Couldn't find another service in the servicechain, message failed")) }
+                        let pluginManager = require('../plugin-manager/plugin-manager')
+                        return pluginManager.getServiceById(nextSvcInSC.service_id)
+                    })
+                    .then(function (nextSvc) {
+                        return MessageManager.sendMessageWithService(msg, nextSvc)
+                    })
+        break
 
-        }
+    }
 
+},
 
+    sendMessageWithService: function (msg, service) {
+        winston.debug("Attempting to send message " + msg.id + " with plugin " + service.name)
+        MessageManager.updateMessageStateAndContinue(msg, "MSG_SENDING")
+        let pluginManager = require('../plugin-manager/plugin-manager')
+        pluginManager.getPluginById(service.id)
+            .then(function (plugin) {
+                return Promise.try(function () { plugin.send_message(msg) })
+            })
+            .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err) {
+                winston.debug("Active plugin with ID " + service.id + " not found")
 
-
-    },
-
-    sendMessageWithService: function (msg, plugin) {
-        winston.debug("Using SMWS to send message " + msg.id + " with plugin " + plugin.name)
-        plugin.send_message(msg)
+                // Check to see if it exists, but is inactive. If so, update the message state and carry on
+                if (!service.initialized) {
+                    return MessageManager.updateMessageStateAndContinue(msg, "MSG_FAILED", service)
+                } else {
+                    winston.error("Plugin does not appear to exist. Re-throwing...")
+                    winston.error(err)
+                }
+            })
     },
 
     /**

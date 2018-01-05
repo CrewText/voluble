@@ -35,6 +35,8 @@ var EsendexPlugin = {
 
       // This must be defined by *every* plugin. It will be called by voluble when a message needs to be sent.
       console.log("Esendex: Sending the message: " + message.body)
+      //voluble_plugin_base.voluble_plugin.message_state_update(message, "MSG_SENT")
+      return true
 
 
       // FIXME: THERE'S NO SUCH THING AS message.phone_number!!!
