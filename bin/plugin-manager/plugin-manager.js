@@ -5,6 +5,7 @@ const Promise = require('bluebird')
 const db = require('../../models')
 var messageManager = require('../message-manager/message-manager')
 const voluble_errors = require('../voluble-errors')
+const errs = require('common-errors')
 
 var PluginManager = {
     plugin_dir: "",
@@ -19,9 +20,10 @@ var PluginManager = {
         })
 
         if (!p){
-            throw new voluble_errors.PluginDoesNotExistError("Plugin with ID " + id + " does not exist.")
+            return Promise.reject(new errs.NotFoundError("Plugin with ID " + id + " does not exist."))
+            //return Promise.reject(Error("Plugin with ID " + id + " does not exist."))
         } else {
-            return p
+            return Promise.resolve(p)
         }
     },
 
@@ -72,18 +74,18 @@ var PluginManager = {
                         }
                     })
                         // So now that the plugin exists in the database, let's try and make it work
-                        .then(function (row) {
+                        .then(function (service) {
                             if (plug_obj.init()) {
-                                PluginManager.loaded_plugins.push([row.id, plug_obj])
-                                console.log("Inited plugin " + row.id + ": " + plug_obj.name)
-                                row.initialized = true
+                                PluginManager.loaded_plugins.push([service.id, plug_obj])
+                                console.log("Inited plugin " + service.id + ": " + plug_obj.name)
+                                service.initialized = true
 
                                 // Add a listener for the message-state-update event, so messageManager can handle it
                                 plug_obj._eventEmitter.on('message-state-update', function(msg, message_state){
-                                    messageManager.updateMessageStateAndContinue(msg, message_state, plug_obj)
+                                    messageManager.updateMessageStateAndContinue(msg, message_state, service)
                                 })
 
-                                return row.save()
+                                return service.save()
                             } else {
                                 throw new voluble_errors.PluginInitFailedError("Failed to init " + plug_obj.name)
                             }
@@ -145,7 +147,7 @@ var PluginManager = {
         return db.sequelize.model('Plugin').findAll()
     },
 
-    getPluginInfoById: function (id) {
+    getServiceById: function (id) {
         return db.sequelize.model('Plugin').findOne({ where: { id: id } })
         // TODO: Validate plugin exists, fail otherwise
     }

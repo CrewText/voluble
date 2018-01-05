@@ -19,7 +19,7 @@ router.get('/', function(req,res,next){
 router.get('/:service_id', function(req, res, next){
   utils.verifyNumberIsInteger(req.params.service_id)
   .then(function(service_id){
-    return pluginManager.getPluginInfoById(service_id)
+    return pluginManager.getServiceById(service_id)
   })
   .then(function(plugin){
     res.status(200).json(plugin)

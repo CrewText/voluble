@@ -66,12 +66,12 @@ router.post('/', function (req, res, next) {
       res.status(200).json(msg)
     })
     .catch(volubleErrors.MessageFailedError, function (err) {
-      res.status(500).json(err.message)
+      res.status(500).json(err)
       winston.error("Failed to send message: " + err)
     })
     .catch(function (err) {
-      res.status(500).json(err.message)
-      winston.error(err.message)
+      res.status(500).json(err)
+      winston.error(err)
     })
 })
 

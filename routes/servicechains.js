@@ -47,7 +47,7 @@ router.get('/:sc_id', function (req, res, next) {
         .then(function (svcs_in_sc) {
           // We only have the IDs of the services - get their names too!
           return Promise.map(svcs_in_sc, function (svc_in_sc) {
-            return pluginManager.getPluginInfoById(svc_in_sc.service_id)
+            return pluginManager.getServiceById(svc_in_sc.service_id)
           })
             .then(function (full_svcs) {
               // And now we have all of the info for the services, add them into
