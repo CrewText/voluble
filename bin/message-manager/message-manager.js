@@ -114,7 +114,13 @@ var MessageManager = {
                 let pluginManager = require('../plugin-manager/plugin-manager')
                 pluginManager.getPluginById(service.id)
                     .then(function (plugin) {
-                        return Promise.try(function () { plugin.send_message(msg) })
+                        let contactManager = require('../contact-manager/contact-manager')
+                        contactManager.getContactWithId(msg.contact)
+                            .then(function (contact) {
+                                return Promise.try(function () {
+                                    plugin.send_message(msg, contact)
+                                })
+                            })
                     })
                     .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err) {
                         winston.debug("Active plugin with ID " + service.id + " not found")
