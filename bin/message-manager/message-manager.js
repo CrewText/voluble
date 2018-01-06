@@ -87,12 +87,15 @@ var MessageManager = {
                                 })
                             })
                             .then(function (nextSvcInSC) {
-                                if (!nextSvcInSC) { return Promise.reject(errors.NotFoundError("Couldn't find another service in the servicechain, message failed")) }
+                                if (!nextSvcInSC) { return Promise.reject(errors.NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
                                 let pluginManager = require('../plugin-manager/plugin-manager')
                                 return pluginManager.getServiceById(nextSvcInSC.service_id)
                             })
                             .then(function (nextSvc) {
                                 return MessageManager.sendMessageWithService(msg, nextSvc)
+                            })
+                            .catch(errors.NotFoundError, function(err){
+                                winston.info("Message " + msg.id + " failed to send:\n" + err)
                             })
                         break
 
