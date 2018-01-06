@@ -1,6 +1,6 @@
 {
   "plugin_name": "Esendex",
-  "plugin_description": "This is what my plugin does!",
+  "plugin_description": "Send an SMS with the Esendex service",
   "npm_modules": [
     "esendex"
   ],
