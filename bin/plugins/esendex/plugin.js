@@ -1,6 +1,5 @@
 // @ts-check
 var voluble_plugin_base = require('../plugin_base.js')
-var Promise = require('bluebird')
 var manifest = require('./manifest.json')
 
 var esendex = null
@@ -30,20 +29,15 @@ var EsendexPlugin = {
     }
   },
 
-  send_message: function (message) {
-    return Promise.try(function () {
+  send_message: function (message, contact) {
 
       // This must be defined by *every* plugin. It will be called by voluble when a message needs to be sent.
       console.log("Esendex: Sending the message: " + message.body)
-      //voluble_plugin_base.voluble_plugin.message_state_update(message, "MSG_SENT")
-      return true
 
-
-      // FIXME: THERE'S NO SUCH THING AS message.phone_number!!!
       let esendex_message = {
         accountreference: this.account_ref,
         message: [{
-          to: message.phone_number,
+          to: contact.phone_number,
           body: message.body
         }]
       }
@@ -51,13 +45,13 @@ var EsendexPlugin = {
       esendex.messages.send(esendex_message, function (err, response) {
         if (err) {
           voluble_plugin_base.voluble_plugin.message_state_update(message, "MSG_FAILED")
+          console.log(err)
         } else {
           voluble_plugin_base.voluble_plugin.message_state_update(message, "MSG_SENT")
         }
       })
 
       return true
-    })
   },
 
   shutdown: function () {
