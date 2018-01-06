@@ -8,16 +8,16 @@ var EsendexPlugin = {
   name: manifest.plugin_name,
   description: manifest.plugin_description,
 
-  username: manifest.esendex_username,
-  password: manifest.esendex_password,
-  account_ref: manifest.esendex_accountref,
+  username: process.env.ESENDEX_USERNAME,
+  password: process.env.ESENDEX_PASSWORD,
+  account_ref: process.env.ESENDEX_ACCOUNT_REF,
 
   init: function () {
 
     try {
       esendex = require('esendex')({
-        username: manifest.esendex_username,
-        password: manifest.esendex_password
+        username: this.username,
+        password: this.password
       })
 
       return true
