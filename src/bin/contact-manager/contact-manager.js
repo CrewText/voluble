@@ -8,7 +8,8 @@ var ContactManager = {
      * @param {string} first_name The first name of the new Contact.
      * @param {string} surname The surname of the new Contact.
      * @param {string} email The email address of the new Contact.
-     * @param {integer} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
+     * @param {string} phone_num The phone number (with leading country code) of the contact
+     * @param {int} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
     createContact: function (first_name, surname, email, phone_num, default_servicechain) {
 
@@ -23,8 +24,8 @@ var ContactManager = {
 
     /**
      * Removes a contact with ID `id` from the database
-     * @param {integer} id ID of contact to remove
-     * @returns {Bluebird promise} Promise resolving to sequelize confirmation
+     * @param {int} id ID of contact to remove
+     * @returns {promise} Promise resolving to sequelize confirmation of deleted row
      */
 
     deleteContactFromDB: function (id) {
@@ -37,8 +38,8 @@ var ContactManager = {
 
     /**
      * Queries the database to make sure confirm that the contact with id `id` exists
-     * @param {integer} id Contact ID number
-     * @returns {Bluebird promise} Promise resolving to the id of the contact, if it exists.
+     * @param {int} id Contact ID number
+     * @returns {promise} Promise resolving to the id of the contact, if it exists.
      */
     checkContactWithIDExists: function (id) {
         return new Promise(function (resolve, reject) {
@@ -58,9 +59,9 @@ var ContactManager = {
     },
 
     /**
-     * Queries the database to retrieve the first hundred contacts, with a given offset.
-     * @param {integer} offset The amount of values to skip over, before returning the next hundred.
-     * @returns {Bluebird promise} Promise resolving to the first hundred rows representing messages.
+     * Queries the database to retrieve the most recent hundred contacts, with a given offset.
+     * @param {int} offset The amount of values to skip over, before returning the next hundred.
+     * @returns {promise} Promise resolving to the most recent hundred  Sequelize rows representing messages.
      */
     getHundredContacts: function (offset) {
         return db.sequelize.model('Contact').findAll({
@@ -70,14 +71,13 @@ var ContactManager = {
 
     /**
      * Queries the database to retrieve the info for contact with ID `id`
-     * @param {integer} id Contact ID number
-     * @returns {Bluebird Promise} with JSON data containing user info
+     * @param {int} id Contact ID number
+     * @returns {promise} Promise resolving to a Sequelize row representing the given contact
      */
     getContactWithId: function (id) {
-
         return db.sequelize.model('Contact').findOne({
             where: {
-                id: id
+                id: id // TODO: Validate contact exists
             }
         })
 
@@ -85,9 +85,9 @@ var ContactManager = {
 
     /**
      * Updates the details of a single Contact.
-     * @param {integer} id ID of the Contact whose details will be updated
+     * @param {int} id ID of the Contact whose details will be updated
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
-     * @returns {Bluebird promise} Promise resolving to a sequelize confirmation of the updated row.
+     * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */
     updateContactDetailsWithId: function (id, updatedDetails) {
         return db.sequelize.model('Contact').update(updatedDetails,
