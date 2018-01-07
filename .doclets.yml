@@ -1,4 +1,2 @@
 dir: src
 packageJson: package.json
-articles:
-  - README.md
