@@ -14,10 +14,10 @@ var MessageManager = {
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
-     * @param {integer} contact_id The ID number of the contact that this message is sent to/recieved from
+     * @param {int} contact_id The ID number of the contact that this message is sent to/recieved from
      * @param {bool} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
-     * @param {integer} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
-     * @returns {Bluebird Promise} Promise resolving to the confirmtion that the new messgae has been entered into the database
+     * @param {int} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
+     * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
     createMessage: function (body, contact_id, direction, is_reply_to = null) {
 
@@ -28,16 +28,16 @@ var MessageManager = {
                     servicechain: servicechain.id,
                     contact: contact_id,
                     is_reply_to: is_reply_to,
-                    direction: direction, // Make this correct - is
+                    direction: direction,
                     message_state: 'MSG_PENDING'
                 })
             })
     },
 
     /**
-     * Does what it says on the tin - attempts to send a message by looping through the services in the servicechain associated with the message.
-     * @param {Sequelize Message model} A Message object (TODO: or id?) representing the message to send.
-     * @returns {Bluebird Promise} Promise reso lving to the sequelize Message model that has been sent.
+     * Does what it says on the tin - attempts to send a message by finding the service in the messages' servicechain with priority 1.
+     * @param {db.Sequelize.Message} A Message object (TODO: or id?) representing the message to send.
+     * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
 
     sendMessage: function (msg) {
@@ -63,6 +63,12 @@ var MessageManager = {
             })
     },
 
+    /**
+     * This is called when a messages' state changes. Determine the correct course of action depending on the new message state.
+     * @param {Sequelize.Message} msg The message whose state will be updated
+     * @param {string} message_state The new message state for the message
+     * @param {Sequelize.Plugin} svc The service that initiated the state change.
+     */
     updateMessageStateAndContinue: function (msg, message_state, svc) {
         winston.info("Updating message state for message " + msg.id + " to " + message_state)
         msg.message_state = message_state
@@ -110,6 +116,12 @@ var MessageManager = {
             })
     },
 
+    /**
+     * Sends a given message with the specified plugins' `send_message` method.
+     * @param {Sequelize.Message} msg The message to attempt to send
+     * @param {Sequelize.Plugin} service The service with which to attempt to send the message
+     * @returns {promise} A promise that resolves to whatever the plugin returns
+     */
     sendMessageWithService: function (msg, service) {
         winston.debug("Attempting to send message " + msg.id + " with plugin " + service.name)
         MessageManager.updateMessageStateAndContinue(msg, "MSG_SENDING")
@@ -141,8 +153,8 @@ var MessageManager = {
 
     /**
      * Returns the first 100 messages available in the database with a given offset.
-     * @param {integer} offset The amount of messages to skip over, before returning the next 100.
-     * @returns {Bluebird Promise} A Promise resolving to the rows returned.
+     * @param {int} offset The amount of messages to skip over, before returning the next 100.
+     * @returns {promise} A Promise resolving to the rows returned.
      */
     getHundredMessageIds: function (offset) {
         return db.sequelize.model('Message').findAll({
@@ -154,8 +166,8 @@ var MessageManager = {
 
     /**
      * Returns the details about a message with a given ID.
-     * @param {integer} id The ID number of the message to retrieve.
-     * @returns {Bluebird Promise} A Promise resolving to a row containing the details of the message.
+     * @param {int} id The ID number of the message to retrieve.
+     * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
     getMessageFromId: function (id) {
         return db.sequelize.model('Message').findOne({
