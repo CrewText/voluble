@@ -1,3 +1,5 @@
+[![API Doc](https://doclets.io/calmcl1/voluble/master.svg)](https://doclets.io/calmcl1/voluble/master)
+
 # Voluble
 A plugin-oriented mass text communication system
 
