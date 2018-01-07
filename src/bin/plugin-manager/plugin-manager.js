@@ -7,10 +7,20 @@ var messageManager = require('../message-manager/message-manager')
 const voluble_errors = require('../voluble-errors')
 const errs = require('common-errors')
 
+/**
+ * The PluginManager keeps track of all loaded plugins, as well as initializing, loading and shutting down all detected plugins.
+ * It also handles all plugin- and service-related operations.
+ */
 var PluginManager = {
     plugin_dir: "",
     loaded_plugins: [],
 
+    /**
+     * Find a loaded plugin object by it's ID number and return it.
+     * @param {int} id The ID number of the plugin to find
+     * @returns {promise} A promise resolving to the loaded plugin object
+     * @throws {errs.NotFoundError} Thrown when plugin with specified ID does not exist.
+     */
     getPluginById: function (id) {
         let p = null
         PluginManager.loaded_plugins.forEach(function (plugin) {
@@ -28,6 +38,10 @@ var PluginManager = {
     },
 
 
+    /**
+     * Iterates over the `PluginManager.plugin_dir` directory and looks for available plugins. If any are found, attempt to load them.
+     * If successfully loaded, attempt to initialize them. If successfully initialized, add them to the list of loaded plugins.
+     */
     loadAllPlugins: function () {
         // Cycle through plugin directory and try to init all available plugins
 
@@ -140,13 +154,19 @@ var PluginManager = {
     },
 
     /**
-     * Gets the list of plugins from the DB with their status
+     * Gets the list of services from the DB with their status.
+     * @returns {array <Sequelize.Plugin>} An array of Sequelize rows representing loaded services.
      */
 
-    getAllPlugins: function () {
+    getAllServices: function () {
         return db.sequelize.model('Plugin').findAll()
     },
 
+    /**
+     * Gets a single service from the DB by its' ID.
+     * @param {int} id The ID of the service to find.
+     * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
+     */
     getServiceById: function (id) {
         return db.sequelize.model('Plugin').findOne({ where: { id: id } })
         // TODO: Validate plugin exists, fail otherwise
