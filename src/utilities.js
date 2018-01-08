@@ -3,7 +3,7 @@ const Promise = require('bluebird')
 /**
  * Confirms that the supplied ID is a valid number.
  * @param {string} id String to confirm is a valid integer
- * @returns {Q.promise} containing value of the ID number as integer
+ * @returns {promise} containing value of the ID number as integer
  */
 
 function verifyNumberIsInteger(id) {
