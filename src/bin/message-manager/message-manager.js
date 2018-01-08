@@ -10,14 +10,18 @@ const errors = require('common-errors')
 Will this be done from the plugin end?
 */
 
+/**
+ * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,
+ * sending Messages and finding out information about given Messages.
+ */
 var MessageManager = {
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
-     * @param {int} contact_id The ID number of the contact that this message is sent to/recieved from
-     * @param {bool} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
-     * @param {int} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
-     * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
+     * @param {Number} contact_id The ID number of the contact that this message is sent to/recieved from
+     * @param {Boolean} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
+     * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
+     * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
     createMessage: function (body, contact_id, direction, is_reply_to = null) {
 
@@ -36,7 +40,7 @@ var MessageManager = {
 
     /**
      * Does what it says on the tin - attempts to send a message by finding the service in the messages' servicechain with priority 1.
-     * @param {db.Sequelize.Message} A Message object (TODO: or id?) representing the message to send.
+     * @param {db.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
      * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
 
@@ -153,7 +157,7 @@ var MessageManager = {
 
     /**
      * Returns the first 100 messages available in the database with a given offset.
-     * @param {int} offset The amount of messages to skip over, before returning the next 100.
+     * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
     getHundredMessageIds: function (offset) {
@@ -166,7 +170,7 @@ var MessageManager = {
 
     /**
      * Returns the details about a message with a given ID.
-     * @param {int} id The ID number of the message to retrieve.
+     * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
     getMessageFromId: function (id) {

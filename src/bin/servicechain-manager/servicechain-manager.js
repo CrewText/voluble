@@ -3,10 +3,15 @@ const contactManager = require('../contact-manager/contact-manager')
 const winston = require('winston')
 const Promise = require('bluebird')
 
+/**
+ * The ServicechainManager handles all operations that relate to Servicechains and ServiceInServicechains, which includes
+ * creating and removing Servicechains, and finding information for a given Servicechain.
+ * Like all Voluble Managers, ServicechainManager does not need to be instantiated and can be accessed directly.
+ */
 var ServicechainManager = {
     /**
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
-     * @param servicechain_id {integer} The ID of the servicechain that we want to retrieve the services for.
+     * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
     getServicesInServicechain: function (servicechain_id) {
         return db.sequelize.model('ServicesInSC').findAll({
@@ -81,7 +86,7 @@ var ServicechainManager = {
 
     /**
      * Removes a Servicechain from the database. Returns the ID number of the servicechain removed.
-     * @param {integer} id ID number of the Servicechain to remove.
+     * @param {Number} id ID number of the Servicechain to remove.
      */
     deleteServicechain: function (id) {
         return db.Servicechain.destroy({ where: { id: id } }) // TODO: Validate me!

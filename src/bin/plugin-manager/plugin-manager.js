@@ -17,7 +17,7 @@ var PluginManager = {
 
     /**
      * Find a loaded plugin object by it's ID number and return it.
-     * @param {int} id The ID number of the plugin to find
+     * @param {Number} id The ID number of the plugin to find
      * @returns {promise} A promise resolving to the loaded plugin object
      * @throws {errs.NotFoundError} Thrown when plugin with specified ID does not exist.
      */
@@ -164,7 +164,7 @@ var PluginManager = {
 
     /**
      * Gets a single service from the DB by its' ID.
-     * @param {int} id The ID of the service to find.
+     * @param {Number} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
     getServiceById: function (id) {

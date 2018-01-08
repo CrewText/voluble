@@ -2,6 +2,10 @@ const winston = require('winston')
 const Promise = require('bluebird')
 const db = require('../../models')
 
+/**
+ * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
+ * removing Contacts and finding information about Contacts.
+ */
 var ContactManager = {
     /**
      * Adds a new Contact to the database with specified details. All Contacts must have these details as a minimum.
@@ -9,7 +13,7 @@ var ContactManager = {
      * @param {string} surname The surname of the new Contact.
      * @param {string} email The email address of the new Contact.
      * @param {string} phone_num The phone number (with leading country code) of the contact
-     * @param {int} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
+     * @param {Number} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
     createContact: function (first_name, surname, email, phone_num, default_servicechain) {
 
@@ -24,7 +28,7 @@ var ContactManager = {
 
     /**
      * Removes a contact with ID `id` from the database
-     * @param {int} id ID of contact to remove
+     * @param {Number} id ID of contact to remove
      * @returns {promise} Promise resolving to sequelize confirmation of deleted row
      */
 
@@ -38,7 +42,7 @@ var ContactManager = {
 
     /**
      * Queries the database to make sure confirm that the contact with id `id` exists
-     * @param {int} id Contact ID number
+     * @param {Number} id Contact ID number
      * @returns {promise} Promise resolving to the id of the contact, if it exists.
      */
     checkContactWithIDExists: function (id) {
@@ -60,7 +64,7 @@ var ContactManager = {
 
     /**
      * Queries the database to retrieve the most recent hundred contacts, with a given offset.
-     * @param {int} offset The amount of values to skip over, before returning the next hundred.
+     * @param {Number} offset The amount of values to skip over, before returning the next hundred.
      * @returns {promise} Promise resolving to the most recent hundred  Sequelize rows representing messages.
      */
     getHundredContacts: function (offset) {
@@ -71,7 +75,7 @@ var ContactManager = {
 
     /**
      * Queries the database to retrieve the info for contact with ID `id`
-     * @param {int} id Contact ID number
+     * @param {Number} id Contact ID number
      * @returns {promise} Promise resolving to a Sequelize row representing the given contact
      */
     getContactWithId: function (id) {
@@ -85,7 +89,7 @@ var ContactManager = {
 
     /**
      * Updates the details of a single Contact.
-     * @param {int} id ID of the Contact whose details will be updated
+     * @param {Number} id ID of the Contact whose details will be updated
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */

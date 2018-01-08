@@ -5,6 +5,11 @@ var message = db.sequelize.model('Message')
 const events = require('events')
 
 
+/**
+ * The voluble_plugin forms the basis of any given Voluble plugin, and should be extended by any new plugin.
+ * This defines the basic methods that must be defined by new plugins, as well as various internal parts of the plugin
+ * that Voluble uses for all plugins to work, such as the EventEmitter.
+ */
 var voluble_plugin = {
     name: null,
     description: null,
@@ -36,6 +41,8 @@ voluble_plugin.shutdown = function () {
 
 /**
  * This is called by voluble when a message needs to be sent.
+ * @param {Sequelize.Message} message_content The Sequelize row of the message to be sent.
+ * @param {Sequelize.Contact} contact The Sequelize row of the contact who we're sending a message to.
  */
 voluble_plugin.send_message = function (message_content, contact) {
     throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
