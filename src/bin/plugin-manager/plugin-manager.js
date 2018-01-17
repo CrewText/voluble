@@ -45,12 +45,11 @@ var PluginManager = {
     loadAllPlugins: function () {
         // Cycle through plugin directory and try to init all available plugins
 
-        /**
-         * Logic - the plugin's directory is something we should be able to identify it by.
-         * SO: We should loop through all of the directories under the plugin directory and see if a plugin exists in the database with that directory.
-         * If so, update it's status to not initialized. Otherwise, create it as not initialized.
-         * The point of this is so that when plugins are added, they aren't removed and re-added on startup, which could likely lead to a change in ID number in the database when a new plugin is added or an existing one removed.
-         */
+        // Logic - the plugin's directory is something we should be able to identify it by.
+        // SO: We should loop through all of the directories under the plugin directory and see if a plugin exists in the database with that directory.
+        // If so, update it's status to not initialized. Otherwise, create it as not initialized.
+        // The point of this is so that when plugins are added, they aren't removed and re-added on startup,
+        // which could likely lead to a change in ID number in the database when a new plugin is added or an existing one removed.
 
         // Get a list of all of the directories under the plugin directory
         let plugin_subdirs = fs.readdirSync(PluginManager.plugin_dir).filter(function (element) {
