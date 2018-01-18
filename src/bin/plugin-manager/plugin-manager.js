@@ -65,14 +65,18 @@ var PluginManager = {
         plugin_subdirs.forEach(function (plugin_subdir_rel) {
             let plugin_file_abs = path.join(PluginManager.plugin_dir, plugin_subdir_rel, "plugin.js")
             if (fs.existsSync(plugin_file_abs)) {
-                try {
+
+                Promise.try(function(){
                     let plug_obj = require(plugin_file_abs)()
                     winston.info("Loaded plugin:\n\t" + plug_obj.name)
-
+                    return plug_obj
+                })
+                .then(function(plug_obj){
                     // We've found the plugin file, so now let's update the database to match.
-                    db.sequelize.model("Plugin").findOne({
+                    return db.sequelize.model("Plugin").findOne({
                         where: { 'directory_name': plugin_subdir_rel }
-                    }).then(function (row) {
+                    })
+                    .then(function (row) {
                         if (!row) {
                             // This plugin doesn't exist in the database, so let's add an entry for it
                             return db.sequelize.model('Plugin').create({
@@ -86,29 +90,30 @@ var PluginManager = {
                             return row.save()
                         }
                     })
-                        // So now that the plugin exists in the database, let's try and make it work
-                        .then(function (service) {
-                            if (plug_obj.init()) {
-                                PluginManager.loaded_plugins.push([service.id, plug_obj])
-                                console.log("Inited plugin " + service.id + ": " + plug_obj.name)
-                                service.initialized = true
+                    // So now that the plugin exists in the database, let's try and make it work
+                    .then(function (service) {
+                        if (plug_obj.init()) {
+                            PluginManager.loaded_plugins.push([service.id, plug_obj])
+                            console.log("Inited plugin " + service.id + ": " + plug_obj.name)
+                            service.initialized = true
 
-                                // Add a listener for the message-state-update event, so messageManager can handle it
-                                plug_obj._eventEmitter.on('message-state-update', function(msg, message_state){
-                                    messageManager.updateMessageStateAndContinue(msg, message_state, service)
-                                })
+                            // Add a listener for the message-state-update event, so messageManager can handle it
+                            plug_obj._eventEmitter.on('message-state-update', function(msg, message_state){
+                                messageManager.updateMessageStateAndContinue(msg, message_state, service)
+                            })
 
-                                return service.save()
-                            } else {
-                                throw new voluble_errors.PluginInitFailedError("Failed to init " + plug_obj.name)
-                            }
-                        })
-                        .catch(voluble_errors.PluginInitFailedError, function (err) {
-                            winston.error(err.message)
-                        })
-                } catch (err) {
+                            return service.save()
+                        } else {
+                            throw new voluble_errors.PluginInitFailedError("Failed to init " + plug_obj.name)
+                        }
+                    })
+                    .catch(voluble_errors.PluginInitFailedError, function (err) {
+                        winston.error(err.message)
+                    })
+                })
+                .catch(function(err){
                     winston.error("Failed to load plugin: " + plugin_file_abs + "\nMessage: " + err.message)
-                }
+                })
             } else {
                 winston.info("No plugin in\n\t" + path.join(PluginManager.plugin_dir, plugin_subdir_rel))
             }
