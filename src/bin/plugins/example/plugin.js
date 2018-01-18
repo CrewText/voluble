@@ -2,31 +2,33 @@ var voluble_plugin_base = require('../plugin_base.js')
 var manifest = require('./manifest.json')
 
 
-var ExamplePlugin = {
-    name: manifest.plugin_name,
-    description: manifest.plugin_description,
+var ExamplePlugin = function () {
+    this.name = manifest.plugin_name
+    this.description = manifest.plugin_description
 
-    api_key: manifest.data_fields.custom['api_key'],
-    api_secret: manifest.data_fields.custom['api_secret'],
+    this.api_key = manifest.data_fields.custom['api_key']
+    this.api_secret = manifest.data_fields.custom['api_secret']
+}
 
-    /* Implement the functions required by `plugin_base`:
-    init, send_message, shutdown
-    */
+ExamplePlugin.prototype = Object.create(voluble_plugin_base.voluble_plugin.prototype)
+ExamplePlugin.prototype.constructor = ExamplePlugin
 
-    init: function(){
-    },
+/*
+Implement the functions required by `plugin_base`:
+init, send_message, shutdown
+*/
 
-    shutdown: function(){
-    },
-    
-    send_message: function (message) {
-    }
+ExamplePlugin.prototype.init = function () {
+}
+
+ExamplePlugin.prototype.shutdown = function () {
+}
+
+ExamplePlugin.prototype.send_message = function (message) {
 }
 
 var createPlugin = function () {
-    let ex_plug = Object.assign(Object.create(voluble_plugin_base.voluble_plugin), ExamplePlugin)
-
-    return ex_plug
+    return new ExamplePlugin()
 }
 
 module.exports = createPlugin;

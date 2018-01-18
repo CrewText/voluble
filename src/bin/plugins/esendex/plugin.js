@@ -2,67 +2,69 @@
 var voluble_plugin_base = require('../plugin_base.js')
 var manifest = require('./manifest.json')
 
-var esendex = null
+var EsendexPlugin = function() {
+  this.name= manifest.plugin_name
+  this.description= manifest.plugin_description
 
-var EsendexPlugin = {
-  name: manifest.plugin_name,
-  description: manifest.plugin_description,
+  this.username= process.env.ESENDEX_USERNAME
+  this.password= process.env.ESENDEX_PASSWORD
+  this.account_ref= process.env.ESENDEX_ACCOUNT_REF
 
-  username: process.env.ESENDEX_USERNAME,
-  password: process.env.ESENDEX_PASSWORD,
-  account_ref: process.env.ESENDEX_ACCOUNT_REF,
+  this.esendex = null
+}
 
-  init: function () {
+EsendexPlugin.prototype = Object.create(voluble_plugin_base.voluble_plugin.prototype)
+EsendexPlugin.prototype.constructor = EsendexPlugin
 
-    try {
-      esendex = require('esendex')({
-        username: this.username,
-        password: this.password
-      })
+EsendexPlugin.prototype.init = function () {
 
-      return true
-    }
+  try {
+    this.esendex = require('esendex')({
+      username: this.username,
+      password: this.password
+    })
+  }
 
-    catch (e) {
-      console.log(e)
-      return false
-    }
-  },
+  catch (e) {
+    console.log(e)
+  }
 
-  send_message: function (message, contact) {
-
-      // This must be defined by *every* plugin. It will be called by voluble when a message needs to be sent.
-      console.log("Esendex: Sending the message: " + message.body)
-
-      let esendex_message = {
-        accountreference: this.account_ref,
-        message: [{
-          to: contact.phone_number,
-          body: message.body
-        }]
-      }
-
-      esendex.messages.send(esendex_message, function (err, response) {
-        if (err) {
-          voluble_plugin_base.voluble_plugin.message_state_update(message, "MSG_FAILED")
-          console.log(err)
-        } else {
-          voluble_plugin_base.voluble_plugin.message_state_update(message, "MSG_SENT")
-        }
-      })
-
-      return true
-  },
-
-  shutdown: function () {
-    return true
+  finally{
+    return !!this.esendex
   }
 }
 
-var createPlugin = function () {
-  let es_plug = Object.assign(Object.create(voluble_plugin_base.voluble_plugin), EsendexPlugin)
+EsendexPlugin.prototype.send_message = function (message, contact) {
 
-  return es_plug
+  // This must be defined by *every* plugin. It will be called by voluble when a message needs to be sent.
+
+  let esendex_message = {
+    accountreference: this.account_ref,
+    message: [{
+      to: contact.phone_number,
+      body: message.body
+    }]
+  }
+
+  this.esendex.messages.send(esendex_message, function (err, response) {
+    if (err) {
+      EsendexPlugin.prototype.message_state_update(message, "MSG_FAILED")
+      console.log(err)
+    } else {
+      EsendexPlugin.prototype.message_state_update(message, "MSG_SENT")
+    }
+  })
+
+  return true
+}
+
+EsendexPlugin.prototype.shutdown = function () {
+  return true
+}
+
+
+var createPlugin = function () {
+  return new EsendexPlugin()
 }
 
 module.exports = createPlugin;
