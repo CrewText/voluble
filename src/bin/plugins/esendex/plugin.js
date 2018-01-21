@@ -47,13 +47,14 @@ EsendexPlugin.prototype.send_message = function (message, contact) {
     }]
   }
 
+  let t = this
   this.esendex.messages.send(esendex_message, function (err, response) {
     if (err) {
-      let t = this
-      this.message_state_update(message, "MSG_FAILED")
+
+      t.message_state_update(message, "MSG_FAILED")
       console.log(err)
     } else {
-      this.message_state_update(message, "MSG_SENT")
+      t.message_state_update(message, "MSG_SENT")
     }
   })
 
