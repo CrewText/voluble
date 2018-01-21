@@ -3,6 +3,7 @@ var manifest = require('./manifest.json')
 const { MTProto } = require('telegram-mtproto')
 
 var TelegramPlugin = function () {
+    voluble_plugin_base.voluble_plugin.call(this)
     this.name = manifest.plugin_name
     this.description = manifest.plugin_description
 
@@ -34,11 +35,15 @@ TelegramPlugin.prototype.shutdown = function () {
 TelegramPlugin.prototype.send_message = function (message, contact) {
     console.info(`Sending message with Telegram: ${message.body}`)
 
-    let pne = this.checkPhoneNumExists(contact.phone_number)
+    let t = this
+    this.checkPhoneNumExists(contact.phone_number)
         .then(function (phoneNumExists) {
-            if (!phoneNumExists){
-                TelegramPlugin.prototype.message_state_update(message, "MSG_FAILED")
+            if (!phoneNumExists) {
+                t.message_state_update(message, "MSG_FAILED")
             }
+        })
+        .catch(function (err) {
+            t.message_state_update(message, "MSG_FAILED")
         })
 
 }
@@ -50,7 +55,6 @@ TelegramPlugin.prototype.checkPhoneNumExists = function (phone_num) {
     })
         .then(function (checkedPhone) {
             console.log(`Phone number ${phone_num} registered: ${checkedPhone.phone_registered}`)
-            console.log(checkedPhone)
 
             return checkedPhone.phone_registered
         })
@@ -58,7 +62,6 @@ TelegramPlugin.prototype.checkPhoneNumExists = function (phone_num) {
 
 
 var createPlugin = function () {
-
     return new TelegramPlugin()
 }
 

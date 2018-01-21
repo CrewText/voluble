@@ -82,6 +82,7 @@ var MessageManager = {
                     case "MSG_FAILED":
                         // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
                         // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
+                        winston.debug(`Finding priority of service with ID ${svc.id} in SC ${msg.servicechain}`)
                         db.ServicesInSC.findOne({
                             where: {
                                 servicechain_id: msg.servicechain,

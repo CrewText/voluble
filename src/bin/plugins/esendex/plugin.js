@@ -3,6 +3,7 @@ var voluble_plugin_base = require('../plugin_base.js')
 var manifest = require('./manifest.json')
 
 var EsendexPlugin = function() {
+  voluble_plugin_base.voluble_plugin.call(this)
   this.name= manifest.plugin_name
   this.description= manifest.plugin_description
 
@@ -26,7 +27,7 @@ EsendexPlugin.prototype.init = function () {
   }
 
   catch (e) {
-    console.log(e)
+    // console.log(e)
   }
 
   finally{
@@ -48,10 +49,11 @@ EsendexPlugin.prototype.send_message = function (message, contact) {
 
   this.esendex.messages.send(esendex_message, function (err, response) {
     if (err) {
-      EsendexPlugin.prototype.message_state_update(message, "MSG_FAILED")
+      let t = this
+      this.message_state_update(message, "MSG_FAILED")
       console.log(err)
     } else {
-      EsendexPlugin.prototype.message_state_update(message, "MSG_SENT")
+      this.message_state_update(message, "MSG_SENT")
     }
   })
 
