@@ -1,8 +1,9 @@
-const express = require('express');
+import * as express from "express"
 const router = express.Router();
-const promise = require('bluebird')
-const utils = require('../utilities.js')
-const contactManager = require('../bin/contact-manager/contact-manager')
+import * as Promise from "bluebird"
+import * as utils from '../utilities'
+//const contactManager = require('../bin/contact-manager/contact-manager')
+import {ContactManager} from '../bin/contact-manager/contact-manager'
 
 /**
  * Handles the route `GET /contacts`.
@@ -13,15 +14,14 @@ router.get('/', function (req, res, next) {
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-
   return utils.verifyNumberIsInteger(offset)
-    .then(function (offset) {
-      return contactManager.getHundredContacts(offset)
+    .then(function (offset: number) {
+      return ContactManager.getHundredContacts(offset)
     })
-    .then(function (rows) {
+    .then(function (rows: any) {
       res.status(200).json(rows)
     })
-    .catch(function (err) {
+    .catch(function (err: any) {
       res.status(500).json(err.message)
     })
 })
@@ -31,17 +31,16 @@ router.get('/', function (req, res, next) {
  * Lists all of the details available about the contact with a given ID.
  */
 router.get('/:contact_id', function (req, res, next) {
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return contactManager.checkContactWithIDExists(id)
+      return ContactManager.checkContactWithIDExists(id)
     })
     .then(function (id) {
-      return contactManager.getContactWithId(id)
+      return ContactManager.getContactWithId(id)
     }).then(function (user) {
       res.status(200).json(user)
     })
-    .catch(function (error) {
+    .catch(function (error: any) {
       res.status(500).send(error.message)
     })
 
@@ -53,11 +52,11 @@ router.get('/:contact_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
 
-  return contactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
+  return ContactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
     .then(function (newContact) {
       res.status(200).json(newContact)
     })
-    .catch(function (error) {
+    .catch(function (error: any) {
       console.log(error)
       res.status(500).end()
     })
@@ -71,15 +70,15 @@ router.put('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
-      return contactManager.checkContactWithIDExists(id)
+      return ContactManager.checkContactWithIDExists(id)
     })
     .then(function (id) {
-      return contactManager.updateContactDetailsWithId(id, req.body)
+      return ContactManager.updateContactDetailsWithId(id, req.body)
     })
     .then(function () {
       res.status(200).end()
     })
-    .catch(function () {
+    .catch(function (err: any) {
       console.log(err)
       res.status(500).send(err)
     })
@@ -94,12 +93,12 @@ router.delete('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (contact_id) {
-      return contactManager.deleteContactFromDB(contact_id)
+      return ContactManager.deleteContactFromDB(contact_id)
     })
     .then(function (resp) {
       res.status(200).json(resp)
     })
-    .catch(function (error) {
+    .catch(function (error: any) {
       console.log(error.message)
       res.status(500).end()
     })

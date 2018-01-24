@@ -1,28 +1,33 @@
-const express = require('express');
-const Promise = require('bluebird')
+import * as express from "express"
+import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
-const utils = require('../utilities.js')
-const messageManager = require('../bin/message-manager/message-manager')
+import * as utils from '../utilities'
+import { MessageManager } from '../bin/message-manager/message-manager'
 const db = require('../models')
-const volubleErrors = require('../bin/voluble-errors')
+import * as volubleErrors from '../bin/voluble-errors'
 
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
  */
 router.get('/', function (req, res, next) {
+  console.log("got a req")
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
+  console.log("Offset: " + offset)
+
   utils.verifyNumberIsInteger(offset)
-    .then(function (offset) {
-      return messageManager.getHundredMessageIds(offset)
+    .then(function (off) {
+      console.log("verified offset")
+      return MessageManager.getHundredMessageIds(off)
     })
     .then(function (rows) {
+      console.log("Got " + rows.length + " rows")
       res.status(200).json(rows)
     })
-    .catch(function (error) {
+    .catch(function (error: any) {
       res.status(500).send(error.message)
     })
 
@@ -36,12 +41,12 @@ router.get('/:message_id', function (req, res, next) {
 
   return utils.verifyNumberIsInteger(req.params.message_id)
     .then(function (id) {
-      return messageManager.getMessageFromId(id)
+      return MessageManager.getMessageFromId(id)
     })
     .then(function (msg) {
       res.status(200).json(msg)
     })
-    .catch(function (error) {
+    .catch(function (error: any) {
       res.status(500).json(error.message)
       winston.error(error.message)
     })
@@ -54,22 +59,22 @@ router.get('/:message_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
   winston.info("Creating new message")
-  messageManager.createMessage(
+  MessageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!
     req.body.direction
   )
     .then(function (msg) {
-      return messageManager.sendMessage(msg)
+      return MessageManager.sendMessage(msg)
     })
     .then(function (msg) {
       res.status(200).json(msg)
     })
-    .catch(volubleErrors.MessageFailedError, function (err) {
+    .catch(volubleErrors.MessageFailedError, function (err: any) {
       res.status(500).json(err)
       winston.error("Failed to send message: " + err)
     })
-    .catch(function (err) {
+    .catch(function (err: any) {
       res.status(500).json(err)
       winston.error(err)
     })
