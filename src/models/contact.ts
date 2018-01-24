@@ -1,10 +1,10 @@
 import * as Sequelize from "sequelize"
 
 export interface ContactAttributes {
-    first_name: String,
-    surname: String,
-    email_address: String,
-    phone_number: String,
+    first_name: string,
+    surname: string,
+    email_address: string,
+    phone_number: string,
     default_servicechain: number
 }
 
@@ -14,9 +14,9 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes>{
     updatedAt: Date,
 
     first_name: String,
-    surname: String,
-    email_address: String,
-    phone_number: String,
+    surname: string,
+    email_address: string,
+    phone_number: string,
     default_servicechain: number
 }
 
