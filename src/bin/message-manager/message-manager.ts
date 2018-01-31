@@ -1,5 +1,6 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
+import * as events from "events"
 import * as utilities from "../../utilities"
 import db from '../../models'
 import * as volubleErrors from '../voluble-errors'
@@ -16,6 +17,10 @@ const errors = require('common-errors')
  * sending Messages and finding out information about given Messages.
  */
 export namespace MessageManager {
+
+    let eventEmitter = new events.EventEmitter()
+    eventEmitter.on('send-message', doMessageSend)
+
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
@@ -24,7 +29,7 @@ export namespace MessageManager {
      * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
-    export function createMessage (body: string, contact_id: number, direction: Boolean, is_reply_to: number | null = null): Promise<MessageInstance> {
+    export function createMessage(body: string, contact_id: number, direction: Boolean, is_reply_to: number | null = null): Promise<MessageInstance> {
 
         return ServicechainManager.getServicechainFromContactId(contact_id)
             .then(function (servicechain) {
@@ -44,7 +49,13 @@ export namespace MessageManager {
      * @param {db.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
      * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
-    export function sendMessage (msg: MessageInstance) {
+    export function sendMessage(msg: MessageInstance) {
+        eventEmitter.emit('send-message', msg)
+        return msg
+    }
+
+    function doMessageSend(msg:MessageInstance){
+        winston.info("Beginning message send process", {message_id: msg.id, message_state: msg.message_state})
         return Promise.filter(ServicechainManager.getServicesInServicechain(msg.servicechain), function (svcInSC: ServicesInSCInstance) {
             return svcInSC.priority == 1
         })
@@ -72,7 +83,7 @@ export namespace MessageManager {
      * @param {string} message_state The new message state for the message
      * @param {Sequelize.Plugin} svc The service that initiated the state change.
      */
-    export function updateMessageStateAndContinue (msg: MessageInstance, message_state: string, svc?: PluginInstance) {
+    export function updateMessageStateAndContinue(msg: MessageInstance, message_state: string, svc?: PluginInstance) {
         winston.info("Updating message state for message " + msg.id + " to " + message_state)
         msg.message_state = message_state
         return msg.save()
@@ -125,7 +136,7 @@ export namespace MessageManager {
      * @param {Sequelize.Plugin} service The service with which to attempt to send the message
      * @returns {promise} A promise that resolves to whatever the plugin returns
      */
-    export function sendMessageWithService (msg: MessageInstance, service: PluginInstance) {
+    export function sendMessageWithService(msg: MessageInstance, service: PluginInstance) {
         winston.debug("Attempting to send message " + msg.id + " with plugin " + service.name)
         MessageManager.updateMessageStateAndContinue(msg, "MSG_SENDING")
             .then(function () {
@@ -138,7 +149,7 @@ export namespace MessageManager {
                                 })
                             })
                     })
-                    .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err:any) {
+                    .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err: any) {
                         winston.debug("Active plugin with ID " + service.id + " not found")
 
                         // Check to see if it exists, but is inactive. If so, update the message state and carry on
@@ -157,7 +168,7 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export function getHundredMessageIds (offset: number): Promise<Array<MessageInstance>> {
+    export function getHundredMessageIds(offset: number): Promise<Array<MessageInstance>> {
         return db.Message.findAll({
             offset: offset,
             limit: 100,
@@ -170,7 +181,7 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export function getMessageFromId (id: number): Promise<MessageInstance> {
+    export function getMessageFromId(id: number): Promise<MessageInstance> {
         return db.Message.findOne({
             where: { id: id }
         })
