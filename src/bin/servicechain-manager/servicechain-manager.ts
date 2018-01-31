@@ -1,5 +1,6 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
+import * as errors from "node-common-errors"
 import db from '../../models'
 import { ContactManager } from '../contact-manager/contact-manager'
 import { ServicesInSCInstance } from '../../models/servicesInServicechain';
@@ -90,6 +91,13 @@ export namespace ServicechainManager {
      * @param {Number} id ID number of the Servicechain to remove.
      */
     export function deleteServicechain (id: number): Promise<number> {
-        return db.Servicechain.destroy({ where: { id: id } }) // TODO: Validate me!
+        return db.Servicechain.destroy({ where: { id: id } })
+        .then(function(destroyedRowsCount){
+            if (destroyedRowsCount == 0){
+                return Promise.reject(new errors.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+            } else {
+                return destroyedRowsCount
+            }
+        }) // TODO: Update SC DELETE route handler to catch this and drop error to ensure idempotence
     }
 }

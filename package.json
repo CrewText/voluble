@@ -17,6 +17,7 @@
     "mysql2": "^1.5.1",
     "sequelize": "^4.23.2",
     "telegram-mtproto": "^2.2.2",
+    "typedoc": "^0.9.0",
     "winston": "^2.4.0"
   },
   "description": "A plugin-oriented mass text communication system",
