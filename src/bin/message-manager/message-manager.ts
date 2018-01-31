@@ -151,14 +151,7 @@ export namespace MessageManager {
                     })
                     .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err: any) {
                         winston.debug("Active plugin with ID " + service.id + " not found")
-
-                        // Check to see if it exists, but is inactive. If so, update the message state and carry on
-                        if (!service.initialized) {
-                            return MessageManager.updateMessageStateAndContinue(msg, "MSG_FAILED", service)
-                        } else {
-                            winston.error("Plugin does not appear to exist. Re-throwing...")
-                            winston.error(err)
-                        }
+                        return MessageManager.updateMessageStateAndContinue(msg, "MSG_FAILED", service)
                     })
             })
     }
