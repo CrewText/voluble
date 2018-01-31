@@ -4,7 +4,7 @@ import db from '../../models'
 import * as events from 'events'
 import { ContactInstance } from '../../models/contact';
 import { MessageInstance } from '../../models/message';
-export type contactInstance =ContactInstance
+export type contactInstance = ContactInstance
 export type messageInstance = MessageInstance
 
 
@@ -28,28 +28,28 @@ interface IVolublePluginBase {
 
 export class voluble_plugin implements IVolublePluginBase {
     name: string
-    description:string
-    plugin_uid : string
+    description: string
+    plugin_uid: string
     _eventEmitter: events.EventEmitter
 
-    constructor(){
+    constructor() {
         this._eventEmitter = new events.EventEmitter()
     }
 
-    init():boolean {
+    init(): boolean {
         throw new errors.NotImplementedError("Plugin " + this.name + " has not defined the function 'init'. Contact the plugin author for a fix.")
     }
 
-    shutdown():boolean{
+    shutdown(): boolean {
         throw new errors.NotImplementedError("Plugin " + this.name + "has not defined the function 'shutdown'. Contact the plugin author for a fix.")
     }
 
-    send_message(message: MessageInstance, contact: ContactInstance):null | undefined | void{
+    send_message(message: MessageInstance, contact: ContactInstance): null | undefined | void {
         throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
     }
 
-    message_state_update(msg:MessageInstance, message_state:string){
-        this._eventEmitter.emit('message-state-update', msg, message_state, this)
+    message_state_update(msg: MessageInstance, message_state: string) {
+        this._eventEmitter.emit('message-state-update', msg, message_state)
     }
 }
 

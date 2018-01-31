@@ -90,9 +90,9 @@ export namespace PluginManager {
                                     console.log("Inited plugin " + svc.id + ": " + plug_obj.name)
                                     svc.initialized = true
 
-                                    // Add a listener for the message-state-update event, so MessageManager can handle it
-                                    plug_obj._eventEmitter.on('message-state-update', function (msg: MessageInstance, message_state: string) {
-                                        MessageManager.updateMessageStateAndContinue(msg, message_state, svc)
+                                    // Add event listeners, so Voluble can react to message state changes
+                                    plug_obj._eventEmitter.on('message-state-update', function (msg: MessageInstance, message_state: string){
+                                        MessageManager.updateMessageState(msg, message_state, svc)
                                     })
 
                                     return svc.save()

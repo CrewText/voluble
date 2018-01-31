@@ -20,6 +20,8 @@ export namespace MessageManager {
 
     let eventEmitter = new events.EventEmitter()
     eventEmitter.on('send-message', doMessageSend)
+    eventEmitter.on('message-failed', onMessageFailed)
+    eventEmitter.on('message-sent', onMessageSent)
 
     /**
      * Attempts to create a new Message in the database with the supplied details.
@@ -54,8 +56,8 @@ export namespace MessageManager {
         return msg
     }
 
-    function doMessageSend(msg:MessageInstance){
-        winston.info("Beginning message send process", {message_id: msg.id, message_state: msg.message_state})
+    function doMessageSend(msg: MessageInstance) {
+        winston.info("Beginning message send process", { message_id: msg.id, message_state: msg.message_state })
         return Promise.filter(ServicechainManager.getServicesInServicechain(msg.servicechain), function (svcInSC: ServicesInSCInstance) {
             return svcInSC.priority == 1
         })
@@ -77,51 +79,61 @@ export namespace MessageManager {
             })
     }
 
+
+
+    function onMessageFailed(msg: MessageInstance, svc: PluginInstance) {
+        // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
+        // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
+        winston.debug(`Finding priority of service with ID ${svc.id} in SC ${msg.servicechain}`)
+        db.ServicesInSC.findOne({
+            where: {
+                servicechain_id: msg.servicechain,
+                service_id: svc.id
+            }
+        })
+            .then(function (currentSvcInSC) {
+                return db.ServicesInSC.findOne({
+                    where: {
+                        servicechain_id: msg.servicechain,
+                        priority: currentSvcInSC.priority + 1
+                    }
+                })
+            })
+            .then(function (nextSvcInSC) {
+                if (!nextSvcInSC) { return Promise.reject(errors.NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
+                return PluginManager.getServiceById(nextSvcInSC.service_id)
+            })
+            .then(function (nextSvc) {
+                return sendMessageWithService(msg, nextSvc)
+            })
+            .catch(errors.NotFoundError, function (err: any) {
+                winston.info("Message " + msg.id + " failed to send:\n" + err)
+            })
+    }
+
+    function onMessageSent(msg: MessageInstance, message_state: string) {
+        msg.sent_time = db.Sequelize.fn('NOW')
+        return msg.save()
+    }
+
     /**
      * This is called when a messages' state changes. Determine the correct course of action depending on the new message state.
      * @param {Sequelize.Message} msg The message whose state will be updated
      * @param {string} message_state The new message state for the message
      * @param {Sequelize.Plugin} svc The service that initiated the state change.
      */
-    export function updateMessageStateAndContinue(msg: MessageInstance, message_state: string, svc?: PluginInstance) {
-        winston.info("Updating message state for message " + msg.id + " to " + message_state)
+    export function updateMessageState(msg: MessageInstance, message_state: string, svc?: PluginInstance) {
+        winston.info("New message state", { msg: msg.id, state: message_state })
         msg.message_state = message_state
         return msg.save()
             .then(function (msg) {
                 switch (message_state) {
                     case "MSG_FAILED":
-                        // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
-                        // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
-                        winston.debug(`Finding priority of service with ID ${svc.id} in SC ${msg.servicechain}`)
-                        db.ServicesInSC.findOne({
-                            where: {
-                                servicechain_id: msg.servicechain,
-                                service_id: svc.id
-                            }
-                        })
-                            .then(function (currentSvcInSC) {
-                                return db.ServicesInSC.findOne({
-                                    where: {
-                                        servicechain_id: msg.servicechain,
-                                        priority: currentSvcInSC.priority + 1
-                                    }
-                                })
-                            })
-                            .then(function (nextSvcInSC) {
-                                if (!nextSvcInSC) { return Promise.reject(errors.NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
-                                return PluginManager.getServiceById(nextSvcInSC.service_id)
-                            })
-                            .then(function (nextSvc) {
-                                return MessageManager.sendMessageWithService(msg, nextSvc)
-                            })
-                            .catch(errors.NotFoundError, function (err: any) {
-                                winston.info("Message " + msg.id + " failed to send:\n" + err)
-                            })
+                        eventEmitter.emit('message-failed', msg, svc)
                         break
-
                     case "MSG_SENT":
-                        msg.sent_time = db.Sequelize.fn('NOW')
-                        return msg.save()
+                        eventEmitter.emit('message-sent', msg)
+                        break
                 }
             })
             .catch(db.Sequelize.ValidationError, function (err: any) {
@@ -138,7 +150,7 @@ export namespace MessageManager {
      */
     export function sendMessageWithService(msg: MessageInstance, service: PluginInstance) {
         winston.debug("Attempting to send message " + msg.id + " with plugin " + service.name)
-        MessageManager.updateMessageStateAndContinue(msg, "MSG_SENDING")
+        MessageManager.updateMessageState(msg, "MSG_SENDING")
             .then(function () {
                 PluginManager.getPluginById(service.id)
                     .then(function (plugin) {
@@ -151,7 +163,7 @@ export namespace MessageManager {
                     })
                     .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err: any) {
                         winston.debug("Active plugin with ID " + service.id + " not found")
-                        return MessageManager.updateMessageStateAndContinue(msg, "MSG_FAILED", service)
+                        return MessageManager.updateMessageState(msg, "MSG_FAILED", service)
                     })
             })
     }
