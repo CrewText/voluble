@@ -16,7 +16,7 @@ class TelegramPlugin extends voluble_plugin {
         this.api_hash = process.env.TELEGRAM_API_HASH
     }
 
-    init():boolean{
+    init(): boolean {
         let server = { dev: true }
         let api = {}
         this.client = MTProto({ server, api })
@@ -24,31 +24,31 @@ class TelegramPlugin extends voluble_plugin {
         return (!!this.client)
     }
 
-    shutdown():boolean{
+    shutdown(): boolean {
         return true
     }
 
-    send_message(message: messageInstance, contact:contactInstance){
+    send_message(message: messageInstance, contact: contactInstance) {
         let t = this
         this.checkPhoneNumExists(contact.phone_number)
-        .then(function(phoneNumExists){
-            if (!phoneNumExists){
+            .then(function (phoneNumExists) {
+                if (!phoneNumExists) {
+                    t.message_state_update(message, "MSG_FAILED")
+                }
+            })
+            .catch(function (err) {
+                console.log(err)
                 t.message_state_update(message, "MSG_FAILED")
-            }
-        })
-        .catch(function(err){
-            console.log(err)
-            t.message_state_update(message, "MSG_FAILED")
-        })
+            })
     }
 
-    checkPhoneNumExists(phone_num: string): Promise<boolean>{
+    checkPhoneNumExists(phone_num: string): Promise<boolean> {
         return this.client('auth.checkPhone', {
             phone_number: phone_num
         })
-            .then(function (checkedPhone:any) {
+            .then(function (checkedPhone: any) {
                 console.log(`Phone number ${phone_num} registered: ${checkedPhone.phone_registered}`)
-    
+
                 return checkedPhone.phone_registered
             })
     }
