@@ -1,6 +1,6 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
-import * as errors from "node-common-errors"
+let errors = require('common-errors')
 import db from '../../models'
 import { ContactManager } from '../contact-manager/contact-manager'
 import { ServicesInSCInstance } from '../../models/servicesInServicechain';
