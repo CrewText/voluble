@@ -1,5 +1,4 @@
-// @ts-check
-const express = require('express');
+import * as express from "express";
 const path = require('path');
 const bodyParser = require('body-parser');
 const winston = require('winston')
@@ -14,7 +13,7 @@ if (!process.env.IS_PRODUCTION) {
 const http = require('http');
 
 winston.info("Connecting to database")
-const db = require('./models')
+import * as db from './models'
 
 winston.info("Loading routes")
 const index = require('./routes/index');
@@ -27,7 +26,7 @@ const routerBlasts = require('./routes/blasts');
 const routerServicechains = require('./routes/servicechains');
 
 winston.info("Loading plugin manager")
-const pluginManager = require("./bin/plugin-manager/plugin-manager")
+import { PluginManager } from './bin/plugin-manager/plugin-manager'
 
 winston.info("Starting Express server")
 const app = express();
@@ -35,7 +34,7 @@ const app = express();
 /**
  * Get port from environment and store in Express.
  */
-function normalizePort(val) {
+function normalizePort(val: string) {
   var port = parseInt(val, 10);
 
   if (isNaN(port)) {
@@ -51,7 +50,7 @@ function normalizePort(val) {
   return false;
 }
 
-function onError(error) {
+function onError(error: any) {
   if (error.syscall !== 'listen') {
     throw error;
   }
@@ -102,18 +101,18 @@ app.use('/servicechains', routerServicechains)
 
 // Set up plugin manager
 winston.info("Initing all plugins")
-pluginManager.initAllPlugins(process.env.PLUGIN_DIR)
+PluginManager.initAllPlugins(process.env.PLUGIN_DIR || "./bin/plugins")
 
 
 // catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  var err = new Error('Not Found');
+app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
+  let err: any = new Error('Not Found');
   err.status = 404;
   next(err);
 });
 
 // error handler
-app.use(function (err, req, res, next) {
+app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = process.env.IS_PRODUCTION ? err : {};

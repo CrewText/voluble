@@ -1,0 +1,12 @@
+{
+  "plugin_name": "Telegram",
+  "plugin_description": "Implements an interface to the Telegram service",
+  "npm_modules": [],
+  "data_fields": {
+    "contact": [
+      "ExampleDataField1",
+      "ExampleDataField2",
+      "TelegramUsername"
+    ]
+  }
+}

@@ -25,6 +25,7 @@ coverage
 
 # Compiled binary addons (http://nodejs.org/api/addons.html)
 build/Release
+dist
 
 # Dependency directories
 node_modules
@@ -41,3 +42,4 @@ docs
 /.vscode/settings.json
 /.vscode/tasks.json
 /.env
+/.vscode/launch.json

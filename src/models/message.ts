@@ -1,4 +1,30 @@
-let message_model = function (sequelize, DataTypes) {
+import * as Sequelize from "sequelize"
+
+export interface MessageAttributes {
+    body: string
+    servicechain: number,
+    contact: number,
+    is_reply_to: number | null | undefined
+    direction: Boolean,
+    sent_time?: Date,
+    message_state: string
+}
+
+export interface MessageInstance extends Sequelize.Instance<MessageAttributes>{
+    id: number,
+    createdAt: Date,
+    updatedAt: Date,
+
+    body: string
+    servicechain: number,
+    contact: number,
+    is_reply_to: number | null | undefined
+    direction: Boolean,
+    sent_time: Date,
+    message_state: string
+}
+
+export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Message = sequelize.define('Message', {
 
         id: {
@@ -25,5 +51,3 @@ let message_model = function (sequelize, DataTypes) {
 
     return Message
 }
-
-module.exports = message_model
