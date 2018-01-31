@@ -93,7 +93,7 @@ export namespace ContactManager {
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */
-    export function updateContactDetailsWithId (id: number, updatedDetails: any): Promise<[[Number, any]]> {
+    export function updateContactDetailsWithId (id: number, updatedDetails: any): Promise<[number, any[]]> {
         return db.Contact.update(updatedDetails,
             {
                 where: { id: id }
