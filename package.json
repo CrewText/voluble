@@ -7,9 +7,6 @@
     "start": "node dist/app.js"
   },
   "dependencies": {
-    "@types/bluebird": "^3.5.19",
-    "@types/express": "^4.11.0",
-    "@types/sequelize": "^4.27.4",
     "bluebird": "^3.5.1",
     "body-parser": "~1.17.1",
     "common-errors": "^1.0.5",
