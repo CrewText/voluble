@@ -2,6 +2,7 @@ const db = require('../../models')
 const contactManager = require('../contact-manager/contact-manager')
 const winston = require('winston')
 const Promise = require('bluebird')
+import * as errors from "node-common-errors"
 
 /**
  * The ServicechainManager handles all operations that relate to Servicechains and ServiceInServicechains, which includes
@@ -89,7 +90,14 @@ var ServicechainManager = {
      * @param {Number} id ID number of the Servicechain to remove.
      */
     deleteServicechain: function (id) {
-        return db.Servicechain.destroy({ where: { id: id } }) // TODO: Validate me!
+        return db.Servicechain.destroy({ where: { id: id } })
+        .then(function(destroyedRowsCount){
+            if (destroyedRowsCount == 0){
+                return Promise.reject(new errors.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+            } else {
+                return destroyedRowsCount
+            }
+        }) // TODO: Update SC DELETE route handler to catch this and drop error to ensure idempotence
     }
 }
 
