@@ -16,7 +16,7 @@ export namespace ContactManager {
      * @param {string} phone_num The phone number (with leading country code) of the contact
      * @param {Number} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
-    export function createContact (first_name: String, surname: String, email: String, phone_num: String, default_servicechain: number): Promise<ContactInstance> {
+    export function createContact (first_name: string, surname: string, email: string, phone_num: string, default_servicechain: number): Promise<ContactInstance> {
         return db.Contact.create({
             first_name: first_name,
             surname: surname,
