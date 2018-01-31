@@ -1,7 +1,7 @@
-import {voluble_plugin, contactInstance, messageInstance} from '../plugin_base'
+import * as plugin_base from '../plugin_base'
 var manifest = require('./manifest.json')
 
-class MyExamplePlugin extends voluble_plugin{
+class MyExamplePlugin extends plugin_base.voluble_plugin{
     api_key: string | undefined
     api_secret: string | undefined
 
@@ -22,7 +22,7 @@ class MyExamplePlugin extends voluble_plugin{
         return true
     }
 
-    send_message(message: messageInstance, contact:contactInstance){
+    send_message(message: plugin_base.messageInstance, contact:plugin_base.contactInstance){
         this.message_state_update(message, "MSG_FAILED")
     }
 }
