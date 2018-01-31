@@ -1,4 +1,5 @@
 import * as express from "express";
+import * as fs from 'fs'
 const path = require('path');
 const bodyParser = require('body-parser');
 const winston = require('winston')
@@ -10,7 +11,7 @@ if (!process.env.IS_PRODUCTION) {
   winston.info("Detected prod environment")
   winston.level = 'info'
 }
-const http = require('http');
+const https = require('https');
 
 winston.info("Connecting to database")
 import * as db from './models'
@@ -77,7 +78,20 @@ function onError(error: any) {
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-var server = http.createServer(app);
+if (!fs.existsSync(process.env.SSL_KEY_PATH || "")){
+  throw new Error("SSL key does not exist at " + process.env.SSL_KEY_PATH)
+}
+
+if (!fs.existsSync(process.env.SSL_CERT_PATH || "")){
+  throw new Error("SSL certificate does not exist at " + process.env.SSL_CERT_PATH)
+}
+
+let https_options = {
+  key: fs.readFileSync(process.env.SSL_KEY_PATH || ""),
+  cert: fs.readFileSync(process.env.SSL_CERT_PATH || "")
+}
+// TODO: (branch: implement-ssl) Use Helmet for HSTS
+var server = https.createServer(https_options, app);
 
 server.listen(port);
 server.on('error', onError);
