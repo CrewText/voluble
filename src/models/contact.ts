@@ -13,7 +13,7 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes>{
     createdAt: Date,
     updatedAt: Date,
 
-    first_name: String,
+    first_name: string,
     surname: string,
     email_address: string,
     phone_number: string,
