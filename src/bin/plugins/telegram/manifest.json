@@ -2,11 +2,10 @@
   "plugin_name": "Telegram",
   "plugin_description": "Implements an interface to the Telegram service",
   "npm_modules": [],
-  "data_fields": {
-    "contact": [
-      "ExampleDataField1",
-      "ExampleDataField2",
-      "TelegramUsername"
-    ]
+  "data_tables": {
+    "contact": {
+      "ExampleDataField1": "number",
+      "ExampleDataField2": "string"
+    }
   }
 }

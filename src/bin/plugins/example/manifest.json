@@ -2,12 +2,11 @@
   "plugin_name": "My Example Plugin",
   "plugin_description": "This is what my plugin does!",
   "npm_modules": [],
-  "data_fields": {
-    "contact": [
-      "ExampleDataField1",
-      "ExampleDataField2",
-      "TelegramUsername"
-    ],
+  "data_tables": {
+    "contact": {
+      "ExampleDataField1": "number",
+      "ExampleDataField2": "string"
+    },
     "custom": {
       "api_key": "THISISTHEAPIKEY0123546789",
       "api_secret": "VERYLONGOBFUSCATEDAPISECRET9876543210"
