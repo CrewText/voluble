@@ -1,6 +1,7 @@
 import { voluble_plugin, contactInstance, messageInstance } from '../plugin_base'
 var manifest = require('./manifest.json')
-import MTProto from 'telegram-mtproto'
+import * as telegram from 'node-telegram-bot-api'
+//import MTProto from 'telegram-mtproto'
 
 class TelegramPlugin extends voluble_plugin {
     api_id: string | undefined
