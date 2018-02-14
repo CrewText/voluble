@@ -1,6 +1,6 @@
 var errors = require('common-errors')
 var voluble_errors = require('../../bin/voluble-errors')
-import db from '../../models'
+import * as db from '../../models'
 import * as events from 'events'
 import { ContactInstance } from '../../models/contact';
 import { MessageInstance } from '../../models/message';
@@ -27,9 +27,9 @@ interface IVolublePluginBase {
 }
 
 export class voluble_plugin implements IVolublePluginBase {
-    name: string
-    description: string
-    plugin_uid: string
+    name: string = ""
+    description: string =""
+    plugin_uid: string = ""
     _eventEmitter: events.EventEmitter
 
     constructor() {
