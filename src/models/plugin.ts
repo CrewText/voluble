@@ -1,9 +1,9 @@
 import * as Sequelize from "sequelize"
 
 export interface PluginAttributes {
-    name: String,
-    directory_name: String,
-    initialized: Boolean
+    name: string,
+    directory_name: string,
+    initialized: boolean
 }
 
 export interface PluginInstance extends Sequelize.Instance<PluginAttributes> {
@@ -11,9 +11,9 @@ export interface PluginInstance extends Sequelize.Instance<PluginAttributes> {
     createdAt: Date,
     updatedAt: Date,
 
-    name: String,
-    directory_name: String,
-    initialized: Boolean
+    name: string,
+    directory_name: string,
+    initialized: boolean
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
