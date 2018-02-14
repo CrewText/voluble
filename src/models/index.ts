@@ -11,6 +11,13 @@ import * as Servicechain from './servicechain'
 import * as ServiceInSC from './servicesInServicechain'
 import * as Blast from './blast'
 
+export type ContactInstance = Contact.ContactInstance
+export type MessageInstance = Message.MessageInstance
+export type PluginInstance = Plugin.PluginInstance
+export type ServicechainInstance = Servicechain.ServicechainInstance
+export type ServicesInSCInstance = ServiceInSC.ServicesInSCInstance
+export type BlastInstance = Blast.BlastInstance
+
 export interface DbConnection {
     Contact: Sequelize.Model<Contact.ContactInstance, Contact.ContactAttributes>,
     Message: Sequelize.Model<Message.MessageInstance, Message.MessageAttributes>,
@@ -21,8 +28,9 @@ export interface DbConnection {
     [key: string]: any
 }
 
-var db: any = {}
-var sequelize = new Sequelize(process.env.JAWSDB_MARIA_URL || "localhost", { dialect: 'mysql' })
+
+export var models: DbConnection = {}
+export var sequelize = new Sequelize(process.env.JAWSDB_MARIA_URL || "localhost", { dialect: 'mysql' })
 
 // TODO: #5 Set up associations between models, reduce the need for validation
 
@@ -33,18 +41,17 @@ fs
     })
     .forEach(file => {
         var model = sequelize['import'](path.join(__dirname, file));
-        db[model.name] = model;
+        models[model.name] = model;
     });
 
-Object.keys(db).forEach(modelName => {
-    if (db[modelName].associate) {
-        db[modelName].associate(db);
+Object.keys(models).forEach(modelName => {
+    if (models[modelName].associate) {
+        models[modelName].associate(models);
     }
 });
 
 sequelize.sync()
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+models.Sequelize = Sequelize;
 
-export default <DbConnection>db
+//<DbConnection>db
