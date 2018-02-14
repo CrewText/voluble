@@ -2,14 +2,14 @@ import * as fs from 'fs'
 import * as path from 'path'
 const winston = require('winston')
 import * as Promise from "bluebird"
-import { voluble_plugin } from '../plugins/plugin_base'
-import db from '../../models'
-import { MessageManager } from '../message-manager/message-manager'
-import { ContactInstance } from '../../models/contact';
-import { PluginInstance } from '../../models/plugin';
-import { MessageInstance } from '../../models/message';
-const voluble_errors = require('../voluble-errors')
 const errs = require('common-errors')
+import * as crypto from 'crypto'
+
+import { voluble_plugin } from '../plugins/plugin_base'
+import * as db from '../../models'
+import { MessageManager } from '../message-manager/message-manager'
+import { Sequelize } from 'sequelize';
+const voluble_errors = require('../voluble-errors')
 
 /**
  * The PluginManager keeps track of all loaded plugins, as well as initializing, loading and shutting down all detected plugins.
@@ -19,7 +19,7 @@ export namespace PluginManager {
     var __plugin_dir: string = ""
     var __loaded_plugins: Array<any> = []
 
-    export function getPluginById(id: number): Promise<any> {
+    export function getPluginById(id: number): PromiseLike<voluble_plugin> {
         let p: any = null
         __loaded_plugins.forEach(function (plugin: any) {
             if (plugin[0] == id) {
@@ -66,13 +66,13 @@ export namespace PluginManager {
                 })
                     .then(function (plug_obj) {
                         // We've found the plugin file, so now let's update the database to match.
-                        return db.Plugin.findOne({
+                        return db.models.Plugin.findOne({
                             where: { 'directory_name': plugin_subdir_rel }
                         })
-                            .then(function (svc: PluginInstance) {
+                            .then(function (svc: db.PluginInstance) {
                                 if (!svc) {
                                     // This plugin doesn't exist in the database, so let's add an entry for it
-                                    return db.Plugin.create({
+                                    return db.models.Plugin.create({
                                         'name': plug_obj.name,
                                         'directory_name': plugin_subdir_rel,
                                         'initialized': false
@@ -84,14 +84,14 @@ export namespace PluginManager {
                                 }
                             })
                             // So now that the plugin exists in the database, let's try and make it work
-                            .then(function (svc: PluginInstance) {
+                            .then(function (svc: db.PluginInstance) {
                                 if (plug_obj.init()) {
                                     __loaded_plugins.push([svc.id, plug_obj])
                                     console.log("Inited plugin " + svc.id + ": " + plug_obj.name)
                                     svc.initialized = true
 
                                     // Add event listeners, so Voluble can react to message state changes
-                                    plug_obj._eventEmitter.on('message-state-update', function (msg: MessageInstance, message_state: string){
+                                    plug_obj._eventEmitter.on('message-state-update', function (msg: db.MessageInstance, message_state: string){
                                         MessageManager.updateMessageState(msg, message_state, svc)
                                     })
 
@@ -131,11 +131,11 @@ export namespace PluginManager {
      */
     export function shutdownAllPlugins() {
 
-        db.Plugin.findAll({
+        db.models.Plugin.findAll({
             where: { initialized: true }
         })
-            .then(function (svcs: PluginInstance[]) {
-                Promise.map(svcs, function (svc: PluginInstance) {
+            .then(function (svcs: db.PluginInstance[]) {
+                Promise.map(svcs, function (svc: db.PluginInstance) {
                     let plugin = PluginManager.getPluginById(svc.id)
                     plugin.shutdown()
                     let index = __loaded_plugins.indexOf(plugin)
@@ -155,8 +155,8 @@ export namespace PluginManager {
      * @returns {array <Sequelize.Plugin>} An array of Sequelize rows representing loaded services.
      */
 
-    export function getAllServices(): Promise<PluginInstance[]> {
-        return db.Plugin.findAll()
+    export function getAllServices(): Promise<db.PluginInstance[]> {
+        return db.models.Plugin.findAll()
     }
 
     /**
@@ -164,8 +164,22 @@ export namespace PluginManager {
      * @param {Number} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
-    export function getServiceById (id: number): Promise<PluginInstance> {
-        return db.Plugin.findOne({ where: { id: id } })
+    export function getServiceById (id: number): Promise<db.PluginInstance | null> {
+        return db.models.Plugin.findById(id)
         // TODO: Validate plugin exists, fail otherwise
+    }
+
+    function createPluginDataTables(service: db.PluginInstance, table_names: string[]): Promise<any[]>{
+        // `data_structure` must be laid out as follows:
+        // { table_name: { columnOne: typeName, columnTwo: typeName }, ... }
+        
+        let prefix = createPluginDataTablePrefix(service.directory_name)
+        return Promise.map(Object.keys(table_names), function(table){
+            return db.sequelize.define(`${prefix}_${table}`,{})
+        })
+    }
+
+    function createPluginDataTablePrefix(plugin_dir:string):string{
+        return crypto.createHash('md5').update(plugin_dir).digest('base64')
     }
 }
