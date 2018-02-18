@@ -11,19 +11,24 @@ import { MessageInstance } from '../../models/message';
 const voluble_errors = require('../voluble-errors')
 const errs = require('common-errors')
 
+interface IPluginIDMap{
+    id: number,
+    plugin: PluginInstance
+}
+
 /**
  * The PluginManager keeps track of all loaded plugins, as well as initializing, loading and shutting down all detected plugins.
  * It also handles all plugin- and service-related operations.
  */
 export namespace PluginManager {
     var __plugin_dir: string = ""
-    var __loaded_plugins: Array<any> = []
+    var __loaded_plugins: Array<IPluginIDMap> = []
 
     export function getPluginById(id: number): Promise<any> {
         let p: any = null
-        __loaded_plugins.forEach(function (plugin: any) {
-            if (plugin[0] == id) {
-                p = plugin[1]
+        __loaded_plugins.forEach(function (plugin: IPluginIDMap) {
+            if (plugin.id == id) {
+                p = plugin.plugin
             }
         })
 
@@ -86,7 +91,8 @@ export namespace PluginManager {
                             // So now that the plugin exists in the database, let's try and make it work
                             .then(function (svc: PluginInstance) {
                                 if (plug_obj.init()) {
-                                    __loaded_plugins.push([svc.id, plug_obj])
+                                    let p:IPluginIDMap = {id: svc.id, plugin: plug_obj}
+                                    __loaded_plugins.push(p)
                                     console.log("Inited plugin " + svc.id + ": " + plug_obj.name)
                                     svc.initialized = true
 
