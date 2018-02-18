@@ -11,9 +11,9 @@ import { MessageInstance } from '../../models/message';
 const voluble_errors = require('../voluble-errors')
 const errs = require('common-errors')
 
-interface IPluginIDMap{
+interface IPluginIDMap {
     id: number,
-    plugin: PluginInstance
+    plugin: voluble_plugin
 }
 
 /**
@@ -24,7 +24,7 @@ export namespace PluginManager {
     var __plugin_dir: string = ""
     var __loaded_plugins: Array<IPluginIDMap> = []
 
-    export function getPluginById(id: number): Promise<any> {
+    export function getPluginById(id: number): Promise<voluble_plugin> {
         let p: any = null
         __loaded_plugins.forEach(function (plugin: IPluginIDMap) {
             if (plugin.id == id) {
@@ -65,7 +65,7 @@ export namespace PluginManager {
             if (fs.existsSync(plugin_file_abs)) {
 
                 Promise.try(function () {
-                    let plug_obj = require(plugin_file_abs)()
+                    let plug_obj: voluble_plugin = require(plugin_file_abs)()
                     winston.info("Loaded plugin:\n\t" + plug_obj.name)
                     return plug_obj
                 })
@@ -91,13 +91,13 @@ export namespace PluginManager {
                             // So now that the plugin exists in the database, let's try and make it work
                             .then(function (svc: PluginInstance) {
                                 if (plug_obj.init()) {
-                                    let p:IPluginIDMap = {id: svc.id, plugin: plug_obj}
+                                    let p: IPluginIDMap = { id: svc.id, plugin: plug_obj }
                                     __loaded_plugins.push(p)
                                     console.log("Inited plugin " + svc.id + ": " + plug_obj.name)
                                     svc.initialized = true
 
                                     // Add event listeners, so Voluble can react to message state changes
-                                    plug_obj._eventEmitter.on('message-state-update', function (msg: MessageInstance, message_state: string){
+                                    plug_obj._eventEmitter.on('message-state-update', function (msg: MessageInstance, message_state: string) {
                                         MessageManager.updateMessageState(msg, message_state, svc)
                                     })
 
@@ -142,13 +142,21 @@ export namespace PluginManager {
         })
             .then(function (svcs: PluginInstance[]) {
                 Promise.map(svcs, function (svc: PluginInstance) {
-                    let plugin = PluginManager.getPluginById(svc.id)
-                    plugin.shutdown()
-                    let index = __loaded_plugins.indexOf(plugin)
-                    if (index > -1) { __loaded_plugins.splice(index, 1) }
-                    plugin._eventEmitter.removeAllListeners('message-state-update')
-                    svc.initialized = false
-                    return svc.save()
+                    return PluginManager.getPluginById(svc.id)
+                        .then(function (plugin) {
+                            plugin.shutdown()
+
+                            let i = 0
+                            __loaded_plugins.forEach(element => {
+                                if (element.plugin == plugin) {
+                                    i = __loaded_plugins.indexOf(element)
+                                }
+                            });
+                            if (i > -1) { __loaded_plugins.splice(i, 1) }
+                            plugin._eventEmitter.removeAllListeners('message-state-update')
+                            svc.initialized = false
+                            return svc.save()
+                        })
                 })
             })
             .catch(function (err: any) {
@@ -170,8 +178,8 @@ export namespace PluginManager {
      * @param {Number} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
-    export function getServiceById (id: number): Promise<PluginInstance> {
-        return db.Plugin.findOne({ where: { id: id } })
+    export function getServiceById(id: number): PromiseLike<PluginInstance> {
+        return db.Plugin.findById(id)
         // TODO: Validate plugin exists, fail otherwise
     }
 }
