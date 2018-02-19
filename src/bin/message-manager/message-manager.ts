@@ -186,9 +186,7 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export function getMessageFromId(id: number): Promise<MessageInstance> {
-        return db.Message.findOne({
-            where: { id: id }
-        })
+    export function getMessageFromId(id: number): Promise<MessageInstance | null> {
+        return db.Message.findById(id)
     }
 }
