@@ -34,5 +34,5 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         auth0_id: DataTypes.STRING,
     })
 
-    return Contact
+    return User
 }
