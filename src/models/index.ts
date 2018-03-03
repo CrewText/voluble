@@ -10,6 +10,7 @@ import * as Plugin from './plugin'
 import * as Servicechain from './servicechain'
 import * as ServiceInSC from './servicesInServicechain'
 import * as Blast from './blast'
+import * as User from './user'
 
 export interface DbConnection {
     Contact: Sequelize.Model<Contact.ContactInstance, Contact.ContactAttributes>,
@@ -18,6 +19,7 @@ export interface DbConnection {
     Servicechain: Sequelize.Model<Servicechain.ServicechainInstance, Servicechain.ServicechainAttributes>,
     ServicesInSC: Sequelize.Model<ServiceInSC.ServicesInSCInstance, ServiceInSC.ServicesInSCAttributes>,
     Blast: Sequelize.Model<Blast.BlastInstance, Blast.BlastAttributes>,
+    User: Sequelize.Model<User.UserInstance, User.UserAttributes>
     [key: string]: any
 }
 
