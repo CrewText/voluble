@@ -6,6 +6,7 @@ export interface UserAttributes {
     email_address: string,
     phone_number: string,
     auth0_id: string
+    org_number: number
 }
 
 export interface UserInstance extends Sequelize.Instance<UserAttributes>{
@@ -18,6 +19,7 @@ export interface UserInstance extends Sequelize.Instance<UserAttributes>{
     email_address: string,
     phone_number: string,
     auth0_id: string
+    org_member: number
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
@@ -32,6 +34,7 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         email_address: DataTypes.STRING,
         phone_number: DataTypes.STRING,
         auth0_id: DataTypes.STRING,
+        org_number: DataTypes.BIGINT
     })
 
     return User
