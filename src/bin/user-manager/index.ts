@@ -46,7 +46,7 @@ export namespace UserManager {
                 return db.User.findById(user_id)
             })
             .then(function (user_inst) {
-                if (!user_inst) { return Promise.reject(errs.NotFoundError()) }
+                if (!user_inst) { return Promise.reject(new errs.NotFoundError("Could not find user with ID " + id)) }
 
                 return Auth0Manager.getEncryptedUserDetailsByID(user_inst.auth0_id)
                     .then(function (encrypted_details) {
