@@ -3,7 +3,10 @@ import db from '../../models'
 const winston = require('winston')
 import * as Promise from "bluebird"
 import * as crypto from 'crypto'
-import { json } from 'express';
+const errs = require('common-errors')
+import * as utils from '../../utilities'
+import { UserInstance } from '../../models/user';
+import { Auth0Manager } from './auth0-manager'
 
 export namespace UserManager {
 
@@ -35,5 +38,20 @@ export namespace UserManager {
         let decr_string = cipher.update(encrypted_data, 'base64', 'utf8') + cipher.final('base64')
 
         return <IUser>JSON.parse(decr_string)
+    }
+
+    export function getUserDetailsById(id: string): Promise<IUser> {
+        return utils.verifyNumberIsInteger(id)
+            .then(function (user_id) {
+                return db.User.findById(user_id)
+            })
+            .then(function (user_inst) {
+                if (!user_inst) { return Promise.reject(errs.NotFoundError()) }
+
+                return Auth0Manager.getEncryptedUserDetailsByID(user_inst.auth0_id)
+                    .then(function (encrypted_details) {
+                        return decryptUserAttributes(encrypted_details, user_inst.auth0_encr_iv)
+                    })
+            })
     }
 }
