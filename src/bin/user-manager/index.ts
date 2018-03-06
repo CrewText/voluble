@@ -17,7 +17,7 @@ export namespace UserManager {
         [key: string]: any
     }
 
-    export function encryptUserAttributes(user: IUser, encr_iv: string): string {
+    function encryptUserAttributes(user: IUser, encr_iv: string): string {
         // As recommended by https://auth0.com/rules/encrypt-sensitive-data
         let data_string = JSON.stringify(user || {})
 
@@ -28,7 +28,7 @@ export namespace UserManager {
         return cipher.update(data_string, 'utf8', 'base64') + cipher.final('base64')
     }
 
-    export function decryptUserAttributes(encrypted_data: string, encr_iv: string): IUser {
+    function decryptUserAttributes(encrypted_data: string, encr_iv: string): IUser {
         // As recommended by https://auth0.com/rules/decrypt-sensitive-data
 
         let encodeKey = crypto.createHash('sha256')
