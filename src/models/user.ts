@@ -5,7 +5,8 @@ export interface UserAttributes {
     surname: string,
     email_address: string,
     phone_number: string,
-    auth0_id: string
+    auth0_id: string,
+    auth0_encr_iv: string,
     org_number: number
 }
 
@@ -18,7 +19,8 @@ export interface UserInstance extends Sequelize.Instance<UserAttributes>{
     surname: string,
     email_address: string,
     phone_number: string,
-    auth0_id: string
+    auth0_id: string,
+    auth0_encr_iv: string
     org_member: number
 }
 
@@ -34,6 +36,7 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         email_address: DataTypes.STRING,
         phone_number: DataTypes.STRING,
         auth0_id: DataTypes.STRING,
+        auth0_encr_iv: DataTypes.STRING,
         org_number: DataTypes.BIGINT
     })
 
