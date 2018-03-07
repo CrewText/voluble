@@ -10,8 +10,8 @@ export namespace Auth0Manager {
             body:
                 {
                     grant_type: 'client_credentials',
-                    client_id: '0nUX32BCmm16aWmtfiDi3TSryXgYiJm9',
-                    client_secret: 'GC9aRT84s_8Uv5kMWRVEP4qh3VzyuK6QNZyylCfe5bgaXOB-eOziQImTgEv_dBqZ',
+                    client_id: process.env.AUTH0_CLIENT_ID,
+                    client_secret: process.env.AUTH0_CLIENT_SECRET,
                     audience: process.env.AUTH0_CLIENT_API_IDENTIFER
                 },
             json: true
