@@ -1,14 +1,15 @@
-var express = require('express');
-var router = express.Router();
+import * as express from "express"
+import * as Promise from "bluebird"
+const router = express.Router();
 const winston = require('winston')
-const Promise = require('bluebird')
 
-const utils = require('../utilities')
-const scManager = require('../bin/servicechain-manager/servicechain-manager')
-const pluginManager = require('../bin/plugin-manager/plugin-manager')
+import * as utils from '../utilities'
+import {ServicechainManager} from '../bin/servicechain-manager/servicechain-manager'
+import {PluginManager} from '../bin/plugin-manager/plugin-manager'
+import { ServicesInSCInstance } from "../models/servicesInServicechain";
 
 router.get('/', function (req, res, next) {
-  scManager.getAllServicechains()
+  ServicechainManager.getAllServicechains()
     .then(function (rows) {
       res.status(200).json(rows)
     })
@@ -24,7 +25,7 @@ router.post('/', function (req, res, next) {
   winston.debug("Request for new SC: " + req.body.name + ", with services:")
   winston.debug(services_list)
 
-  scManager.createNewServicechain(req.body.name, services_list)
+  ServicechainManager.createNewServicechain(req.body.name, services_list)
     .then(function (sc) {
       res.status(200).json(sc)
     })
@@ -39,15 +40,15 @@ router.get('/:sc_id', function (req, res, next) {
   utils.verifyNumberIsInteger(req.params.sc_id)
     .then(function (sc_id) {
       // First, get the servicechain itself
-      return scManager.getServicechainById(sc_id)
+      return ServicechainManager.getServicechainById(sc_id)
     })
     .then(function (sc) {
       // Then, find out which services are in the chain
-      return scManager.getServicesInServicechain(sc.id)
+      return ServicechainManager.getServicesInServicechain(sc.id)
         .then(function (svcs_in_sc) {
           // We only have the IDs of the services - get their names too!
-          return Promise.map(svcs_in_sc, function (svc_in_sc) {
-            return pluginManager.getServiceById(svc_in_sc.service_id)
+          return Promise.map(svcs_in_sc, function (svc_in_sc:ServicesInSCInstance) {
+            return PluginManager.getServiceById(svc_in_sc.service_id)
           })
             .then(function (full_svcs) {
               // And now we have all of the info for the services, add them into
@@ -75,7 +76,7 @@ router.put('/{id}', function (req, res, next) {
 router.delete('/:sc_id', function (req, res, next) {
   utils.verifyNumberIsInteger(req.params.sc_id)
     .then(function (sc_id) {
-      return scManager.deleteServicechain(sc_id)
+      return ServicechainManager.deleteServicechain(sc_id)
     })
     .then(function (row) {
       res.status(200).json(row)

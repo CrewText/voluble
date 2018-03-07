@@ -7,6 +7,7 @@
     "start": "node dist/app.js"
   },
   "dependencies": {
+    "@types/request-promise": "^4.1.41",
     "@types/winston": "^2.3.7",
     "bluebird": "^3.5.1",
     "body-parser": "~1.17.1",
@@ -16,7 +17,8 @@
     "express": "^4.15.5",
     "mariasql": "^0.2.6",
     "mysql2": "^1.5.1",
-    "node-telegram-bot-api": "^0.30.0",
+    "request": "^2.83.0",
+    "request-promise": "^4.2.2",
     "sequelize": "^4.32.2",
     "telegram-mtproto": "^2.2.8",
     "typedoc": "^0.9.0",
