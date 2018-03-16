@@ -10,6 +10,11 @@ import { Auth0Manager } from './auth0-manager'
 
 export namespace UserManager {
 
+    export interface IUserMetadata {
+        app_metadata: Object,
+        user_metadata: Object
+    }
+
     export interface IUser {
         first_name: string
         surname: string
@@ -28,7 +33,7 @@ export namespace UserManager {
         return cipher.update(data_string, 'utf8', 'base64') + cipher.final('base64')
     }
 
-    function decryptUserAttributes(encrypted_data: string, encr_iv: string): IUser {
+    function decryptUserAttributes(encrypted_data: string, encr_iv: string): any {
         // As recommended by https://auth0.com/rules/decrypt-sensitive-data
 
         let encodeKey = crypto.createHash('sha256')
@@ -37,10 +42,10 @@ export namespace UserManager {
         let cipher = crypto.createDecipheriv('aes-256-cbc', encodeKey, encr_iv)
         let decr_string = cipher.update(encrypted_data, 'base64', 'utf8') + cipher.final('base64')
 
-        return <IUser>JSON.parse(decr_string)
+        return JSON.parse(decr_string)
     }
 
-    export function getUserDetailsById(id: string): Promise<IUser> {
+    export function getUserDetailsById(id: string): Promise<IUserMetadata> {
         return utils.verifyNumberIsInteger(id)
             .then(function (user_id) {
                 return db.User.findById(user_id)
@@ -48,9 +53,13 @@ export namespace UserManager {
             .then(function (user_inst) {
                 if (!user_inst) { return Promise.reject(new errs.NotFoundError("Could not find user with ID " + id)) }
 
-                return Auth0Manager.getEncryptedUserDetailsByID(user_inst.auth0_id)
-                    .then(function (encrypted_details) {
-                        return decryptUserAttributes(encrypted_details, user_inst.auth0_encr_iv)
+                return Auth0Manager.getEncryptedUserMetadataByID(user_inst.auth0_id)
+                    .then(function (encrypted_details: any) {
+                        let m: IUserMetadata = {
+                            "user_metadata": decryptUserAttributes(encrypted_details["user_metadata"], user_inst.auth0_encr_iv),
+                            "app_metadata": decryptUserAttributes(encrypted_details["app_metadata"], user_inst.auth0_encr_iv)
+                        }
+                        return m
                     })
             })
     }
