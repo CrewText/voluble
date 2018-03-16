@@ -45,7 +45,7 @@ export namespace UserManager {
         return JSON.parse(decr_string)
     }
 
-    export function getUserDetailsById(id: string): Promise<IUserMetadata> {
+    export function getUserMetadataByID(id: string): Promise<IUserMetadata> {
         return utils.verifyNumberIsInteger(id)
             .then(function (user_id) {
                 return db.User.findById(user_id)
