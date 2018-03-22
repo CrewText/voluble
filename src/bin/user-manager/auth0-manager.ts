@@ -28,7 +28,7 @@ export namespace Auth0Manager {
         // Do verification of JWT
     }
 
-    export function getEncryptedUserMetadataByID(auth0_id: string): PromiseLike<Object> {
+    export function getUserMetadataByID(auth0_id: string): PromiseLike<Object> {
         return getCCAccessToken()
             .then(function (access_token) {
                 let req_opts = {
