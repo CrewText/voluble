@@ -47,7 +47,8 @@ export namespace Auth0Manager {
                 return body["access_token"]
             })
 
-        // Do verification of JWT
+        // TODO: Do verification of JWT
+        // TODO: Handle errors
     }
 
     export function getUserProfileByID(auth0_id: string): PromiseLike<Auth0Profile> {
