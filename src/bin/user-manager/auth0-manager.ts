@@ -50,7 +50,7 @@ export namespace Auth0Manager {
         // Do verification of JWT
     }
 
-    export function getUserProfileByID(auth0_id: string): PromiseLike<Object> {
+    export function getUserProfileByID(auth0_id: string): PromiseLike<Auth0Profile> {
         return getCCAccessToken()
             .then(function (access_token) {
                 let req_opts = {
@@ -61,10 +61,7 @@ export namespace Auth0Manager {
                 }
             })
             .then(function (user_profile: any) {
-                return {
-                    user_metadata: user_profile["user_metadata"],
-                    app_metadata: user_profile["app_metadata"]
-                }
+                return <Auth0Profile>user_profile
             })
 
     }
