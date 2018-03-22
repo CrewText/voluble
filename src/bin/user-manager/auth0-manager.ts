@@ -4,6 +4,28 @@ import * as jwt from 'jsonwebtoken'
 
 export namespace Auth0Manager {
 
+    export interface Auth0Profile{
+        app_metadata: Object | any,
+        blocked: boolean | void,
+        created_at: Date,
+        email: string,
+        email_verified: boolean,
+        identities: Object|any,
+        multifactor: string[] | void,
+        last_ip: string | void,
+        last_login: Date | void,
+        logins_count: number | void,
+        name: string,
+        nickname: string,
+        phone_number: string,
+        phone_verified: boolean,
+        picture: string,
+        updated_at: Date,
+        user_id: string,
+        user_metadata: Object|any,
+        username: string
+    }
+
     function getCCAccessToken(): PromiseLike<string> {
         let req_opts = {
             method: 'POST',
@@ -28,7 +50,7 @@ export namespace Auth0Manager {
         // Do verification of JWT
     }
 
-    export function getUserMetadataByID(auth0_id: string): PromiseLike<Object> {
+    export function getUserProfileByID(auth0_id: string): PromiseLike<Object> {
         return getCCAccessToken()
             .then(function (access_token) {
                 let req_opts = {
