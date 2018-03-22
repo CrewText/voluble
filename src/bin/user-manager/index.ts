@@ -20,12 +20,7 @@ export namespace UserManager {
         user_metadata: Object
     }
 
-    export interface IUser {
-        first_name: string
-        surname: string
-        email_address: string
-        [key: string]: any
-    }
+    export type Auth0Profile = Auth0Manager.Auth0Profile
 
     // The distinction here is between user details (which might represent something approaching a full profile),
     // which is a combination of the Auth0 user profile, and the Voluble database information.
