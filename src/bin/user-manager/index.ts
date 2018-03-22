@@ -25,4 +25,12 @@ export namespace UserManager {
     // The distinction here is between user details (which might represent something approaching a full profile),
     // which is a combination of the Auth0 user profile, and the Voluble database information.
 
+    
+    export function addNewUser(Auth0ID: string, org_id: number | null){
+        return db.User.create({
+            auth0_id: Auth0ID,
+            org_number: org_id || null
+        })
+    }
+
 }
