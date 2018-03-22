@@ -1,6 +1,7 @@
 import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import * as jwt from 'jsonwebtoken'
+const errs = require('common-errors')
 
 export namespace Auth0Manager {
 
@@ -44,6 +45,9 @@ export namespace Auth0Manager {
 
         return rp(req_opts)
             .then(function (body: any) {
+                if (!body["access_token"]){
+                    return Promise.reject(new errs.NotFoundError('No access token received'))
+                }
                 return body["access_token"]
             })
 
