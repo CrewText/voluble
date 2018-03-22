@@ -30,27 +30,4 @@ export namespace UserManager {
     // The distinction here is between user details (which might represent something approaching a full profile),
     // which is a combination of the Auth0 user profile, and the Voluble database information.
 
-    /**
-     * Returns the full decrypted metadata stored by Auth0 - this is the PII not covered by Auth0's basic Profile,
-     * such as user role, and so on.
-     * @param vol_user_id Voluble user ID
-     */
-    export function getUserMetadataByID(vol_user_id: string): Promise<IUserMetadata> {
-        return utils.verifyNumberIsInteger(vol_user_id)
-            .then(function (user_id) {
-                return db.User.findById(user_id)
-            })
-            .then(function (user_inst) {
-                if (!user_inst) { return Promise.reject(new errs.NotFoundError("Could not find user with ID " + vol_user_id)) }
-
-                return Auth0Manager.getUserMetadataByID(user_inst.auth0_id)
-                    .then(function (details: any) {
-                        let m: IUserMetadata = {
-                            "user_metadata": details["user_metadata"],
-                            "app_metadata": details["app_metadata"]
-                        }
-                        return m
-                    })
-            })
-    }
 }
