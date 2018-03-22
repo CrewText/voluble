@@ -31,6 +31,7 @@ export namespace UserManager {
             auth0_id: Auth0ID,
             org_number: org_id || null
         })
+        //TODO: Handle database errors
     }
 
 }
