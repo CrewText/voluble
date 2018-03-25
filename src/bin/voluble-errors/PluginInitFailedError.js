@@ -1,4 +1,4 @@
-function PluginInitFailedError(message) {
+function PluginInitFailedError(message:string) {
     this.message = message
     this.name = "PluginInitFailedError"
     Error.captureStackTrace(this, PluginInitFailedError)
