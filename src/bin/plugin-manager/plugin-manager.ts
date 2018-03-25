@@ -74,7 +74,7 @@ export namespace PluginManager {
                         return db.Plugin.findOne({
                             where: { 'directory_name': plugin_subdir_rel }
                         })
-                            .then(function (svc: PluginInstance) {
+                            .then(function (svc) {
                                 if (!svc) {
                                     // This plugin doesn't exist in the database, so let's add an entry for it
                                     return db.Plugin.create({
