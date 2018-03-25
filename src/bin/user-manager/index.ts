@@ -34,4 +34,18 @@ export namespace UserManager {
         //TODO: Handle database errors
     }
 
+    export function getUserProfile(voluble_user_id: number): PromiseLike<Auth0Manager.Auth0Profile>{
+        return utils.verifyNumberIsInteger(voluble_user_id)
+        .then(function(voluble_uid){
+            return db.User.findById(voluble_uid)
+            
+        .then(function(user_entry){
+            if (!user_entry){
+                return Promise.reject(new errs.NotFoundError(`Couldn't find user with VID ${voluble_user_id} in the database`))
+            }
+            return Auth0Manager.getUserProfileByID(user_entry.auth0_id)
+        })
+        })
+    }
+
 }
