@@ -60,7 +60,7 @@ export namespace Auth0Manager {
     export function getUserProfileByID(auth0_id: string): Promise<Auth0Profile> {
         return getCCAccessToken()
             .then(function (access_token) {
-                winston.debug(`Using token ${access_token["access_token"]}`)
+                //winston.debug(`Using token ${access_token["access_token"]}`)
                 let req_opts = {
                     method: 'GET',
                     url: process.env.AUTH0_BASE_URL + `/api/v2/users/${auth0_id}`,
