@@ -1,18 +1,19 @@
 import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import * as jwt from 'jsonwebtoken'
+import { access } from 'fs-extra';
 const winston = require('winston')
 const errs = require('common-errors')
 
 export namespace Auth0Manager {
 
-    export interface Auth0Profile{
+    export interface Auth0Profile {
         app_metadata: Object | any,
         blocked: boolean | void | null,
         created_at: Date,
         email: string,
         email_verified: boolean,
-        identities: Object|any,
+        identities: Object | any,
         multifactor: string[] | void | null,
         last_ip: string | void | null,
         last_login: Date | void | null,
@@ -24,11 +25,11 @@ export namespace Auth0Manager {
         picture: string,
         updated_at: Date,
         user_id: string,
-        user_metadata: Object|any,
+        user_metadata: Object | any,
         username: string
     }
 
-    function getCCAccessToken(): PromiseLike<string> {
+    function getCCAccessToken(): Promise<string> {
         let req_opts = {
             method: 'POST',
             url: process.env.AUTH0_BASE_URL + "/oauth/token",
@@ -46,29 +47,34 @@ export namespace Auth0Manager {
 
         return rp(req_opts)
             .then(function (body: any) {
-                if (!body["access_token"]){
+                if (!body["access_token"]) {
                     return Promise.reject(new errs.NotFoundError('No access token received'))
                 }
-                console.debug(`Access token received: ${body["access_token"]}`)
-                return body["access_token"]
+                return body
             })
 
         // TODO: Do verification of JWT
         // TODO: Handle errors
     }
 
-    export function getUserProfileByID(auth0_id: string): PromiseLike<Auth0Profile> {
+    export function getUserProfileByID(auth0_id: string): Promise<Auth0Profile> {
         return getCCAccessToken()
             .then(function (access_token) {
+                winston.debug(`Using token ${access_token["access_token"]}`)
                 let req_opts = {
                     method: 'GET',
                     url: process.env.AUTH0_BASE_URL + `/api/v2/users/${auth0_id}`,
-                    headers: { 'Authorization': `Bearer ${access_token}` },
+                    headers: { 'Authorization': "Bearer " + access_token["access_token"]},
                     json: true
                 }
+                return rp(req_opts)
             })
             .then(function (user_profile: any) {
-                return <Auth0Profile>user_profile
+                if (!user_profile) {
+                    return Promise.reject(new errs.NotFoundError("Could not find Auth0 user with AID " + auth0_id))
+                }
+                winston.debug("Found user profile for " + auth0_id + ": " + user_profile.email)
+                return Promise.resolve(<Auth0Profile>user_profile)
             })
 
     }
