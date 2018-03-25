@@ -6,7 +6,7 @@ import * as Promise from "bluebird"
  * @returns {promise} containing value of the ID number as integer
  */
 
-export function verifyNumberIsInteger(id:string): Promise<number> {
+export function verifyNumberIsInteger(id:string|number): Promise<number> {
     let parsed_id = parseInt(id, 10)
     if (parsed_id === NaN) {
       return Promise.reject(`Supplied number is not an integer: ${id}`)
