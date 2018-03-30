@@ -30,6 +30,14 @@ export namespace Auth0Manager {
     }
 
     function getCCAccessToken(): Promise<string> {
+    interface CCAccessToken {
+        access_token: string,
+        token_type: string,
+        expires_in: number,
+        [key: string]: any
+    }
+
+    function getCCAccessToken(): Promise<CCAccessToken> {
         let req_opts = {
             method: 'POST',
             url: process.env.AUTH0_BASE_URL + "/oauth/token",
