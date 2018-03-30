@@ -29,7 +29,6 @@ export namespace Auth0Manager {
         username: string
     }
 
-    function getCCAccessToken(): Promise<string> {
     interface CCAccessToken {
         access_token: string,
         token_type: string,
@@ -58,7 +57,7 @@ export namespace Auth0Manager {
                 if (!body["access_token"]) {
                     return Promise.reject(new errs.NotFoundError('No access token received'))
                 }
-                return body
+                return Promise.resolve(<CCAccessToken>body)
             })
 
         // TODO: Do verification of JWT
@@ -72,7 +71,7 @@ export namespace Auth0Manager {
                 let req_opts = {
                     method: 'GET',
                     url: process.env.AUTH0_BASE_URL + `/api/v2/users/${auth0_id}`,
-                    headers: { 'Authorization': "Bearer " + access_token["access_token"]},
+                    headers: { 'Authorization': "Bearer " + access_token.access_token },
                     json: true
                 }
                 return rp(req_opts)
