@@ -59,4 +59,16 @@ export namespace UserManager {
         })
     }
 
+    export function deleteUserFromVoluble(voluble_user_id:number):Promise<boolean>{
+        return db.User.findById(voluble_user_id)
+        .then(function(user_entry){
+            if (!user_entry){return Promise.reject(errs.NotFoundError("User with ID " + voluble_user_id + "cannot be found"))}
+
+            return user_entry.destroy()
+        })
+        .then(function(){
+            return Promise.resolve(true)
+        })
+    }
+
 }
