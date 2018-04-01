@@ -3,13 +3,14 @@ import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
 import { UserManager } from '../bin/user-manager'
+import user from "../models/user";
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {
 });
 
 router.get('/:user_id', function (req, res, next) {
-  UserManager.getUserProfile(req.params["user_id"])
+  UserManager.getUserFullProfile(req.params["user_id"])
     .then(function (user_profile) {
       res.status(200).json(user_profile)
     })
@@ -17,6 +18,27 @@ router.get('/:user_id', function (req, res, next) {
       res.status(500).send(error.message)
     })
   //TODO: Add user authentication, make sure they're able to see the user they're asking for!
+})
+
+router.post('/', function (req, res, next) {
+  winston.debug(`Creating new user with id ${req.body.auth0_id}`)
+  winston.debug(Object.keys(req.body))
+
+
+  UserManager.getUserEntryByAuth0ID(req.body.auth0_id)
+    .then(function (user_entry) {
+      if (!user_entry) {
+        UserManager.addNewUser(req.body.auth0_id, req.body.org_id || null)
+          .then(function (new_user_entry) {
+            res.status(200).json(new_user_entry)
+          })
+      } else {
+        res.status(200).json(user_entry)
+      }
+    })
+    .catch(function (error: any) {
+      res.status(500).send(error.message)
+    })
 })
 
 module.exports = router;

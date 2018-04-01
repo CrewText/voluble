@@ -34,7 +34,7 @@ export namespace UserManager {
         //TODO: Handle database errors
     }
 
-    export function getUserProfile(voluble_user_id: number): Promise<Auth0Manager.Auth0Profile> {
+    export function getUserFullProfile(voluble_user_id: number): Promise<Auth0Manager.Auth0Profile> {
         return utils.verifyNumberIsInteger(voluble_user_id)
             .then(function (voluble_uid) {
                 return db.User.findById(voluble_uid)
@@ -46,6 +46,17 @@ export namespace UserManager {
                         return Auth0Manager.getUserProfileByID(user_entry.auth0_id)
                     })
             })
+    }
+
+    export function getUserEntryByVID(voluble_user_id: number): Promise<UserInstance | null> {
+        return db.User.findById(voluble_user_id)
+    }
+
+    export function getUserEntryByAuth0ID(auth0_user_id: number): Promise<UserInstance | null> {
+        return db.User.findOne({
+            "where":
+                { "auth0_id": auth0_user_id }
+        })
     }
 
 }
