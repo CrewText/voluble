@@ -2,6 +2,7 @@ import * as express from "express"
 import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
+const errs = require('common-errors')
 import { UserManager } from '../bin/user-manager'
 import user from "../models/user";
 
@@ -21,8 +22,12 @@ router.get('/:user_id', function (req, res, next) {
 })
 
 router.post('/', function (req, res, next) {
-  winston.debug(`Creating new user with id ${req.body.auth0_id}`)
-  winston.debug(Object.keys(req.body))
+  if (!req.body.auth0_id) {
+    res.status(400).json({
+      error: "Missing field: auth0_id"
+    })
+    return
+  }
 
 
   UserManager.getUserEntryByAuth0ID(req.body.auth0_id)
@@ -30,7 +35,7 @@ router.post('/', function (req, res, next) {
       if (!user_entry) {
         UserManager.addNewUser(req.body.auth0_id, req.body.org_id || null)
           .then(function (new_user_entry) {
-            res.status(200).json(new_user_entry)
+            res.status(201).json(new_user_entry)
           })
       } else {
         res.status(200).json(user_entry)
@@ -58,4 +63,5 @@ router.delete('/:voluble_user_id', function (req, res, next) {
     })
 
 })
+
 module.exports = router;
