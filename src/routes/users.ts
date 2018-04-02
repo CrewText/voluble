@@ -41,4 +41,21 @@ router.post('/', function (req, res, next) {
     })
 })
 
+router.delete('/:voluble_user_id', function (req, res, next) {
+
+  UserManager.deleteUserFromVoluble(req.params.voluble_user_id)
+    .then(function (user_deleted) {
+      if (user_deleted) {
+        res.status(204).send()
+      } else {
+        res.status(500).send()
+      }
+    })
+    .catch(errs.NotFoundError, function (error) {
+      res.status(404).json({
+          error: `User not found: ${req.params.voluble_user_id}`
+        })
+    })
+
+})
 module.exports = router;
