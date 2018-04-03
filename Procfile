@@ -1,2 +1,2 @@
-web: npm run-script start-server
-worker npm run-script start-worker
+web: npm start
+worker: npm run-script start-worker

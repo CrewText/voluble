@@ -4,7 +4,7 @@
   "private": true,
   "main": "app.js",
   "scripts": {
-    "start-server": "node dist/server/server-main.js",
+    "start": "node dist/server/server-main.js",
     "start-worker": "node dist/worker/worker-main.js"
   },
   "dependencies": {
