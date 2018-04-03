@@ -92,6 +92,9 @@ export namespace MessageManager {
             }
         })
             .then(function (currentSvcInSC) {
+                if (!currentSvcInSC){
+                    return Promise.reject(new errors.NotFoundError("Could not find current service in servicechain"))
+                }
                 return db.ServicesInSC.findOne({
                     where: {
                         servicechain_id: msg.servicechain,

@@ -1,12 +1,12 @@
-const express = require('express');
+import * as express from 'express'
 const router = express.Router();
-const Promise = require('bluebird')
+import * as Promise from 'bluebird'
 const winston = require('winston')
-const pluginManager = require('../bin/plugin-manager/plugin-manager')
-const utils = require('../utilities')
+import {PluginManager} from '../bin/plugin-manager/plugin-manager'
+import * as utils from '../utilities'
 
 router.get('/', function(req,res,next){
-  pluginManager.getAllPlugins()
+  PluginManager.getAllServices()
   .then(function(rows){
     res.status(200).json(rows)
   })
@@ -19,7 +19,7 @@ router.get('/', function(req,res,next){
 router.get('/:service_id', function(req, res, next){
   utils.verifyNumberIsInteger(req.params.service_id)
   .then(function(service_id){
-    return pluginManager.getServiceById(service_id)
+    return PluginManager.getServiceById(service_id)
   })
   .then(function(plugin){
     res.status(200).json(plugin)

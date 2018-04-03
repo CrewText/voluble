@@ -7,6 +7,7 @@
     "start": "node dist/app.js"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^7.2.5",
     "@types/request-promise": "^4.1.41",
     "@types/winston": "^2.3.7",
     "bluebird": "^3.5.1",
@@ -15,10 +16,12 @@
     "debug": "~2.6.3",
     "esendex": "^0.1.8",
     "express": "^4.15.5",
+    "jsonwebtoken": "^8.2.0",
     "mariasql": "^0.2.6",
     "mysql2": "^1.5.1",
     "request": "^2.83.0",
     "request-promise": "^4.2.2",
+    "rsmq": "^0.8.3",
     "sequelize": "^4.32.2",
     "telegram-mtproto": "^2.2.8",
     "typedoc": "^0.9.0",

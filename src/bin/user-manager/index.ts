@@ -8,50 +8,67 @@ import * as utils from '../../utilities'
 import { UserInstance } from '../../models/user';
 import { Auth0Manager } from './auth0-manager'
 
+/**
+ * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and
+ * constructing full user profiles from the information stored in the Voluble database and extra
+ * PII stored in the Auth0 database, both in cleartext and encrypted.
+*/
 export namespace UserManager {
 
-    export interface IUser {
-        first_name: string
-        surname: string
-        email_address: string
-        [key: string]: any
+    export interface IUserMetadata {
+        app_metadata: Object,
+        user_metadata: Object
     }
 
-    function encryptUserAttributes(user: IUser, encr_iv: string): string {
-        // As recommended by https://auth0.com/rules/encrypt-sensitive-data
-        let data_string = JSON.stringify(user || {})
+    export type Auth0Profile = Auth0Manager.Auth0Profile
 
-        let decodeKey = crypto.createHash('sha256')
-            .update(process.env.ENCR_PASS || "", 'utf8').digest()
+    // The distinction here is between user details (which might represent something approaching a full profile),
+    // which is a combination of the Auth0 user profile, and the Voluble database information.
 
-        let cipher = crypto.createCipheriv('aes-256-cbc', decodeKey, encr_iv)
-        return cipher.update(data_string, 'utf8', 'base64') + cipher.final('base64')
+
+    export function addNewUser(Auth0ID: string, org_id: number | null) {
+        return db.User.create({
+            auth0_id: Auth0ID,
+            org_number: org_id || null
+        })
+        //TODO: Handle database errors
     }
 
-    function decryptUserAttributes(encrypted_data: string, encr_iv: string): IUser {
-        // As recommended by https://auth0.com/rules/decrypt-sensitive-data
+    export function getUserFullProfile(voluble_user_id: number): Promise<Auth0Manager.Auth0Profile> {
+        return utils.verifyNumberIsInteger(voluble_user_id)
+            .then(function (voluble_uid) {
+                return db.User.findById(voluble_uid)
 
-        let encodeKey = crypto.createHash('sha256')
-            .update(process.env.ENCR_PASS || "", 'utf8').digest()
-
-        let cipher = crypto.createDecipheriv('aes-256-cbc', encodeKey, encr_iv)
-        let decr_string = cipher.update(encrypted_data, 'base64', 'utf8') + cipher.final('base64')
-
-        return <IUser>JSON.parse(decr_string)
-    }
-
-    export function getUserDetailsById(id: string): Promise<IUser> {
-        return utils.verifyNumberIsInteger(id)
-            .then(function (user_id) {
-                return db.User.findById(user_id)
-            })
-            .then(function (user_inst) {
-                if (!user_inst) { return Promise.reject(new errs.NotFoundError("Could not find user with ID " + id)) }
-
-                return Auth0Manager.getEncryptedUserDetailsByID(user_inst.auth0_id)
-                    .then(function (encrypted_details) {
-                        return decryptUserAttributes(encrypted_details, user_inst.auth0_encr_iv)
+                    .then(function (user_entry) {
+                        if (!user_entry) {
+                            return Promise.reject(new errs.NotFoundError(`Couldn't find user with VID ${voluble_user_id} in the database`))
+                        }
+                        return Auth0Manager.getUserProfileByID(user_entry.auth0_id)
                     })
             })
     }
+
+    export function getUserEntryByVID(voluble_user_id: number): Promise<UserInstance | null> {
+        return db.User.findById(voluble_user_id)
+    }
+
+    export function getUserEntryByAuth0ID(auth0_user_id: number): Promise<UserInstance | null> {
+        return db.User.findOne({
+            "where":
+                { "auth0_id": auth0_user_id }
+        })
+    }
+
+    export function deleteUserFromVoluble(voluble_user_id:number):Promise<boolean>{
+        return db.User.findById(voluble_user_id)
+        .then(function(user_entry){
+            if (!user_entry){return Promise.reject(errs.NotFoundError("User with ID " + voluble_user_id + "cannot be found"))}
+
+            return user_entry.destroy()
+        })
+        .then(function(){
+            return Promise.resolve(true)
+        })
+    }
+
 }

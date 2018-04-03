@@ -69,8 +69,8 @@ router.get('/:sc_id', function (req, res, next) {
 
 
 /* Note: this is boilerplate and has NOT been implemented yet */
-router.put('/{id}', function (req, res, next) {
-  res.render('servicechains_update', { group_id: id, data: req.params }) //TODO: Make PUT/servicechains/ID work
+router.put('/:id', function (req, res, next) {
+  res.render('servicechains_update', { group_id: req.params.id, data: req.params }) //TODO: Make PUT/servicechains/ID work
 })
 
 router.delete('/:sc_id', function (req, res, next) {
