@@ -1,9 +1,9 @@
 var errors = require('common-errors')
 var voluble_errors = require('../../bin/voluble-errors')
-import * as db from '../../models'
+import * as db from '../server/models'
 import * as events from 'events'
-import { ContactInstance } from '../../models/contact';
-import { MessageInstance } from '../../models/message';
+import { ContactInstance } from '../server/models/contact';
+import { MessageInstance } from '../server/models/message';
 export type contactInstance = ContactInstance
 export type messageInstance = MessageInstance
 
