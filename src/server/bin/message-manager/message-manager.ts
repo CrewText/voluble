@@ -2,7 +2,7 @@ const winston = require('winston')
 import * as Promise from "bluebird"
 import * as events from "events"
 import * as utilities from "../../utilities"
-import db from '../../models'
+const db = require('../../models')
 import * as volubleErrors from '../voluble-errors'
 import { ServicechainManager } from '../servicechain-manager/servicechain-manager'
 import { PluginManager } from '../plugin-manager/plugin-manager'
@@ -22,7 +22,7 @@ export namespace MessageManager {
     eventEmitter.on('send-message', doMessageSend)
     eventEmitter.on('message-failed', onMessageFailed)
     eventEmitter.on('message-sent', onMessageSent)
-
+    
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
