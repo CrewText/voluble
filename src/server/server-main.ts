@@ -29,6 +29,9 @@ const routerServicechains = require('./routes/servicechains');
 winston.info("Loading plugin manager")
 import { PluginManager } from './bin/plugin-manager/plugin-manager'
 
+winston.info("Loading queue manager")
+import { QueueManager } from './bin/queue-manager'
+
 winston.info("Starting Express server")
 const app = express();
 
@@ -78,11 +81,11 @@ function onError(error: any) {
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-if (!fs.existsSync(process.env.SSL_KEY_PATH || "")){
+if (!fs.existsSync(process.env.SSL_KEY_PATH || "")) {
   throw new Error("SSL key does not exist at " + process.env.SSL_KEY_PATH)
 }
 
-if (!fs.existsSync(process.env.SSL_CERT_PATH || "")){
+if (!fs.existsSync(process.env.SSL_CERT_PATH || "")) {
   throw new Error("SSL certificate does not exist at " + process.env.SSL_CERT_PATH)
 }
 
