@@ -1,7 +1,7 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 let errors = require('common-errors')
-import db from '../../models'
+import * as db from '../../models'
 import { ContactManager } from '../contact-manager/contact-manager'
 import { ServicesInSCInstance } from '../../models/servicesInServicechain';
 import { ServicechainInstance } from '../../models/servicechain';
@@ -17,7 +17,7 @@ export namespace ServicechainManager {
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
     export function getServicesInServicechain(servicechain_id: number): Promise<ServicesInSCInstance[]> {
-        return db.ServicesInSC.findAll({
+        return db.models.ServicesInSC.findAll({
             where: {
                 servicechain_id: servicechain_id
             },
@@ -28,13 +28,13 @@ export namespace ServicechainManager {
     export function getServicechainFromContactId(contact_id: number): Promise<ServicechainInstance> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
-                return db.Contact.findOne({
+                return db.models.Contact.findOne({
                     where: { id: cont_id },
                     attributes: ['default_servicechain']
                 })
             })
             .then(function (contact_svc) {
-                return db.Servicechain.findOne({
+                return db.models.Servicechain.findOne({
                     where: {
                         id: contact_svc.default_servicechain
                     }
@@ -43,11 +43,11 @@ export namespace ServicechainManager {
     }
 
     export function getAllServicechains(): Promise<ServicechainInstance[]> {
-        return db.Servicechain.findAll()
+        return db.models.Servicechain.findAll()
     }
 
     export function getServicechainById (id: number): Promise<ServicechainInstance> {
-        return db.Servicechain.findOne(
+        return db.models.Servicechain.findOne(
             { where: { id: id } } // TODO: Validate me!
         )
     }
@@ -61,7 +61,7 @@ export namespace ServicechainManager {
     export function createNewServicechain (name: string, services: Array<[number, number]>): Promise<ServicechainInstance> {
         winston.debug("Creating new SC - " + name)
         // First, create the new SC itself
-        return db.Servicechain.create({
+        return db.models.Servicechain.create({
             name: name
         })
             // Then add services to it!
@@ -79,7 +79,7 @@ export namespace ServicechainManager {
     }
 
     export function addServiceToServicechain(sc_id: number, service_id: number, priority: number): Promise<ServicesInSCInstance> {
-        return db.ServicesInSC.create({
+        return db.models.ServicesInSC.create({
             servicechain_id: sc_id,
             service_id: service_id,
             priority: priority
@@ -91,7 +91,7 @@ export namespace ServicechainManager {
      * @param {Number} id ID number of the Servicechain to remove.
      */
     export function deleteServicechain (id: number): Promise<number> {
-        return db.Servicechain.destroy({ where: { id: id } })
+        return db.models.Servicechain.destroy({ where: { id: id } })
         .then(function(destroyedRowsCount){
             if (!destroyedRowsCount){
                 return Promise.reject(new errors.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))

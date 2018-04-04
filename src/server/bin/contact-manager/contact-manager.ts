@@ -1,7 +1,8 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 import { ContactInstance } from "../../models/contact";
-import db from '../../models'
+import * as db from '../../models'
+//import db from '../../models'
 
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
@@ -17,7 +18,7 @@ export namespace ContactManager {
      * @param {Number} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
     export function createContact (first_name: string, surname: string, email: string, phone_num: string, default_servicechain: number): Promise<ContactInstance> {
-        return db.Contact.create({
+        return db.models.Contact.create({
             first_name: first_name,
             surname: surname,
             email_address: email,
@@ -33,7 +34,7 @@ export namespace ContactManager {
      */
 
     export function deleteContactFromDB (id: number): Promise<number> {
-        return db.Contact.destroy({
+        return db.models.Contact.destroy({
             where: {
                 id: id
             }
@@ -50,7 +51,7 @@ export namespace ContactManager {
             /* Do a COUNT of all of the contacts in the DB with this ID. If it doesn't exist (i.e. COUNT = 0,)
              * throw an error.
              */
-            return db.Contact.count({ where: { id: id } })
+            return db.models.Contact.count({ where: { id: id } })
                 .then(function (count: number) {
                     if (count == 0) {
                         return Promise.reject(`No contact with ID ${id}`)
@@ -68,7 +69,7 @@ export namespace ContactManager {
      * @returns {promise} Promise resolving to the most recent hundred  Sequelize rows representing messages.
      */
     export function getHundredContacts (offset: number):Promise<ContactInstance[]> {
-        return db.Contact.findAll({
+        return db.models.Contact.findAll({
             offset: offset, limit: 100
         })
     }
@@ -79,7 +80,7 @@ export namespace ContactManager {
      * @returns { promise} Promise resolving to a Sequelize row representing the given contact
      */
     export function getContactWithId (id: number): Promise<ContactInstance> {
-        return db.Contact.findOne({
+        return db.models.Contact.findOne({
             where: {
                 id: id // TODO: Validate contact exists
             }
@@ -94,7 +95,7 @@ export namespace ContactManager {
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */
     export function updateContactDetailsWithId (id: number, updatedDetails: any): Promise<[number, any[]]> {
-        return db.Contact.update(updatedDetails,
+        return db.models.Contact.update(updatedDetails,
             {
                 where: { id: id }
             })

@@ -2,11 +2,12 @@ const winston = require('winston')
 import * as Promise from "bluebird"
 import * as events from "events"
 import * as utilities from "../../utilities"
-const db = require('../../models')
+import * as db from '../../models'
 import * as volubleErrors from '../voluble-errors'
 import { ServicechainManager } from '../servicechain-manager/servicechain-manager'
 import { PluginManager } from '../plugin-manager/plugin-manager'
 import { ContactManager } from '../contact-manager/contact-manager'
+import { QueueManager } from '../queue-manager'
 import { MessageInstance } from "../../models/message";
 import { ServicesInSCInstance } from "../../models/servicesInServicechain";
 import { PluginInstance } from "../../models/plugin";
@@ -22,7 +23,7 @@ export namespace MessageManager {
     eventEmitter.on('send-message', doMessageSend)
     eventEmitter.on('message-failed', onMessageFailed)
     eventEmitter.on('message-sent', onMessageSent)
-    
+
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
@@ -35,7 +36,7 @@ export namespace MessageManager {
 
         return ServicechainManager.getServicechainFromContactId(contact_id)
             .then(function (servicechain) {
-                return db.Message.create({
+                return db.models.Message.create({
                     body: body,
                     servicechain: servicechain.id,
                     contact: contact_id,
@@ -48,12 +49,15 @@ export namespace MessageManager {
 
     /**
      * Does what it says on the tin - attempts to send a message by finding the service in the messages' servicechain with priority 1.
-     * @param {db.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
+     * @param {db.models.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
      * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
     export function sendMessage(msg: MessageInstance) {
+        /*
         eventEmitter.emit('send-message', msg)
         return msg
+        */
+       QueueManager.sendMessage(msg)
     }
 
     function doMessageSend(msg: MessageInstance) {
@@ -85,17 +89,17 @@ export namespace MessageManager {
         // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
         // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
         winston.debug(`Finding priority of service with ID ${svc.id} in SC ${msg.servicechain}`)
-        db.ServicesInSC.findOne({
+        db.models.ServicesInSC.findOne({
             where: {
                 servicechain_id: msg.servicechain,
                 service_id: svc.id
             }
         })
             .then(function (currentSvcInSC) {
-                if (!currentSvcInSC){
+                if (!currentSvcInSC) {
                     return Promise.reject(new errors.NotFoundError("Could not find current service in servicechain"))
                 }
-                return db.ServicesInSC.findOne({
+                return db.models.ServicesInSC.findOne({
                     where: {
                         servicechain_id: msg.servicechain,
                         priority: currentSvcInSC.priority + 1
@@ -115,7 +119,7 @@ export namespace MessageManager {
     }
 
     function onMessageSent(msg: MessageInstance, message_state: string) {
-        msg.sent_time = db.Sequelize.fn('NOW')
+        msg.sent_time = db.models.Sequelize.fn('NOW')
         return msg.save()
     }
 
@@ -139,7 +143,7 @@ export namespace MessageManager {
                         break
                 }
             })
-            .catch(db.Sequelize.ValidationError, function (err: any) {
+            .catch(db.models.Sequelize.ValidationError, function (err: any) {
                 winston.error("Could not update message state:\n" + err)
                 return Promise.reject(err)
             })
@@ -177,7 +181,7 @@ export namespace MessageManager {
      * @returns {promise} A Promise resolving to the rows returned.
      */
     export function getHundredMessageIds(offset: number): Promise<Array<MessageInstance>> {
-        return db.Message.findAll({
+        return db.models.Message.findAll({
             offset: offset,
             limit: 100,
             order: [['id', 'DESC']]
@@ -190,6 +194,6 @@ export namespace MessageManager {
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
     export function getMessageFromId(id: number): Promise<MessageInstance | null> {
-        return db.Message.findById(id)
+        return db.models.Message.findById(id)
     }
 }
