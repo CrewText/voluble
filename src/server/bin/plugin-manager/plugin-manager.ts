@@ -126,7 +126,7 @@ export namespace PluginManager {
  */
     export function initAllPlugins(plugin_dir: string) {
         winston.debug("Attempting to load plugins from " + plugin_dir)
-        __plugin_dir = path.resolve(plugin_dir || path.join(__dirname, "../plugins"))
+        __plugin_dir = path.resolve(plugin_dir || path.join(__dirname, "../../plugins"))
         winston.info("Loading plugins from\n\t" + plugin_dir)
         loadAllPlugins()
     }
