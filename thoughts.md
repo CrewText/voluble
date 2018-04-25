@@ -136,12 +136,13 @@ Questions:
 * Given that all users on voluble must also exist on Auth0, why can we not simply use the same UIDs on Voluble as the ones generated on Auth0? This reduces lookups between Voluble and Auth0 users
 All of the contacts and messages that are sent by Voluble are stored somewhere. This is the somewhere. 
 
-Centrally, the 
+Centrally, the messages, plugin status data, organization data, as well as ancillary data about users than needn't be stored on Auth0 is stored in a MariaDB database.
 
 #### Plugins
-I'm of the belief that sending of messages isn't something that should be part of the Voluble core. Instead, this behaviour should be delegated to plugins, each of which represents a system of sending messages (SMS, Telegram, etc.), and Voluble should be able to interact with every plugin in a predictable way, withough having to think about how it actually sends the messages.
 
-This way, if Voluble needs to be able to support a new system for sending messages, then all that needs to happen is for a plugin (`service` in Voluble-speak) to be installed and added to a `servicechain` (a system for sending messages). Voluble itself doesn't need a new version-release or code update.
+The actual mechanism of sending a message (via a worker) is delegated to a `plugin`, which represents a way of Voluble interacting with a given service. For example, if a user wished to be able to send an SMS using the Esendex platform (considered a `service` in Voluble terminology), then Voluble will delegate this responsibility to an Esendex plugin. The plugin will attempt to send the message and notify the calling worker of the success or failure of the attempt.
+
+This way, if Voluble needs to be able to support a new system for sending messages, then all that needs to happen is for a plugin to be installed and added to a `servicechain` (a system for sending messages). Voluble itself doesn't need a new version-release or code update.
     
 How should a plugin work? If Voluble needs to work with it in a predictable way, then it needs to expose a certain set of interfaces/methods and not break when it's used. How can we ensure this? How do we define what the plugin needs to make available for Voluble to be able to use it?
 
@@ -170,14 +171,12 @@ How should a plugin work? If Voluble needs to work with it in a predictable way,
                             }
                             etc...
 
-
-        * Or, do we decide that a single Voluble instance represents a single Organization?
-            * This would provide a neater way of splitting up instances of Voluble, but would require additional outlay per client, with greater setup time to roll-out
-
 * For each level of client/user, Voluble will also need to be able to implement the following basic features:
     * User creation
     * Login/logout + cookie management
     * Password reset
+    
+Though, most of these features will be handed off to Auth0 to take place more securely.
 
 
 #### Client Authentication
