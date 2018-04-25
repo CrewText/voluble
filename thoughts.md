@@ -1,10 +1,47 @@
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=1 depthTo=6 orderedList=false} -->
+
+<!-- code_chunk_output -->
+
+* [Mechanism design thoughts](#mechanism-design-thoughts)
+	* [Application Components](#application-components)
+		* [Architecture](#architecture)
+			* [Server](#server)
+			* [Worker](#worker)
+		* [Back End/Service Layer](#back-endservice-layer)
+			* [REST API](#rest-api)
+			* [Message Flow](#message-flow)
+			* [Data Storage](#data-storage)
+			* [Plugins](#plugins)
+			* [Client/User creation](#clientuser-creation)
+			* [Client Authentication](#client-authentication)
+		* [Front End/Website](#front-endwebsite)
+			* [Design](#design)
+			* [Back-End Interaction](#back-end-interaction)
+			* [User Login/Logout](#user-loginlogout)
+
+<!-- /code_chunk_output -->
+
 # Mechanism design thoughts
 
 ## Application Components
 
+### Architecture
+Voluble is implemented in a server/worker fashion whereby the 'server' component is responsible for all of the central organisation of the system that the workers may depend upon, and the workers simply handle the process of sending messages with a given service. The two communicate through a Redis-backed messaging system.
+
+#### Server
+The server has three primary roles: firstly to implement the REST API which allows websites and other user service layers to interact with the Voluble system; secondly to keep track of the messages that are being processed within the system; and thirdly to assert that any parts of the Voluble system that workers may depend upon but it would be inefficient to re-evaluate upon each usage (such as plugins) are working as expected.
+
+The server does not handle the actual mechanism of message-sending, which is delegated to workers, but does co-ordinate the messages that flow through the system.
+
+#### Worker
+The worker has a simple function: to attempt to send a given message with a given service (or rather, using a given plugin) naively and report back whether or not the attempt was successful. The inherent naivity of the system is designed that any worker must be able to attempt to send any given message with any given plugin without having to concern itself with whether or not the plugin is functioning as it should. It is the responsibility of the server to validate the available plugins before messages are handed to workers and to choose to refuse to utilise a given plugin if it does not appear to be functioning or unable to be correctly instantiated, so as to save messaging attempts with plugins that do not work.
+
+Once a worker has attempted to send a message with a given plugin, the worker should simply respond to the server (through the messaging interface) the success or failure state of the message-sending attempt.
+
 ### Back End/Service Layer
 #### REST API
-This is the primary way that Voluble Server instances interact with outside clients. All client-facing Voluble operations should be accessible through the REST API. This includes managing contacts, sending messages and defining how messages can be sent.
+This is the primary way that Voluble server instances interact with outside clients. All client-facing Voluble operations should be accessible through the REST API. This includes managing contacts, sending messages and defining how messages can be sent.
 
 The design and implementation of this section is arguably the largest part of the whole project. It forms the bulk of the work that needs to be done, since it is effectively the basis of the software - it does the heavy lifting.
 
@@ -46,19 +83,60 @@ Points to consider:
 }
 ```
 
+though it may be important in the future that server-worker and server-client messages follow a scheme such as the JRESP standard.
+
 #### Message Flow
-How do we refer to the state of a `message`? It makes sense that each message is stored with a state indicator, that defines whether a message has been sent, delivered or read (where appropriate; this cannot be determined in the case of say, SMS.)
+
+A `message` once it has been created has one of the following states:
+| State                 | Meaning
+|-----------------------|--------
+| MSG_PENDING           | Voluble has queued the message for sending.
+| MSG_SENDING           | Voluble is in the process of sending the message via the relevant plugin.
+| MSG_SENT              | Message has been sent by Voluble, but we cannot confirm that it has been delivered or read.
+| MSG_DELIVERED_SERVICE | In the case of messages that use an intermediate delivery serice (e.g. Facebook Messenger, Telegram, etc.), the message has been confirmed as delivered to the intermediary, but the user has not necessarily recieved it. Does not apply in the case of SMS messages.
+| MSG_DELIVERED_USER    | The message has been delivered to the user through a given service. Cannot confirm that the message has been read. Final state for SMS messages, unless they are replied to.
+| MSG_READ              | The message has been confirmed as read by the user. Does not apply to SMS messages.
+| MSG_REPLIED           | The user has sent a reply to the message through a given channel.
+| MSG_FAILED            | Voluble could not send the message to the delivery provider.
+
 
 How do we deal with replies? The most straightforward method might be to store the reply as a standard `message`, with a `reply_to` field. The downside of this is that by default, every message sent from a contact to an organization would be a reply to the previous message sent (assuming the contact had not already replied). Perhaps an implementation with a `direction` parameter stored in the message would be helpful, so we know whether or not the message was sent by a contact, and if so, whether it was a reply to a message sent out or an unsolicited message. Doing this would allow contacts to contact an organization without the organization sending a message to the contact first, and also allow Voluble to keep track of conversations, regardless of who initiated it.
 
-#### Data Storage
-All of the contacts and messages that are sent by Voluble are stored somewhere. This is the somewhere. There are a number of options to consider here:
-* What kind of database are we using? Relational or NoSQL? Flat-file based or engine-based?
+The process of sending a message is as follows:
 
-* How will the database be structured?
-    * If using a relational database, how are the tables structured, especially in such a way that is extensible as plugin information is added?
-    
-    * If using a NoSQL or document database, how is the information arranged into a vaguely predictable, but extensible way?
+|Server|Worker|
+|---|---|
+| INIT | INIT |
+| Init all plugins to validate that they work, blacklist any plugins that fail | |
+| Join message queue | Join message queue |
+| **ON POST /messages** | |
+| Receive message | |
+| Create message entry in database with `MSG_PENDING` state | |
+| Send `send-message` message to queue with message details | |
+| Update message database entry to `MSG_SENDING` state | |
+| | **ON `send-message` MESSAGE** |
+| | Recieve message from queue with message details |
+| | Retrieve relevant plugin API details from Auth0 |
+| | Attempt to init plugin with relevant API details for user |
+| | If plugin fails, send `attempt-failed` message to message queue |
+| | If plugin inits, attempt to send message with the given plugin |
+| | If attempt is successful, send `message-sent` message to the message queue |
+| | If attempt is unsuccessful, send `attempt-failed` message to the message queue |
+| **ON `attempt-failed` MESSAGE** | |
+| Iterate through the servicechain that the message was sent with to find the next plugin in the servicechain | |
+| If there is a next plugin in the servicechain, send `send-message` message to the queue using the new plugin | |
+| If this the last plugin in the servicechain, update the message database entry to the `MSG_FAILED` state | |
+| **ON `message-sent` MESSAGE** | |
+| Update the message database entry to the `MSG_SENT` state and set the message entry's `sent_time` to the current time. |
+
+
+#### Data Storage
+
+Questions:
+* Given that all users on voluble must also exist on Auth0, why can we not simply use the same UIDs on Voluble as the ones generated on Auth0? This reduces lookups between Voluble and Auth0 users
+All of the contacts and messages that are sent by Voluble are stored somewhere. This is the somewhere. 
+
+Centrally, the 
 
 #### Plugins
 I'm of the belief that sending of messages isn't something that should be part of the Voluble core. Instead, this behaviour should be delegated to plugins, each of which represents a system of sending messages (SMS, Telegram, etc.), and Voluble should be able to interact with every plugin in a predictable way, withough having to think about how it actually sends the messages.
