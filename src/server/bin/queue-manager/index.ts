@@ -1,4 +1,5 @@
 import { MessageInstance } from "../../models";
+import { MessageManager } from "../message-manager/message-manager"
 
 const winston = require('winston')
 import * as RedisSMQ from 'rsmq'
@@ -27,7 +28,13 @@ export namespace QueueManager {
     let worker_send_msg_update = new rsmqWorker("message-state-update", { redis: client })
     worker_send_msg_update.on("message", function (message, next, message_id) {
         let update = JSON.parse(message)
-        winston.info("Got message update for message " + update.message + ": " + update.status)
+        winston.debug("Got message update for message " + update.message_id + ": " + update.status)
+        let msg_inst = MessageManager.getMessageFromId(update.message_id)
+            .then(function (msg_inst) {
+                if (msg_inst) {
+                    MessageManager.updateMessageState(msg_inst, update.status)
+                }
+            })
         next()
     })
     worker_send_msg_update.start()

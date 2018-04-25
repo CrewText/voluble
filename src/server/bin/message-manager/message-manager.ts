@@ -58,6 +58,7 @@ export namespace MessageManager {
         return msg
         */
        QueueManager.sendMessage(msg)
+       return msg
     }
 
     function doMessageSend(msg: MessageInstance) {

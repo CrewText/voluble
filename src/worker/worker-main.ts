@@ -27,8 +27,8 @@ let worker_send_msg_update = new rsmqWorker("message-state-update", { redis: cli
 worker_msg_recv.on("message", function (message, next, message_id) {
     let parsed_msg = JSON.parse(message)
     winston.info(`Got message: ${parsed_msg.body}`)
-    let status = { message: parsed_msg.id, status: "MSG_SENDING" }
-    worker_send_msg_update.send(JSON.stringify(status))
+    let body = { message_id: parsed_msg.id, status: "MSG_SENDING" }
+    worker_send_msg_update.send(JSON.stringify(body))
     next()
 })
 
