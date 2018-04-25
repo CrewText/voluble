@@ -145,6 +145,7 @@ export namespace PluginManager {
                     return PluginManager.getPluginById(svc.id)
                         .then(function (plugin) {
                             plugin.shutdown()
+                            plugin._eventEmitter.removeAllListeners()
 
                             let i = 0
                             __loaded_plugins.forEach(element => {
@@ -153,7 +154,6 @@ export namespace PluginManager {
                                 }
                             });
                             if (i > -1) { __loaded_plugins.splice(i, 1) }
-                            plugin._eventEmitter.removeAllListeners('message-state-update')
                             svc.initialized = false
                             return svc.save()
                         })
