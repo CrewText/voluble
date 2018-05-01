@@ -2,13 +2,31 @@ import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import * as jwt from 'jsonwebtoken'
 import { access } from 'fs-extra';
+import organization from '../../models/organization';
 const winston = require('winston')
 const errs = require('common-errors')
 
 export namespace Auth0Manager {
 
+    /**
+     * Auth0ProfileUserMetadata is a representation of the User Metadata field available in a given Auth0 profile.
+     * It is intended to be used for data that the user has r/w access to.
+     */
+    export interface Auth0ProfileUserMetadata{
+        phone_number: string,
+    }
+
+    /**
+     * Auth0ProfileAppMetadata is a representation of the App Metadata field available in a given Auth0 profile.
+     * It is intended to be used for data that the user has no access to.
+     */
+    export interface Auth0ProfileAppMetadata{
+        role: "user:contact" | "organization:author" | "organization:manager" | "organization:admin" | "voluble:admin",
+        organization: number
+    }
+
     export interface Auth0Profile {
-        app_metadata: Object | any,
+        app_metadata: Auth0ProfileAppMetadata,
         blocked: boolean | void | null,
         created_at: Date,
         email: string,
@@ -25,7 +43,7 @@ export namespace Auth0Manager {
         picture: string,
         updated_at: Date,
         user_id: string,
-        user_metadata: Object | any,
+        user_metadata: Auth0ProfileUserMetadata,
         username: string
     }
 
@@ -84,5 +102,24 @@ export namespace Auth0Manager {
                 return Promise.resolve(<Auth0Profile>user_profile)
             })
 
+    }
+
+    /**
+     * Creates a new user in Auth0 and returns the new Auth0Profile
+     */
+    export function createNewAuth0User(email_address: string, password: string):Promise<Auth0Profile>{
+        getCCAccessToken()
+        .then(function (access_token){
+            let req_opts = {
+                method: 'POST',
+                url: process.env.AUTH0_BASE_URL + '/api/v2/users',
+                headers: {'Authorization': `Bearer ${access_token.access_token}`},
+                json: true,
+                body: {
+                    connection: "Username-Password-Authentication",
+                    email
+                }
+            }
+        })
     }
 }
