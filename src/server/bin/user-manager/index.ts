@@ -26,40 +26,26 @@ export namespace UserManager {
     // which is a combination of the Auth0 user profile, and the Voluble database information.
 
 
-    export function getUserFullProfile(user_id: number): Promise<Auth0Manager.Auth0Profile> {
-        return utils.verifyNumberIsInteger(user_id)
-            .then(function (voluble_uid) {
-                return db.models.User.findById(voluble_uid)
+    export function getUserFullProfile(user_id: string): Promise<Auth0Manager.Auth0Profile> {
+        return Auth0Manager.getUserProfileByID(user_id)
+    }
 
-                    .then(function (user_entry) {
-                        if (!user_entry) {
-                            return Promise.reject(new errs.NotFoundError(`Couldn't find user with VID ${user_id} in the database`))
-                        }
-                        return Auth0Manager.getUserProfileByID(user_entry.auth0_id)
-                    })
+    function deleteUserFromVoluble(user_id: string): Promise<boolean> {
+        return db.models.User.findById(user_id)
+            .then(function (user_entry) {
+                if (!user_entry) { return Promise.reject(errs.NotFoundError("User with ID " + user_id + "cannot be found")) }
+
+                return user_entry.destroy()
+            })
+            .then(function () {
+                return Promise.resolve(true)
             })
     }
 
-    export function getUserEntryByVID(voluble_user_id: number): Promise<UserInstance | null> {
-        return db.models.User.findById(voluble_user_id)
-    }
-
-    export function getUserEntryByAuth0ID(auth0_user_id: number): Promise<UserInstance | null> {
-        return db.models.User.findOne({
-            "where":
-                { "auth0_id": auth0_user_id }
-        })
-    }
-
-    export function deleteUserFromVoluble(voluble_user_id:number):Promise<boolean>{
-        return db.models.User.findById(voluble_user_id)
-        .then(function(user_entry){
-            if (!user_entry){return Promise.reject(errs.NotFoundError("User with ID " + voluble_user_id + "cannot be found"))}
-
-            return user_entry.destroy()
-        })
+    export function deleteUser(user_id:string){
+        return deleteUserFromVoluble(user_id)
         .then(function(){
-            return Promise.resolve(true)
+            return Auth0Manager.deleteUserFromAuth0(user_id)
         })
     }
 
@@ -67,18 +53,18 @@ export namespace UserManager {
      * Create a new user in Voluble. Firstly adds the new user to Auth0, and then uses the Auth0 ID to create a corresponding entry in the 
      * Voluble database.
      */
-    export function createNewUser(email: string, password: string, first_name: string, surname: string, phone_number: string){
+    export function createNewUser(email: string, password: string, first_name: string, surname: string, phone_number: string) {
         Auth0Manager.createNewAuth0User(email, password)
-        .then(function(created_user){
-            db.models.Contact.create({
-                id:created_user.user_id,
-                default_servicechain:0,
-                email_address: email,
-                first_name: first_name,
-                surname: surname,
-                phone_number: phone_number
+            .then(function (created_user) {
+                db.models.Contact.create({
+                    id: <string>created_user.user_id,
+                    default_servicechain: 0,
+                    email_address: email,
+                    first_name: first_name,
+                    surname: surname,
+                    phone_number: phone_number
+                })
             })
-        })
     }
 
 }

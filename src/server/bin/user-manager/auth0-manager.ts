@@ -16,7 +16,7 @@ export namespace Auth0Manager {
         phone_number: string,
     }
 
-    export type Role =  "user:contact" | "organization:author" | "organization:manager" | "organization:admin" | "voluble:admin",
+    export type Role = "user:contact" | "organization:author" | "organization:manager" | "organization:admin" | "voluble:admin",
 
     export type Auth0Profile = auth0.User
 
@@ -41,5 +41,9 @@ export namespace Auth0Manager {
             verify_email: true,
             email_verified: false,
         })
+    }
+
+    export function deleteUserFromAuth0(user_id: string) {
+        return auth0MgmtClient.deleteUser({ id: user_id })
     }
 }
