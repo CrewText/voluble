@@ -1,7 +1,7 @@
 import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import * as jwt from 'jsonwebtoken'
-import { access } from 'fs-extra';
+import * as auth0 from 'auth0'
 import organization from '../../models/organization';
 const winston = require('winston')
 const errs = require('common-errors')
@@ -54,79 +54,26 @@ export namespace Auth0Manager {
         [key: string]: any
     }
 
-    function getCCAccessToken(): Promise<CCAccessToken> {
-        let req_opts = {
-            method: 'POST',
-            url: process.env.AUTH0_BASE_URL + "/oauth/token",
-            headers: { 'content-type': 'application/json' },
-            body:
-                {
-                    grant_type: 'client_credentials',
-                    client_id: process.env.AUTH0_CLIENT_ID,
-                    client_secret: process.env.AUTH0_CLIENT_SECRET,
-                    audience: process.env.AUTH0_CLIENT_API_IDENTIFER
-                },
-            json: true
+    let auth0MgmtClient = new auth0.ManagementClient({
+        domain: <string>process.env.AUTH0_DOMAIN,
+        clientId: process.env.AUTH0_CLIENT_ID,
+        clientSecret: process.env.AUTH0_CLIENT_SECRET
+    })
 
-        }
-
-        return rp(req_opts)
-            .then(function (body: any) {
-                if (!body["access_token"]) {
-                    return Promise.reject(new errs.NotFoundError('No access token received'))
-                }
-                return Promise.resolve(<CCAccessToken>body)
-            })
-
-        // TODO: Do verification of JWT
-        // TODO: Handle errors
-    }
-
-    export function getUserProfileByID(auth0_id: string): Promise<Auth0Profile> {
-        return getCCAccessToken()
-            .then(function (access_token) {
-                //winston.debug(`Using token ${access_token["access_token"]}`)
-                let req_opts = {
-                    method: 'GET',
-                    url: process.env.AUTH0_BASE_URL + `/api/v2/users/${auth0_id}`,
-                    headers: { 'Authorization': "Bearer " + access_token.access_token },
-                    json: true
-                }
-                return rp(req_opts)
-            })
-            .then(function (user_profile: any) {
-                if (!user_profile) {
-                    return Promise.reject(new errs.NotFoundError("Could not find Auth0 user with AID " + auth0_id))
-                }
-                winston.debug("Found user profile for " + auth0_id + ": " + user_profile.email)
-                return Promise.resolve(<Auth0Profile>user_profile)
-            })
-
+    export function getUserProfileByID(auth0_id: string): Promise<auth0.User> {
+        return auth0MgmtClient.getUser({ id: auth0_id })
     }
 
     /**
      * Creates a new user in Auth0 and returns the new Auth0Profile
      */
-    export function createNewAuth0User(email_address: string, password: string): Promise<Auth0Profile> {
-        return getCCAccessToken()
-            .then(function (access_token) {
-                let req_opts = {
-                    method: 'POST',
-                    url: process.env.AUTH0_BASE_URL + '/api/v2/users',
-                    headers: { 'Authorization': `Bearer ${access_token.access_token}` },
-                    json: true,
-                    body: {
-                        connection: "Username-Password-Authentication",
-                        email: email_address,
-                        password: password,
-                        verify_email: true,
-                        email_verified: false
-                    }
-                }
-                return rp(req_opts)
-                    .then(function (resp) {
-                        return Promise.resolve(<Auth0Profile>resp)
-                    })
-            })
+    export function createNewAuth0User(email_address: string, password: string): Promise<auth0.User> {
+        return auth0MgmtClient.createUser({
+            connection: "Username-Password-Authentication",
+            email: email_address,
+            password: password,
+            verify_email: true,
+            email_verified: false,
+        })
     }
 }
