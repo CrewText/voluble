@@ -12,7 +12,7 @@ export namespace Auth0Manager {
      * Auth0ProfileUserMetadata is a representation of the User Metadata field available in a given Auth0 profile.
      * It is intended to be used for data that the user has r/w access to.
      */
-    export interface Auth0ProfileUserMetadata{
+    export interface Auth0ProfileUserMetadata {
         phone_number: string,
     }
 
@@ -20,7 +20,7 @@ export namespace Auth0Manager {
      * Auth0ProfileAppMetadata is a representation of the App Metadata field available in a given Auth0 profile.
      * It is intended to be used for data that the user has no access to.
      */
-    export interface Auth0ProfileAppMetadata{
+    export interface Auth0ProfileAppMetadata {
         role: "user:contact" | "organization:author" | "organization:manager" | "organization:admin" | "voluble:admin",
         organization: number
     }
@@ -107,19 +107,26 @@ export namespace Auth0Manager {
     /**
      * Creates a new user in Auth0 and returns the new Auth0Profile
      */
-    export function createNewAuth0User(email_address: string, password: string):Promise<Auth0Profile>{
-        getCCAccessToken()
-        .then(function (access_token){
-            let req_opts = {
-                method: 'POST',
-                url: process.env.AUTH0_BASE_URL + '/api/v2/users',
-                headers: {'Authorization': `Bearer ${access_token.access_token}`},
-                json: true,
-                body: {
-                    connection: "Username-Password-Authentication",
-                    email
+    export function createNewAuth0User(email_address: string, password: string): Promise<Auth0Profile> {
+        return getCCAccessToken()
+            .then(function (access_token) {
+                let req_opts = {
+                    method: 'POST',
+                    url: process.env.AUTH0_BASE_URL + '/api/v2/users',
+                    headers: { 'Authorization': `Bearer ${access_token.access_token}` },
+                    json: true,
+                    body: {
+                        connection: "Username-Password-Authentication",
+                        email: email_address,
+                        password: password,
+                        verify_email: true,
+                        email_verified: false
+                    }
                 }
-            }
-        })
+                return rp(req_opts)
+                    .then(function (resp) {
+                        return Promise.resolve(<Auth0Profile>resp)
+                    })
+            })
     }
 }
