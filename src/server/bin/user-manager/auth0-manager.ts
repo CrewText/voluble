@@ -16,7 +16,7 @@ export namespace Auth0Manager {
         phone_number: string,
     }
 
-    export type Role = "user:contact" | "organization:author" | "organization:manager" | "organization:admin" | "voluble:admin",
+    export type Role = "user:contact" | "organization:author" | "organization:manager" | "organization:admin" | "voluble:admin"
 
     export type Auth0Profile = auth0.User
 
