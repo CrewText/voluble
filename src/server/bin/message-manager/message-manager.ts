@@ -11,7 +11,7 @@ import { QueueManager } from '../queue-manager'
 import { MessageInstance } from "../../models/message";
 import { ServicesInSCInstance } from "../../models/servicesInServicechain";
 import { PluginInstance } from "../../models/plugin";
-const errors = require('common-errors')
+import { NotFoundError } from "node-common-errors";
 
 /**
  * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,
@@ -57,8 +57,8 @@ export namespace MessageManager {
         eventEmitter.emit('send-message', msg)
         return msg
         */
-       QueueManager.sendMessage(msg)
-       return msg
+        QueueManager.sendMessage(msg)
+        return msg
     }
 
     function doMessageSend(msg: MessageInstance) {
@@ -75,7 +75,12 @@ export namespace MessageManager {
 
                 return PluginManager.getServiceById(svcInSC.service_id)
                     .then(function (svc) {
-                        return sendMessageWithService(msg, svc)
+                        if (svc) {
+                            return sendMessageWithService(msg, svc)
+                        }
+                        else {
+                            throw new NotFoundError("Could not find service with ID " + svcInSC.service_id)
+                        }
                     })
 
             })
@@ -98,7 +103,7 @@ export namespace MessageManager {
         })
             .then(function (currentSvcInSC) {
                 if (!currentSvcInSC) {
-                    return Promise.reject(new errors.NotFoundError("Could not find current service in servicechain"))
+                    throw new NotFoundError("Could not find current service in servicechain")
                 }
                 return db.models.ServicesInSC.findOne({
                     where: {
@@ -108,13 +113,17 @@ export namespace MessageManager {
                 })
             })
             .then(function (nextSvcInSC) {
-                if (!nextSvcInSC) { return Promise.reject(errors.NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
+                if (!nextSvcInSC) { return Promise.reject(new NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
                 return PluginManager.getServiceById(nextSvcInSC.service_id)
             })
             .then(function (nextSvc) {
-                return sendMessageWithService(msg, nextSvc)
+                if (nextSvc) {
+                    return sendMessageWithService(msg, nextSvc)
+                } else {
+                    throw new NotFoundError("Could not find next service in servicechain for message " + msg.id)
+                }
             })
-            .catch(errors.NotFoundError, function (err: any) {
+            .catch(NotFoundError, function (err: any) {
                 winston.info("Message " + msg.id + " failed to send:\n" + err)
             })
     }
@@ -169,7 +178,7 @@ export namespace MessageManager {
                                 })
                             })
                     })
-                    .catch(volubleErrors.PluginDoesNotExistError, errors.NotFoundError, function (err: any) {
+                    .catch(volubleErrors.PluginDoesNotExistError, NotFoundError, function (err: any) {
                         winston.debug("Active plugin with ID " + service.id + " not found")
                         return MessageManager.updateMessageState(msg, "MSG_FAILED", service)
                     })
