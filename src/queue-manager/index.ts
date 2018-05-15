@@ -1,5 +1,5 @@
-import { MessageInstance } from "../../models";
-import { MessageManager } from "../message-manager/message-manager"
+import { MessageInstance } from "../models";
+import { MessageManager } from "../message-manager"
 
 const winston = require('winston')
 import * as RedisSMQ from 'rsmq'

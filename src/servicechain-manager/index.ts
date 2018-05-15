@@ -1,10 +1,8 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 let errors = require('common-errors')
-import * as db from '../../models'
-import { ContactManager } from '../contact-manager/contact-manager'
-import { ServicesInSCInstance } from '../../models/servicesInServicechain';
-import { ServicechainInstance } from '../../models/servicechain';
+import * as db from '../models'
+import { ContactManager } from '../contact-manager/'
 
 /**
  * The ServicechainManager handles all operations that relate to Servicechains and ServiceInServicechains, which includes
@@ -16,7 +14,7 @@ export namespace ServicechainManager {
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
-    export function getServicesInServicechain(servicechain_id: number): Promise<ServicesInSCInstance[]> {
+    export function getServicesInServicechain(servicechain_id: number): Promise<db.ServicesInSCInstance[]> {
         return db.models.ServicesInSC.findAll({
             where: {
                 servicechain_id: servicechain_id
@@ -25,7 +23,7 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServicechainFromContactId(contact_id: number): Promise<ServicechainInstance> {
+    export function getServicechainFromContactId(contact_id: number): Promise<db.ServicechainInstance> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
                 return db.models.Contact.findOne({
@@ -42,11 +40,11 @@ export namespace ServicechainManager {
             })
     }
 
-    export function getAllServicechains(): Promise<ServicechainInstance[]> {
+    export function getAllServicechains(): Promise<db.ServicechainInstance[]> {
         return db.models.Servicechain.findAll()
     }
 
-    export function getServicechainById (id: number): Promise<ServicechainInstance> {
+    export function getServicechainById (id: number): Promise<db.ServicechainInstance> {
         return db.models.Servicechain.findOne(
             { where: { id: id } } // TODO: Validate me!
         )
@@ -58,7 +56,7 @@ export namespace ServicechainManager {
      * @param {string} name The name of the new Servicechain
      * @param {array} services The list of priority/service doubles to add
      */
-    export function createNewServicechain (name: string, services: Array<[number, number]>): Promise<ServicechainInstance> {
+    export function createNewServicechain (name: string, services: Array<[number, number]>): Promise<db.ServicechainInstance> {
         winston.debug("Creating new SC - " + name)
         // First, create the new SC itself
         return db.models.Servicechain.create({
@@ -78,7 +76,7 @@ export namespace ServicechainManager {
 
     }
 
-    export function addServiceToServicechain(sc_id: number, service_id: number, priority: number): Promise<ServicesInSCInstance> {
+    export function addServiceToServicechain(sc_id: number, service_id: number, priority: number): Promise<db.ServicesInSCInstance> {
         return db.models.ServicesInSC.create({
             servicechain_id: sc_id,
             service_id: service_id,

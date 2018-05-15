@@ -1,7 +1,7 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
-import { ContactInstance } from "../../models/contact";
-import * as db from '../../models'
+import { ContactInstance } from "../models/contact";
+import * as db from '../models'
 //import db from '../../models'
 
 /**

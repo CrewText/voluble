@@ -5,9 +5,9 @@ import * as Promise from "bluebird"
 const errs = require('common-errors')
 import * as crypto from 'crypto'
 
-import { voluble_plugin } from '../../../plugins/plugin_base'
-import * as db from '../../models'
-import { MessageManager } from '../message-manager/message-manager'
+import { voluble_plugin } from '../plugins/plugin_base'
+import * as db from '../models'
+import { MessageManager } from '../message-manager'
 import { Sequelize } from 'sequelize';
 const voluble_errors = require('../voluble-errors')
 

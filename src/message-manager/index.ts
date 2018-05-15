@@ -1,16 +1,16 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 import * as events from "events"
-import * as utilities from "../../utilities"
-import * as db from '../../models'
+import * as utilities from '../utilities'
+import * as db from '../models'
 import * as volubleErrors from '../voluble-errors'
 import { ServicechainManager } from '../servicechain-manager/servicechain-manager'
-import { PluginManager } from '../plugin-manager/plugin-manager'
-import { ContactManager } from '../contact-manager/contact-manager'
+import { PluginManager } from '../plugin-manager'
+import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'
-import { MessageInstance } from "../../models/message";
-import { ServicesInSCInstance } from "../../models/servicesInServicechain";
-import { PluginInstance } from "../../models/plugin";
+import { MessageInstance } from "../models/message";
+import { ServicesInSCInstance } from "../models/servicesInServicechain";
+import { PluginInstance } from "../models/plugin";
 import { NotFoundError } from "node-common-errors";
 
 /**
