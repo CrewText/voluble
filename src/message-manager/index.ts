@@ -4,7 +4,7 @@ import * as events from "events"
 import * as utilities from '../utilities'
 import * as db from '../models'
 import * as volubleErrors from '../voluble-errors'
-import { ServicechainManager } from '../servicechain-manager/servicechain-manager'
+import { ServicechainManager } from '../servicechain-manager'
 import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'

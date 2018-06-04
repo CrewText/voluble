@@ -2,7 +2,7 @@ import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import * as jwt from 'jsonwebtoken'
 import * as auth0 from 'auth0'
-import organization from '../../models/organization';
+import organization from '../models/organization';
 const winston = require('winston')
 const errs = require('common-errors')
 

@@ -2,10 +2,10 @@ import * as express from "express"
 import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
-import * as utils from '../utilities'
-import { MessageManager } from '../bin/message-manager/message-manager'
+import * as utils from '../../utilities'
+import { MessageManager } from '../../message-manager/'
 const db = require('../models')
-import * as volubleErrors from '../bin/voluble-errors'
+import * as volubleErrors from '../../voluble-errors'
 
 /**
  * Handles the route GET /messages

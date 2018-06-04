@@ -3,8 +3,8 @@ import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
 const errs = require('common-errors')
-import { UserManager } from '../bin/user-manager'
-import user from "../models/user";
+import { UserManager } from '../../user-manager'
+import user from "../../models/user";
 
 /* GET users listing. */
 router.get('/', function (req, res, next) {

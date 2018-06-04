@@ -1,9 +1,9 @@
 import * as express from "express"
 const router = express.Router();
 import * as Promise from "bluebird"
-import * as utils from '../utilities'
+import * as utils from '../../utilities'
 //const contactManager = require('../bin/contact-manager/contact-manager')
-import {ContactManager} from '../bin/contact-manager/contact-manager'
+import {ContactManager} from '../../contact-manager'
 
 /**
  * Handles the route `GET /contacts`.

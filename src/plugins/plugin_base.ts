@@ -1,9 +1,7 @@
 var errors = require('common-errors')
 var voluble_errors = require('../../bin/voluble-errors')
-import * as db from '../server/models'
+import * as db from '../models'
 import * as events from 'events'
-import { ContactInstance } from '../server/models/contact';
-import { MessageInstance } from '../server/models/message';
 export type contactInstance = ContactInstance
 export type messageInstance = MessageInstance
 
@@ -22,8 +20,8 @@ interface IVolublePluginBase {
 
     init(): boolean
     shutdown(): boolean
-    send_message(message: MessageInstance, contact: ContactInstance): null | undefined | void
-    message_state_update(msg: MessageInstance, message_state: string): null | undefined | void
+    send_message(message: db.MessageInstance, contact: db.ContactInstance): null | undefined | void
+    message_state_update(msg: db.MessageInstance, message_state: string): null | undefined | void
 }
 
 export class voluble_plugin implements IVolublePluginBase {
@@ -44,11 +42,11 @@ export class voluble_plugin implements IVolublePluginBase {
         throw new errors.NotImplementedError("Plugin " + this.name + "has not defined the function 'shutdown'. Contact the plugin author for a fix.")
     }
 
-    send_message(message: MessageInstance, contact: ContactInstance): null | undefined | void {
+    send_message(message: db.MessageInstance, contact: db.ContactInstance): null | undefined | void {
         throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
     }
 
-    message_state_update(msg: MessageInstance, message_state: string) {
+    message_state_update(msg: db.MessageInstance, message_state: string) {
         this._eventEmitter.emit('message-state-update', msg, message_state)
     }
 }

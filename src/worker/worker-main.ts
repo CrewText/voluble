@@ -6,6 +6,7 @@ if (!process.env.IS_PRODUCTION) {
     winston.info("Detected prod environment")
     winston.level = 'info'
 }
+
 import * as rsmqWorker from 'rsmq-worker'
 import * as redis from 'redis'
 
@@ -45,7 +46,7 @@ namespace MessageSendWorker {
         }
     })
 
-    client.on('error', function(){
-        winston.error("Failed to connect to the redis server!3")
+    client.on('error', function () {
+        winston.error("Failed to connect to the redis server!")
     })
 }

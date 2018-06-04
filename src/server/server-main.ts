@@ -14,7 +14,7 @@ if (!process.env.IS_PRODUCTION) {
 const https = require('https');
 
 winston.info("Connecting to database")
-import * as db from './models'
+import * as db from '../models'
 
 winston.info("Loading routes")
 const index = require('./routes/index');
@@ -27,10 +27,10 @@ const routerBlasts = require('./routes/blasts');
 const routerServicechains = require('./routes/servicechains');
 
 winston.info("Loading plugin manager")
-import { PluginManager } from './bin/plugin-manager/plugin-manager'
+import { PluginManager } from '../plugin-manager'
 
 winston.info("Loading queue manager")
-import { QueueManager } from './bin/queue-manager'
+import { QueueManager } from '../queue-manager'
 
 winston.info("Starting Express server")
 const app = express();

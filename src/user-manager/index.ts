@@ -1,11 +1,10 @@
 import * as request from 'request'
-import * as db from '../../models'
+import * as db from '../models'
 const winston = require('winston')
 import * as Promise from "bluebird"
 import * as crypto from 'crypto'
 const errs = require('common-errors')
-import * as utils from '../../utilities'
-import { UserInstance } from '../../models/user';
+import * as utils from '../utilities'
 import { Auth0Manager } from './auth0-manager'
 
 /**

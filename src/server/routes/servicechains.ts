@@ -3,10 +3,10 @@ import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
 
-import * as utils from '../utilities'
-import {ServicechainManager} from '../bin/servicechain-manager/servicechain-manager'
-import {PluginManager} from '../bin/plugin-manager/plugin-manager'
-import { ServicesInSCInstance } from "../models/servicesInServicechain";
+import * as utils from '../../utilities'
+import {ServicechainManager} from '../../servicechain-manager/'
+import {PluginManager} from '../../plugin-manager/'
+import { ServicesInSCInstance } from "../../models/servicesInServicechain";
 
 router.get('/', function (req, res, next) {
   ServicechainManager.getAllServicechains()

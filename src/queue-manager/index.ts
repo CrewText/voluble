@@ -45,10 +45,11 @@ export namespace QueueManager {
             qname: "message-send",
             message: JSON.stringify(message)
         }, function (err, resp) {
-            if (resp) {
+            if (!err) {
                 winston.info("Sent message " + message.id)
             } else {
                 winston.error(err)
+                throw err
             }
         })
     }
