@@ -2,8 +2,8 @@ import * as express from 'express'
 const router = express.Router();
 import * as Promise from 'bluebird'
 const winston = require('winston')
-import {PluginManager} from '../bin/plugin-manager/plugin-manager'
-import * as utils from '../utilities'
+import {PluginManager} from '../../plugin-manager'
+import * as utils from '../../utilities'
 
 router.get('/', function(req,res,next){
   PluginManager.getAllServices()

@@ -17,14 +17,14 @@ winston.info("Connecting to database")
 import * as db from '../models'
 
 winston.info("Loading routes")
-const index = require('./routes/index');
-const users = require('./routes/users');
-const routerGroups = require('./routes/groups');
-const routerContacts = require('./routes/contacts');
-const routerMessages = require('./routes/messages');
-const routerServices = require('./routes/services');
-const routerBlasts = require('./routes/blasts');
-const routerServicechains = require('./routes/servicechains');
+const routes_index = require('./routes')
+const routes_users = require('./routes/users')
+const routes_groups = require('./routes/groups')
+const routes_contacts = require('./routes/contacts')
+const routes_messages = require('./routes/messages')
+const routes_services = require('./routes/services')
+const routes_blasts = require('./routes/blasts')
+const routes_servicechains = require('./routes/servicechains')
 
 winston.info("Loading plugin manager")
 import { PluginManager } from '../plugin-manager'
@@ -107,14 +107,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', index);
-app.use('/users', users);
-app.use('/groups', routerGroups)
-app.use('/contacts', routerContacts)
-app.use('/messages', routerMessages)
-app.use('/services', routerServices)
-app.use('/blasts', routerBlasts)
-app.use('/servicechains', routerServicechains)
+app.use('/', routes_index);
+app.use('/users', routes_users);
+app.use('/groups', routes_groups)
+app.use('/contacts', routes_contacts)
+app.use('/messages', routes_messages)
+app.use('/services', routes_services)
+app.use('/blasts', routes_blasts)
+app.use('/servicechains', routes_servicechains)
 
 // Set up plugin manager
 winston.info("Initing all plugins")

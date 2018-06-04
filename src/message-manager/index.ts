@@ -11,7 +11,7 @@ import { QueueManager } from '../queue-manager'
 import { MessageInstance } from "../models/message";
 import { ServicesInSCInstance } from "../models/servicesInServicechain";
 import { PluginInstance } from "../models/plugin";
-import { NotFoundError } from "node-common-errors";
+const errs = require('common-errors')
 
 /**
  * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,
@@ -79,7 +79,7 @@ export namespace MessageManager {
                             return sendMessageWithService(msg, svc)
                         }
                         else {
-                            throw new NotFoundError("Could not find service with ID " + svcInSC.service_id)
+                            throw new errs.errs.NotFoundError("Could not find service with ID " + svcInSC.service_id)
                         }
                     })
 
@@ -103,7 +103,7 @@ export namespace MessageManager {
         })
             .then(function (currentSvcInSC) {
                 if (!currentSvcInSC) {
-                    throw new NotFoundError("Could not find current service in servicechain")
+                    throw new errs.errs.NotFoundError("Could not find current service in servicechain")
                 }
                 return db.models.ServicesInSC.findOne({
                     where: {
@@ -113,17 +113,17 @@ export namespace MessageManager {
                 })
             })
             .then(function (nextSvcInSC) {
-                if (!nextSvcInSC) { return Promise.reject(new NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
+                if (!nextSvcInSC) { return Promise.reject(new errs.NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
                 return PluginManager.getServiceById(nextSvcInSC.service_id)
             })
             .then(function (nextSvc) {
                 if (nextSvc) {
                     return sendMessageWithService(msg, nextSvc)
                 } else {
-                    throw new NotFoundError("Could not find next service in servicechain for message " + msg.id)
+                    throw new errs.NotFoundError("Could not find next service in servicechain for message " + msg.id)
                 }
             })
-            .catch(NotFoundError, function (err: any) {
+            .catch(errs.NotFoundError, function (err: any) {
                 winston.info("Message " + msg.id + " failed to send:\n" + err)
             })
     }
@@ -178,7 +178,7 @@ export namespace MessageManager {
                                 })
                             })
                     })
-                    .catch(volubleErrors.PluginDoesNotExistError, NotFoundError, function (err: any) {
+                    .catch(volubleErrors.PluginDoesNotExistError, errs.NotFoundError, function (err: any) {
                         winston.debug("Active plugin with ID " + service.id + " not found")
                         return MessageManager.updateMessageState(msg, "MSG_FAILED", service)
                     })
