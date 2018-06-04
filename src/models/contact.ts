@@ -26,7 +26,6 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         id: {
             type: DataTypes.STRING,
             primaryKey: true,
-            autoIncrement: true,
         },
         first_name: DataTypes.STRING,
         surname: DataTypes.STRING,
