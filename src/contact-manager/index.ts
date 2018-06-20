@@ -79,12 +79,8 @@ export namespace ContactManager {
      * @param {Number} id Contact ID number
      * @returns { promise} Promise resolving to a Sequelize row representing the given contact
      */
-    export function getContactWithId (id: number): Promise<ContactInstance> {
-        return db.models.Contact.findOne({
-            where: {
-                id: id // TODO: Validate contact exists
-            }
-        })
+    export function getContactWithId (id: number): Promise<ContactInstance|null> {
+        return db.models.Contact.findById(id)
 
     }
 
