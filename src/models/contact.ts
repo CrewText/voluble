@@ -5,11 +5,11 @@ export interface ContactAttributes {
     surname: string,
     email_address: string,
     phone_number: string,
-    default_servicechain: number,
+    defaultServicechainId: number,
     id: string
 }
 
-export interface ContactInstance extends Sequelize.Instance<ContactAttributes>{
+export interface ContactInstance extends Sequelize.Instance<ContactAttributes> {
     id: string,
     createdAt: Date,
     updatedAt: Date,
@@ -18,20 +18,16 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes>{
     surname: string,
     email_address: string,
     phone_number: string,
-    default_servicechain: number
+    defaultServicechainId: number
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Contact = sequelize.define('Contact', {
-        id: {
-            type: DataTypes.STRING,
-            primaryKey: true,
-        },
-        first_name: DataTypes.STRING,
-        surname: DataTypes.STRING,
-        email_address: DataTypes.STRING,
-        phone_number: DataTypes.STRING,
-        default_servicechain: DataTypes.INTEGER,
+        id: { type: DataTypes.STRING, primaryKey: true },
+        first_name: { type: DataTypes.STRING, allowNull: false },
+        surname: { type: DataTypes.STRING, allowNull: false },
+        email_address: { type: DataTypes.STRING, validate: { isEmail: true } },
+        phone_number: { type: DataTypes.STRING, allowNull: false },
     })
 
     return Contact

@@ -47,6 +47,22 @@ export namespace QueueManager {
         }, function (err, resp) {
             if (!err) {
                 winston.info("Sent message " + message.id)
+                return true
+            } else {
+                winston.error(err)
+                throw err
+            }
+        })
+    }
+
+    export function updateMessageState(message_id: number, message_state: string) {
+        let q_msg = { message_id: message_id, status: message_state }
+        rsmq.sendMessage({
+            qname: "message-state-update",
+            message: JSON.stringify(q_msg)
+        }, function (err, resp) {
+            if (!err) {
+                return true
             } else {
                 winston.error(err)
                 throw err

@@ -1,7 +1,6 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 import * as events from "events"
-import * as utilities from '../utilities'
 import * as db from '../models'
 import * as volubleErrors from '../voluble-errors'
 import { ServicechainManager } from '../servicechain-manager'
@@ -28,22 +27,35 @@ export namespace MessageManager {
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
      * @param {Number} contact_id The ID number of the contact that this message is sent to/recieved from
-     * @param {Boolean} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
+     * @param {string} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
      * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
-    export function createMessage(body: string, contact_id: number, direction: Boolean, is_reply_to: number | null = null): Promise<MessageInstance> {
+    export function createMessage(body: string, contact_id: number, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null): Promise<MessageInstance> {
+
+        ContactManager.checkContactWithIDExists(contact_id)
+            .catch(errs.NotFoundError, function (NFError) {
+                winston.error(NFError)
+                return Promise.reject(volubleErrors.MessageFailedError(NFError))
+            })
 
         return ServicechainManager.getServicechainFromContactId(contact_id)
             .then(function (servicechain) {
-                return db.models.Message.create({
-                    body: body,
-                    servicechain: servicechain.id,
-                    contact: contact_id,
-                    is_reply_to: is_reply_to,
-                    direction: direction,
-                    message_state: 'MSG_PENDING'
-                })
+                if (servicechain) {
+                    let msg = db.models.Message.build({
+                        body: body,
+                        ServicechainId: servicechain.id,
+                        contact: contact_id,
+                        is_reply_to: is_reply_to,
+                        direction: direction,
+                        message_state: 'MSG_PENDING'
+                    })
+
+                    return msg.save()
+                }
+                else {
+                    return Promise.reject(new errs.NotFoundError(`Could not find servicechain for contact ${contact_id}`))
+                }
             })
     }
 
@@ -52,18 +64,23 @@ export namespace MessageManager {
      * @param {db.models.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
      * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
-    export function sendMessage(msg: MessageInstance) {
-        /*
-        eventEmitter.emit('send-message', msg)
-        return msg
-        */
-        QueueManager.sendMessage(msg)
+    export function sendMessage(msg: MessageInstance): MessageInstance {
+        Promise.try(function () {
+            return QueueManager.sendMessage(msg)
+        })
+            .then(function () {
+                return QueueManager.updateMessageState(msg.id, "MSG_SENT")
+            })
+            .catch(function () {
+                return QueueManager.updateMessageState(msg.id, "MSG_FAILED")
+            })
+
         return msg
     }
 
     function doMessageSend(msg: MessageInstance) {
         winston.info("Beginning message send process", { message_id: msg.id, message_state: msg.message_state })
-        return Promise.filter(ServicechainManager.getServicesInServicechain(msg.servicechain), function (svcInSC: ServicesInSCInstance) {
+        return Promise.filter(ServicechainManager.getServicesInServicechain(msg.ServicechainId), function (svcInSC: ServicesInSCInstance) {
             return svcInSC.priority == 1
         })
             .then(function (servicesInSC) {

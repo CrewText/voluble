@@ -2,7 +2,6 @@ import * as Sequelize from "sequelize"
 
 export interface UserAttributes {
     auth0_id: string,
-    org_number: number | null
 }
 
 export interface UserInstance extends Sequelize.Instance<UserAttributes>{
@@ -11,7 +10,6 @@ export interface UserInstance extends Sequelize.Instance<UserAttributes>{
     updatedAt: Date,
 
     auth0_id: string,
-    org_member: number | null
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
@@ -22,7 +20,6 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
             autoIncrement: true,
         },
         auth0_id: DataTypes.STRING,
-        org_number: DataTypes.BIGINT
     })
 
     return User

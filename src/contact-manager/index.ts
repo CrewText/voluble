@@ -2,7 +2,7 @@ const winston = require('winston')
 import * as Promise from "bluebird"
 import { ContactInstance } from "../models/contact";
 import * as db from '../models'
-//import db from '../../models'
+const errs = require('common-errors')
 
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
@@ -54,7 +54,7 @@ export namespace ContactManager {
             return db.models.Contact.count({ where: { id: id } })
                 .then(function (count: number) {
                     if (count == 0) {
-                        return Promise.reject(`No contact with ID ${id}`)
+                        return Promise.reject(errs.NotFoundError(`No contact with ID ${id}`))
                     } else {
                         // Contact exists, return the same ID what was provided, for Promise continuity
                         return Promise.resolve(id)

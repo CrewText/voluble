@@ -23,19 +23,14 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServicechainFromContactId(contact_id: number): Promise<db.ServicechainInstance> {
+    export function getServicechainFromContactId(contact_id: number): Promise<db.ServicechainInstance | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
-                return db.models.Contact.findOne({
-                    where: { id: cont_id },
-                    attributes: ['default_servicechain']
-                })
-            })
-            .then(function (contact_svc) {
-                return db.models.Servicechain.findOne({
-                    where: {
-                        id: contact_svc.default_servicechain
-                    }
+                return db.models.Servicechain.findById(cont_id, {
+                    include: [{
+                        model: db.models.Contact,
+                        where: { id: db.sequelize.col('contact.ServicechainId') }
+                    }]
                 })
             })
     }
@@ -44,10 +39,8 @@ export namespace ServicechainManager {
         return db.models.Servicechain.findAll()
     }
 
-    export function getServicechainById (id: number): Promise<db.ServicechainInstance> {
-        return db.models.Servicechain.findOne(
-            { where: { id: id } } // TODO: Validate me!
-        )
+    export function getServicechainById(id: number): Promise<db.ServicechainInstance | null> {
+        return db.models.Servicechain.findById(id)
     }
 
     /**
@@ -56,7 +49,7 @@ export namespace ServicechainManager {
      * @param {string} name The name of the new Servicechain
      * @param {array} services The list of priority/service doubles to add
      */
-    export function createNewServicechain (name: string, services: Array<[number, number]>): Promise<db.ServicechainInstance> {
+    export function createNewServicechain(name: string, services: Array<[number, number]>): Promise<db.ServicechainInstance> {
         winston.debug("Creating new SC - " + name)
         // First, create the new SC itself
         return db.models.Servicechain.create({
@@ -88,15 +81,15 @@ export namespace ServicechainManager {
      * Removes a Servicechain from the database. Returns the ID number of the servicechain removed.
      * @param {Number} id ID number of the Servicechain to remove.
      */
-    export function deleteServicechain (id: number): Promise<number> {
+    export function deleteServicechain(id: number): Promise<number> {
         return db.models.Servicechain.destroy({ where: { id: id } })
-        .then(function(destroyedRowsCount){
-            if (!destroyedRowsCount){
-                return Promise.reject(new errors.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
-            } else {
-                return Promise.resolve(destroyedRowsCount)
-            }
-        })
+            .then(function (destroyedRowsCount) {
+                if (!destroyedRowsCount) {
+                    return Promise.reject(new errors.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+                } else {
+                    return Promise.resolve(destroyedRowsCount)
+                }
+            })
         // TODO: Update SC DELETE route handler to catch this and drop error to ensure idempotence
     }
 }

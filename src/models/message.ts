@@ -2,10 +2,10 @@ import * as Sequelize from "sequelize"
 
 export interface MessageAttributes {
     body: string
-    servicechain: number,
+    ServicechainId: number,
     contact: number,
     is_reply_to: number | null | undefined
-    direction: Boolean,
+    direction: string,
     sent_time?: Date,
     message_state: string
 }
@@ -16,10 +16,10 @@ export interface MessageInstance extends Sequelize.Instance<MessageAttributes>{
     updatedAt: Date,
 
     body: string
-    servicechain: number,
+    ServicechainId: number,
     contact: number,
     is_reply_to: number | null | undefined
-    direction: Boolean,
+    direction: string,
     sent_time: Date,
     message_state: string
 }
@@ -33,10 +33,9 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
             autoIncrement: true,
         },
         body: DataTypes.STRING(1024),
-        servicechain: DataTypes.INTEGER,
         contact: DataTypes.BIGINT,
         is_reply_to: DataTypes.BIGINT,
-        direction: DataTypes.BOOLEAN, // TODO: Can we make this an ENUM? (INBOUND, OUTBOUND)
+        direction: DataTypes.ENUM('INBOUND', 'OUTBOUND'), // TODO: Can we make this an ENUM? (INBOUND, OUTBOUND)
         sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',
             'MSG_SENDING',

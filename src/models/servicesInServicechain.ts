@@ -24,8 +24,6 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes:Sequelize.Dat
             primaryKey: true,
             autoIncrement: true,
         },
-        servicechain_id: DataTypes.BIGINT,
-        service_id: DataTypes.BIGINT,
         priority: DataTypes.INTEGER
     })
 

@@ -4,7 +4,7 @@ const router = express.Router();
 const winston = require('winston')
 import * as utils from '../../utilities'
 import { MessageManager } from '../../message-manager/'
-const db = require('../models')
+import * as db from '../../models'
 import * as volubleErrors from '../../voluble-errors'
 
 /**
@@ -62,7 +62,7 @@ router.post('/', function (req, res, next) {
   MessageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!
-    req.body.direction
+    req.body.direction || "INBOUND"
   )
     .then(function (msg) {
       return MessageManager.sendMessage(msg)

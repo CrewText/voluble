@@ -54,8 +54,20 @@ Object.keys(models).forEach(modelName => {
     }
 });
 
+models.Organization.hasMany(models.User)
+models.User.belongsTo(models.Organization)
+
+//models.Servicechain.hasMany(models.ServicesInSC)
+//models.ServicesInSC.belongsTo(models.Plugin)
+models.Plugin.belongsToMany(models.Servicechain, {through: models.ServicesInSC})
+models.Servicechain.belongsToMany(models.Plugin, {through: models.ServicesInSC})
+
+models.Servicechain.hasOne(models.Contact)
+models.Contact.belongsTo(models.Servicechain)//,{as:"defaultServicechain"})
+
+models.Servicechain.hasOne(models.Message)
+models.Message.belongsTo(models.Servicechain)
+
 sequelize.sync()
 
 models.Sequelize = Sequelize;
-
-//<DbConnection>db
