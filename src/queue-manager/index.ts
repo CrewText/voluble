@@ -39,7 +39,7 @@ export namespace QueueManager {
     })
     worker_send_msg_update.start()
 
-    export function sendMessage(message: MessageInstance) {
+    export function addMessageToSendRequest(message: MessageInstance) {
         winston.debug("Sending message with ID " + message.id)
         rsmq.sendMessage({
             qname: "message-send",
@@ -55,7 +55,7 @@ export namespace QueueManager {
         })
     }
 
-    export function updateMessageState(message_id: number, message_state: string) {
+    export function addMessageStateUpdateRequest(message_id: number, message_state: string) {
         let q_msg = { message_id: message_id, status: message_state }
         rsmq.sendMessage({
             qname: "message-state-update",

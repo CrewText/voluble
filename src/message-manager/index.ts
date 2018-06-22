@@ -18,11 +18,6 @@ const errs = require('common-errors')
  */
 export namespace MessageManager {
 
-    let eventEmitter = new events.EventEmitter()
-    eventEmitter.on('send-message', doMessageSend)
-    eventEmitter.on('message-failed', onMessageFailed)
-    eventEmitter.on('message-sent', onMessageSent)
-
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
@@ -66,83 +61,23 @@ export namespace MessageManager {
      */
     export function sendMessage(msg: MessageInstance): MessageInstance {
         Promise.try(function () {
-            return QueueManager.sendMessage(msg)
+            return QueueManager.addMessageToSendRequest(msg)
         })
-            .then(function () {
-                return QueueManager.updateMessageState(msg.id, "MSG_SENT")
-            })
             .catch(function () {
-                return QueueManager.updateMessageState(msg.id, "MSG_FAILED")
+                return QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
             })
 
         return msg
     }
 
-    function doMessageSend(msg: MessageInstance) {
-        winston.info("Beginning message send process", { message_id: msg.id, message_state: msg.message_state })
-        return Promise.filter(ServicechainManager.getServicesInServicechain(msg.ServicechainId), function (svcInSC: ServicesInSCInstance) {
-            return svcInSC.priority == 1
-        })
-            .then(function (servicesInSC) {
-                if (!servicesInSC || servicesInSC.length < 1) {
-                    return Promise.reject(volubleErrors.MessageFailedError("No plugins in servicechain with priority 1"))
-                }
+    export function doMessageSend(msg: db.MessageInstance) {
+        // First, acquire the first service in the servicechain
 
-                let svcInSC = servicesInSC[0]
-
-                return PluginManager.getServiceById(svcInSC.service_id)
-                    .then(function (svc) {
-                        if (svc) {
-                            return sendMessageWithService(msg, svc)
-                        }
-                        else {
-                            throw new errs.errs.NotFoundError("Could not find service with ID " + svcInSC.service_id)
-                        }
-                    })
-
-            })
-            .then(function () {
-                return msg.reload()
-            })
-    }
-
-
-
-    function onMessageFailed(msg: MessageInstance, svc: PluginInstance) {
-        // To do this, figure out which servicechain we're using, then find out where the plugin that's called the update sits.
-        // If there's one after in the SC, call sendMessageWithService with the next plugin. If not, fail.
-        winston.debug(`Finding priority of service with ID ${svc.id} in SC ${msg.servicechain}`)
-        db.models.ServicesInSC.findOne({
+        db.models.Plugin.findAll({
             where: {
-                servicechain_id: msg.servicechain,
-                service_id: svc.id
+                '$priority$': "1"
             }
         })
-            .then(function (currentSvcInSC) {
-                if (!currentSvcInSC) {
-                    throw new errs.errs.NotFoundError("Could not find current service in servicechain")
-                }
-                return db.models.ServicesInSC.findOne({
-                    where: {
-                        servicechain_id: msg.servicechain,
-                        priority: currentSvcInSC.priority + 1
-                    }
-                })
-            })
-            .then(function (nextSvcInSC) {
-                if (!nextSvcInSC) { return Promise.reject(new errs.NotFoundError("Couldn't find another service in servicechain, message " + msg.id + " failed")) }
-                return PluginManager.getServiceById(nextSvcInSC.service_id)
-            })
-            .then(function (nextSvc) {
-                if (nextSvc) {
-                    return sendMessageWithService(msg, nextSvc)
-                } else {
-                    throw new errs.NotFoundError("Could not find next service in servicechain for message " + msg.id)
-                }
-            })
-            .catch(errs.NotFoundError, function (err: any) {
-                winston.info("Message " + msg.id + " failed to send:\n" + err)
-            })
     }
 
     function onMessageSent(msg: MessageInstance, message_state: string) {
