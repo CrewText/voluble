@@ -78,62 +78,7 @@ export namespace MessageManager {
                 '$priority$': "1"
             }
         })
-    }
-
-    function onMessageSent(msg: MessageInstance, message_state: string) {
-        msg.sent_time = db.models.Sequelize.fn('NOW')
-        return msg.save()
-    }
-
-    /**
-     * This is called when a messages' state changes. Determine the correct course of action depending on the new message state.
-     * @param {Sequelize.Message} msg The message whose state will be updated
-     * @param {string} message_state The new message state for the message
-     * @param {Sequelize.Plugin} svc The service that initiated the state change.
-     */
-    export function updateMessageState(msg: MessageInstance, message_state: string, svc?: PluginInstance) {
-        winston.info("New message state", { msg: msg.id, state: message_state })
-        msg.message_state = message_state
-        return msg.save()
-            .then(function (msg) {
-                switch (message_state) {
-                    case "MSG_FAILED":
-                        eventEmitter.emit('message-failed', msg, svc)
-                        break
-                    case "MSG_SENT":
-                        eventEmitter.emit('message-sent', msg)
-                        break
                 }
-            })
-            .catch(db.models.Sequelize.ValidationError, function (err: any) {
-                winston.error("Could not update message state:\n" + err)
-                return Promise.reject(err)
-            })
-    }
-
-    /**
-     * Sends a given message with the specified plugins' `send_message` method.
-     * @param {Sequelize.Message} msg The message to attempt to send
-     * @param {Sequelize.Plugin} service The service with which to attempt to send the message
-     * @returns {promise} A promise that resolves to whatever the plugin returns
-     */
-    export function sendMessageWithService(msg: MessageInstance, service: PluginInstance) {
-        winston.debug("Attempting to send message " + msg.id + " with plugin " + service.name)
-        MessageManager.updateMessageState(msg, "MSG_SENDING")
-            .then(function () {
-                PluginManager.getPluginById(service.id)
-                    .then(function (plugin) {
-                        ContactManager.getContactWithId(msg.contact)
-                            .then(function (contact) {
-                                return Promise.try(function () {
-                                    return plugin.send_message(msg, contact)
-                                })
-                            })
-                    })
-                    .catch(volubleErrors.PluginDoesNotExistError, errs.NotFoundError, function (err: any) {
-                        winston.debug("Active plugin with ID " + service.id + " not found")
-                        return MessageManager.updateMessageState(msg, "MSG_FAILED", service)
-                    })
             })
     }
 
