@@ -67,28 +67,30 @@ export namespace MessageManager {
         return msg
     }
 
-    export function doMessageSend(msg: db.MessageInstance): Promise<boolean> {
+    export function doMessageSend(msg: db.MessageInstance) {//: Promise<boolean> {
         // First, acquire the first service in the servicechain
 
-        return db.models.ServicesInSC.findOne({
-            where: {
-                "ServicechainId": msg.ServicechainId,
-                "priority": 1
-            }
+        return db.models.Servicechain.findById(msg.ServicechainId, {
+            include: [
+                {
+                    model: db.models.Plugin,
+                    through: {
+                        where: {
+                            priority: 1
+                        }
+                    }
+                }
+            ]
         })
-            .then(function (svcInSc: db.ServicesInSCInstance | null) {
-                if (svcInSc) {
-                    return db.models.Plugin.findById(svcInSc.PluginId)
-                        .then(function (plugin: db.PluginInstance | null) {
-                            if (plugin) {
-                                console.info(`Using plugin: ${plugin.name}`)
-                                return Promise.resolve(true)
-                            } else {
-                                return Promise.reject(new errs.NotFoundError(`Cannot find plugin with ID ${svcInSc.PluginId}`))
-                            }
-                        })
+            .then(function (sc) {
+                if (sc) {
+                    if (sc.Plugins.length) {
+                        console.log("Found plug " + sc.Plugins[0].name)
+                    } else {
+                        console.log("Did not find plug")
+                    }
                 } else {
-                    return Promise.reject(new errs.NotFoundError(`Cannot find ServiceInSc for SC ${msg.ServicechainId}`))
+                    console.log("Did not find SC")
                 }
             })
     }
