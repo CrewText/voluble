@@ -7,9 +7,6 @@ import { ServicechainManager } from '../servicechain-manager'
 import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'
-import { MessageInstance } from "../models/message";
-import { ServicesInSCInstance } from "../models/servicesInServicechain";
-import { PluginInstance } from "../models/plugin";
 const errs = require('common-errors')
 
 /**
@@ -26,7 +23,7 @@ export namespace MessageManager {
      * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
-    export function createMessage(body: string, contact_id: number, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null): Promise<MessageInstance> {
+    export function createMessage(body: string, contact_id: number, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null): Promise<db.MessageInstance> {
 
         ContactManager.checkContactWithIDExists(contact_id)
             .catch(errs.NotFoundError, function (NFError) {
@@ -59,7 +56,7 @@ export namespace MessageManager {
      * @param {db.models.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
      * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
-    export function sendMessage(msg: MessageInstance): MessageInstance {
+    export function sendMessage(msg: db.MessageInstance): db.MessageInstance {
         Promise.try(function () {
             return QueueManager.addMessageToSendRequest(msg)
         })
@@ -70,14 +67,28 @@ export namespace MessageManager {
         return msg
     }
 
-    export function doMessageSend(msg: db.MessageInstance) {
+    export function doMessageSend(msg: db.MessageInstance): Promise<boolean> {
         // First, acquire the first service in the servicechain
 
-        db.models.Plugin.findAll({
+        return db.models.ServicesInSC.findOne({
             where: {
-                '$priority$': "1"
+                "ServicechainId": msg.ServicechainId,
+                "priority": 1
             }
         })
+            .then(function (svcInSc: db.ServicesInSCInstance | null) {
+                if (svcInSc) {
+                    return db.models.Plugin.findById(svcInSc.PluginId)
+                        .then(function (plugin: db.PluginInstance | null) {
+                            if (plugin) {
+                                console.info(`Using plugin: ${plugin.name}`)
+                                return Promise.resolve(true)
+                            } else {
+                                return Promise.reject(new errs.NotFoundError(`Cannot find plugin with ID ${svcInSc.PluginId}`))
+                            }
+                        })
+                } else {
+                    return Promise.reject(new errs.NotFoundError(`Cannot find ServiceInSc for SC ${msg.ServicechainId}`))
                 }
             })
     }
@@ -87,7 +98,7 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export function getHundredMessageIds(offset: number): Promise<Array<MessageInstance>> {
+    export function getHundredMessageIds(offset: number): Promise<Array<db.MessageInstance>> {
         return db.models.Message.findAll({
             offset: offset,
             limit: 100,
@@ -100,7 +111,7 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export function getMessageFromId(id: number): Promise<MessageInstance | null> {
+    export function getMessageFromId(id: number): Promise<db.MessageInstance | null> {
         return db.models.Message.findById(id)
     }
 }

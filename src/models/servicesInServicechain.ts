@@ -18,7 +18,7 @@ export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAtt
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes:Sequelize.DataTypes) {
-    var ServicesInSC = sequelize.define('ServicesInSC', {
+    var XServicesInSC = sequelize.define('ServicesInSC', {
         id: {
             type: DataTypes.BIGINT,
             primaryKey: true,
@@ -27,5 +27,5 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes:Sequelize.Dat
         priority: DataTypes.INTEGER
     })
 
-    return ServicesInSC
+    return XServicesInSC
 }
