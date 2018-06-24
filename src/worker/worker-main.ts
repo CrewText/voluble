@@ -9,7 +9,8 @@ if (!process.env.IS_PRODUCTION) {
 
 import * as rsmqWorker from 'rsmq-worker'
 import * as redis from 'redis'
-import * as fdb from '../models'
+import * as db from '../models'
+import { MessageManager } from '../message-manager'
 
 namespace MessageSendWorker {
     winston.info("Worker: Initializing worker process")
@@ -32,11 +33,16 @@ namespace MessageSendWorker {
         let worker_send_msg_update = new rsmqWorker("message-state-update", { redis: client })
 
         worker_msg_recv.on("message", function (message, next, message_id) {
-            let parsed_msg =  JSON.parse(message)
+            let parsed_msg: db.MessageInstance = JSON.parse(message)
             winston.info(`Got message: ${parsed_msg.body}`)
             let body = { message_id: parsed_msg.id, status: "MSG_SENDING" }
-            worker_send_msg_update.send(JSON.stringify(body))
-            next()
+            worker_send_msg_update.send(JSON.stringify(body), function () {
+
+                MessageManager.doMessageSend(parsed_msg).then(function () {
+                    next()
+                })
+                
+            })
         })
 
         if (worker_msg_recv.start()) {

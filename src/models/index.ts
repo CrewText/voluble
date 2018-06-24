@@ -59,8 +59,9 @@ models.User.belongsTo(models.Organization)
 
 //models.Servicechain.hasMany(models.ServicesInSC)
 //models.ServicesInSC.belongsTo(models.Plugin)
-models.Plugin.belongsToMany(models.Servicechain, {through: models.ServicesInSC})
-models.Servicechain.belongsToMany(models.Plugin, {through: models.ServicesInSC})
+
+models.Plugin.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
+models.Servicechain.belongsToMany(models.Plugin, { through: models.ServicesInSC })
 
 models.Servicechain.hasOne(models.Contact)
 models.Contact.belongsTo(models.Servicechain)//,{as:"defaultServicechain"})

@@ -4,7 +4,6 @@ const router = express.Router();
 const winston = require('winston')
 import * as utils from '../../utilities'
 import { MessageManager } from '../../message-manager/'
-import * as db from '../../models'
 import * as volubleErrors from '../../voluble-errors'
 
 /**
