@@ -7,6 +7,7 @@ import { ServicechainManager } from '../servicechain-manager'
 import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'
+import servicechain from "../models/servicechain";
 const errs = require('common-errors')
 
 /**
@@ -23,15 +24,22 @@ export namespace MessageManager {
      * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
-    export function createMessage(body: string, contact_id: number, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null): Promise<db.MessageInstance> {
+    export function createMessage(body: string, contact_id: number, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null,
+        servicechain_id: number | null = null): Promise<db.MessageInstance> {
 
-        ContactManager.checkContactWithIDExists(contact_id)
+        return ContactManager.checkContactWithIDExists(contact_id)
             .catch(errs.NotFoundError, function (NFError) {
                 winston.error(NFError)
-                return Promise.reject(volubleErrors.MessageFailedError(NFError))
+                return Promise.reject(new volubleErrors.MessageFailedError(NFError))
             })
 
-        return ServicechainManager.getServicechainFromContactId(contact_id)
+            .then(function (verified_contact_id) {
+                if (servicechain_id){
+                    return ServicechainManager.getServicechainById(servicechain_id)
+                } else {
+                    return ServicechainManager.getServicechainFromContactId(verified_contact_id)
+                }
+            })
             .then(function (servicechain) {
                 if (servicechain) {
                     let msg = db.models.Message.build({
