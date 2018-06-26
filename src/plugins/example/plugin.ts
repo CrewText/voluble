@@ -24,6 +24,7 @@ class MyExamplePlugin extends plugin_base.voluble_plugin{
 
     send_message(message: plugin_base.messageInstance, contact:plugin_base.contactInstance){
         this.message_state_update(message, "MSG_FAILED")
+        return false
     }
 }
 

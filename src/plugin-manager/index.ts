@@ -99,7 +99,7 @@ export namespace PluginManager {
 
                                     // Add event listeners, so Voluble can react to message state changes
                                     plug_obj._eventEmitter.on('message-state-update', function (msg: db.MessageInstance, message_state: string){
-                                        MessageManager.updateMessageState(msg, message_state, svc)
+                                        //MessageManager.updateMessageState(msg, message_state, svc)
                                     })
 
                                     return svc.save()
