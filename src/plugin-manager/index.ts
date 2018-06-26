@@ -89,7 +89,7 @@ export namespace PluginManager {
                                 }
                             })
                             // So now that the plugin exists in the database, let's try and make it work
-                            .then(function (svc: db.PluginInstance) {
+                            .then(function (svc: db.ServiceInstance) {
                                 if (plug_obj.init()) {
                                     let p: IPluginIDMap = { id: svc.id, plugin: plug_obj }
                                     __loaded_plugins.push(p)
@@ -140,8 +140,8 @@ export namespace PluginManager {
         db.models.Service.findAll({
             where: { initialized: true }
         })
-            .then(function (svcs: db.PluginInstance[]) {
-                Promise.map(svcs, function (svc: db.PluginInstance) {
+            .then(function (svcs: db.ServiceInstance[]) {
+                Promise.map(svcs, function (svc: db.ServiceInstance) {
                     return PluginManager.getPluginById(svc.id)
                         .then(function (plugin) {
                             plugin.shutdown()
@@ -169,7 +169,7 @@ export namespace PluginManager {
      * @returns {array <Sequelize.Plugin>} An array of Sequelize rows representing loaded services.
      */
 
-    export function getAllServices(): Promise<db.PluginInstance[]> {
+    export function getAllServices(): Promise<db.ServiceInstance[]> {
         return db.models.Service.findAll()
     }
 
@@ -178,12 +178,12 @@ export namespace PluginManager {
      * @param {Number} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
-    export function getServiceById (id: number): Promise<db.PluginInstance | null> {
+    export function getServiceById (id: number): Promise<db.ServiceInstance | null> {
         return db.models.Service.findById(id)
         // TODO: Validate plugin exists, fail otherwise
     }
 
-    function createPluginDataTables(service: db.PluginInstance, table_names: string[]): Promise<any[]>{
+    function createPluginDataTables(service: db.ServiceInstance, table_names: string[]): Promise<any[]>{
         // `data_structure` must be laid out as follows:
         // { table_name: { columnOne: typeName, columnTwo: typeName }, ... }
         

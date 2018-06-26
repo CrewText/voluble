@@ -103,6 +103,10 @@ export namespace MessageManager {
             })
     }
 
+    function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance){
+        PluginManager.getPluginById
+    }
+
     /**
      * Returns the first 100 messages available in the database with a given offset.
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
