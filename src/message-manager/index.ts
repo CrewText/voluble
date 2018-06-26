@@ -34,7 +34,7 @@ export namespace MessageManager {
             })
 
             .then(function (verified_contact_id) {
-                if (servicechain_id){
+                if (servicechain_id) {
                     return ServicechainManager.getServicechainById(servicechain_id)
                 } else {
                     return ServicechainManager.getServicechainFromContactId(verified_contact_id)
@@ -92,19 +92,30 @@ export namespace MessageManager {
         })
             .then(function (sc) {
                 if (sc) {
-                    if (sc.Plugins.length) {
-                        console.log("Found plug " + sc.Plugins[0].name)
+                    if (sc.Services.length) {
+                        //console.log("Found plug " + sc.Services[0].name)
+                        sendMessageWithService(msg, sc.Services[0])
                     } else {
-                        console.log("Did not find plug")
+                        throw new errs.NotFoundError(`No service available with priority 1 in SC ${sc.id}`)
                     }
                 } else {
-                    console.log("Did not find SC")
+                    throw new errs.NotFoundError(`No SC found with ID ${msg.ServicechainId}`)
                 }
             })
     }
 
-    function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance){
-        PluginManager.getPluginById
+    function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance): Promise<Boolean> {
+        return PluginManager.getPluginById(svc.id)
+            .then(function (plugin) {
+                return ContactManager.getContactWithId(msg.contact)
+                    .then(function (contact) {
+                        if (contact) {
+                            return plugin.send_message(msg, contact) // Init first?
+                        } else {
+                            return Promise.reject(new errs.NotFoundError(`Could not find contact with ID ${msg.contact}`))
+                        }
+                    })
+            })
     }
 
     /**

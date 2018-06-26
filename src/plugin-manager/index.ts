@@ -25,8 +25,10 @@ export namespace PluginManager {
     var __loaded_plugins: Array<IPluginIDMap> = []
 
     export function getPluginById(id: number): Promise<voluble_plugin> {
-        let p: any = null
+        let p: voluble_plugin
+        console.log(__loaded_plugins)
         __loaded_plugins.forEach(function (plugin: IPluginIDMap) {
+            console.log(`Plugin ID: ${plugin.id}, ${plugin.id == id}`)
             if (plugin.id == id) {
                 p = plugin.plugin
             }
@@ -34,7 +36,6 @@ export namespace PluginManager {
 
         if (!p) {
             return Promise.reject(new errs.NotFoundError("Plugin with ID " + id + " does not exist."))
-            //return Promise.reject(Error("Plugin with ID " + id + " does not exist."))
         } else {
             return Promise.resolve(p)
         }
