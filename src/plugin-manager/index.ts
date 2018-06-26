@@ -71,13 +71,13 @@ export namespace PluginManager {
                 })
                     .then(function (plug_obj) {
                         // We've found the plugin file, so now let's update the database to match.
-                        return db.models.Plugin.findOne({
+                        return db.models.Service.findOne({
                             where: { 'directory_name': plugin_subdir_rel }
                         })
                             .then(function (svc) {
                                 if (!svc) {
                                     // This plugin doesn't exist in the database, so let's add an entry for it
-                                    return db.models.Plugin.create({
+                                    return db.models.Service.create({
                                         'name': plug_obj.name,
                                         'directory_name': plugin_subdir_rel,
                                         'initialized': false
@@ -137,7 +137,7 @@ export namespace PluginManager {
      */
     export function shutdownAllPlugins() {
 
-        db.models.Plugin.findAll({
+        db.models.Service.findAll({
             where: { initialized: true }
         })
             .then(function (svcs: db.PluginInstance[]) {
@@ -170,7 +170,7 @@ export namespace PluginManager {
      */
 
     export function getAllServices(): Promise<db.PluginInstance[]> {
-        return db.models.Plugin.findAll()
+        return db.models.Service.findAll()
     }
 
     /**
@@ -179,7 +179,7 @@ export namespace PluginManager {
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
     export function getServiceById (id: number): Promise<db.PluginInstance | null> {
-        return db.models.Plugin.findById(id)
+        return db.models.Service.findById(id)
         // TODO: Validate plugin exists, fail otherwise
     }
 

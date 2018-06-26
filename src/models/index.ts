@@ -6,7 +6,7 @@ const winston = require('winston')
 
 import * as Contact from './contact'
 import * as Message from './message'
-import * as Plugin from './plugin'
+import * as Plugin from './service'
 import * as Servicechain from './servicechain'
 import * as ServiceInSC from './servicesInServicechain'
 import * as Blast from './blast'
@@ -15,7 +15,7 @@ import * as Organization from './organization'
 
 export type ContactInstance = Contact.ContactInstance
 export type MessageInstance = Message.MessageInstance
-export type PluginInstance = Plugin.PluginInstance
+export type PluginInstance = Plugin.ServiceInstance
 export type ServicechainInstance = Servicechain.ServicechainInstance
 export type ServicesInSCInstance = ServiceInSC.ServicesInSCInstance
 export type BlastInstance = Blast.BlastInstance
@@ -23,7 +23,7 @@ export type BlastInstance = Blast.BlastInstance
 export interface DbConnection {
     Contact: Sequelize.Model<Contact.ContactInstance, Contact.ContactAttributes>,
     Message: Sequelize.Model<Message.MessageInstance, Message.MessageAttributes>,
-    Plugin: Sequelize.Model<Plugin.PluginInstance, Plugin.PluginAttributes>,
+    Service: Sequelize.Model<Plugin.ServiceInstance, Plugin.ServiceAttributes>,
     Servicechain: Sequelize.Model<Servicechain.ServicechainInstance, Servicechain.ServicechainAttributes>,
     ServicesInSC: Sequelize.Model<ServiceInSC.ServicesInSCInstance, ServiceInSC.ServicesInSCAttributes>,
     Blast: Sequelize.Model<Blast.BlastInstance, Blast.BlastAttributes>,
@@ -60,8 +60,8 @@ models.User.belongsTo(models.Organization)
 models.Organization.hasMany(models.Contact)
 models.Contact.belongsTo(models.Organization)
 
-models.Plugin.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
-models.Servicechain.belongsToMany(models.Plugin, {through: models.ServicesInSC})
+models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
+models.Servicechain.belongsToMany(models.Service, {through: models.ServicesInSC})
 
 models.Servicechain.hasOne(models.Contact)
 models.Contact.belongsTo(models.Servicechain)

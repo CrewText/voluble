@@ -81,7 +81,7 @@ export namespace MessageManager {
         return db.models.Servicechain.findById(msg.ServicechainId, {
             include: [
                 {
-                    model: db.models.Plugin,
+                    model: db.models.Service,
                     through: {
                         where: {
                             priority: 1

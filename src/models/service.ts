@@ -1,12 +1,12 @@
 import * as Sequelize from "sequelize"
 
-export interface PluginAttributes {
+export interface ServiceAttributes {
     name: string,
     directory_name: string,
     initialized: boolean
 }
 
-export interface PluginInstance extends Sequelize.Instance<PluginAttributes> {
+export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes> {
     id: number,
     createdAt: Date,
     updatedAt: Date,
@@ -17,7 +17,7 @@ export interface PluginInstance extends Sequelize.Instance<PluginAttributes> {
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Plugin = sequelize.define('Plugin', {
+    var Service = sequelize.define('Service', {
         id: {
             type: DataTypes.BIGINT,
             primaryKey: true,
@@ -28,5 +28,5 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         initialized: DataTypes.BOOLEAN
     })
 
-    return Plugin
+    return Service
 }
