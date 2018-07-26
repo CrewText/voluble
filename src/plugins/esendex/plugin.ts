@@ -1,14 +1,14 @@
-import {voluble_plugin, contactInstance, messageInstance} from '../plugin_base'
+import { voluble_plugin, contactInstance, messageInstance } from '../plugin_base'
 var manifest = require('./manifest.json')
 const esendex = require('esendex')
 
-class EsendexPlugin extends voluble_plugin{
+class EsendexPlugin extends voluble_plugin {
   username: string | undefined
   password: string | undefined
   account_ref: string | undefined
   client: any
 
-  constructor(){
+  constructor() {
     super()
     this.name = manifest.plugin_name
     this.description = manifest.plugin_description
@@ -17,16 +17,16 @@ class EsendexPlugin extends voluble_plugin{
     this.account_ref = process.env.ESENDEX_ACCOUNT_REF
   }
 
-  init():boolean{
-    
-    try{
+  createPluginDataTables(): boolean {
+
+    try {
       this.client = esendex({
         username: this.username,
         password: this.password
       })
     }
 
-    catch(e){
+    catch (e) {
       console.log(e)
     }
 
@@ -35,11 +35,11 @@ class EsendexPlugin extends voluble_plugin{
     }
   }
 
-  shutdown():boolean{
+  shutdown(): boolean {
     return true
   }
 
-  send_message(message: messageInstance, contact: contactInstance){
+  send_message(message: messageInstance, contact: contactInstance) {
     let esendex_message = {
       accountreference: this.account_ref,
       message: [{
@@ -47,17 +47,18 @@ class EsendexPlugin extends voluble_plugin{
         body: message.body
       }]
     }
-  
+
     let t = this
 
-    this.client.messages.send(esendex_message, function(err:any, response:any){
-      if (err){
+    return this.client.messages.send(esendex_message, function (err: any, response: any) {
+      if (err) {
         t.message_state_update(message, "MSG_FAILED")
-      console.log(err)
-    } else {
-      t.message_state_update(message, "MSG_SENT")
-    }
-
+        return false
+        console.log(err)
+      } else {
+        t.message_state_update(message, "MSG_SENT")
+        return true
+      }
     })
   }
 

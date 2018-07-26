@@ -18,7 +18,6 @@ interface IVolublePluginBase {
     plugin_uid: string | undefined
     _eventEmitter: events.EventEmitter
 
-    init(): boolean
     shutdown(): boolean
     send_message(message: db.MessageInstance, contact: db.ContactInstance): boolean
     message_state_update(msg: db.MessageInstance, message_state: string): null | undefined | void
@@ -32,10 +31,6 @@ export class voluble_plugin implements IVolublePluginBase {
 
     constructor() {
         this._eventEmitter = new events.EventEmitter()
-    }
-
-    init(): boolean {
-        throw new errors.NotImplementedError("Plugin " + this.name + " has not defined the function 'init'. Contact the plugin author for a fix.")
     }
 
     shutdown(): boolean {

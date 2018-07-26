@@ -17,7 +17,7 @@ class TelegramPlugin extends voluble_plugin {
         this.api_hash = process.env.TELEGRAM_API_HASH
     }
 
-    init(): boolean {
+    createPluginDataTables(): boolean {
         let server = { dev: true }
         let api = {}
         this.client = MTProto({ server, api })
