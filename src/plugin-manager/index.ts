@@ -7,8 +7,6 @@ import * as crypto from 'crypto'
 
 import { voluble_plugin } from '../plugins/plugin_base'
 import * as db from '../models'
-import { MessageManager } from '../message-manager'
-import { Sequelize } from 'sequelize';
 const voluble_errors = require('../voluble-errors')
 
 interface IPluginIDMap {
@@ -20,6 +18,8 @@ interface IPluginDirectoryMap {
     subdirectory: string,
     plugin: voluble_plugin
 }
+
+const PluginImportFailedError = errs.helpers.generateClass('PluginImportFailedError')
 
 /**
  * The PluginManager keeps track of all loaded plugins, as well as initializing, loading and shutting down all detected plugins.
@@ -46,7 +46,7 @@ export namespace PluginManager {
         }
     }
 
-    function discoverPlugins(directory: string){
+    function discoverPlugins(directory: string): Promise<IPluginDirectoryMap[]> {
         // Cycle through plugin directory and return a list of all of the valid plugins
 
         // Get a list of all of the directories under the plugin directory
@@ -59,48 +59,58 @@ export namespace PluginManager {
 
         winston.debug("Found plugins at:\n\t" + plugin_subdirs)
 
+        // Create a list of all the plugins we're able to import
         let plugin_list: IPluginDirectoryMap[] = []
         plugin_subdirs.forEach(function (plugin_subdir_rel) {
             let plugin_file_abs = path.join(__plugin_dir, plugin_subdir_rel, "plugin.js")
 
             if (fs.existsSync(plugin_file_abs)) {
-                let plug_obj: voluble_plugin = require(plugin_file_abs)()
-                winston.info("Loaded plugin:\n\t" + plug_obj.name)
-                let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir_rel }
-                plugin_list.push(p)
+                try {
+                    let plug_obj: voluble_plugin = require(plugin_file_abs)()
+                    winston.info("Loaded plugin:\n\t" + plug_obj.name)
+                    let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir_rel }
+                    plugin_list.push(p)
+                } catch (e) {
+                    //throw new PluginImportFailedError(e)
+                    winston.error(`Could not load plugin in subdirectory ${plugin_subdir_rel}`)
+                    errs.log(e, `Could not load plugin in subdirectory ${plugin_subdir_rel}`)
+                }
             }
         })
 
-        return Promise.mapSeries(plugin_list, function (plugin_directory_map) {
-            return db.models.Service.findOne({
-                where: { 'directory_name': plugin_directory_map.subdirectory }
-            })
-                .then(function (service) {
-                    if (!service) {
-                        // This plugin doesn't exist in the database, so let's add an entry for it
-                        return db.models.Service.create({
-                            'name': plugin_directory_map.plugin.name,
-                            'directory_name': plugin_directory_map.subdirectory,
-                            'initialized': false
-                        })
-                    } else {
-                        // This plugin does exist, but let's make sure that Voluble doesn't think it's ready yet
-                        service.initialized = false
-                        return service.save()
-                    }
-                })
-                .then(function (service) {
-                    // Add event listeners, so Voluble can react to message state changes
-                    plugin_directory_map.plugin._eventEmitter.on('message-state-update', function (msg: db.MessageInstance, message_state: string) {
-                        //MessageManager.updateMessageState(msg, message_state, svc)
-                    })
-                })
-        })
+        return Promise.resolve(plugin_list)
 
     }
 
-    function createServiceDataTables(service: db.ServiceInstance) {
-        return true
+    function synchronizePluginDatabase(plugin_list: IPluginDirectoryMap[]) {
+        return Promise.mapSeries(plugin_list, function (plugin_directory_map) {
+            return db.models.Service.findOne({
+                where: { 'directory_name': plugin_directory_map.subdirectory }
+            }).then(function (service) {
+                if (!service) {
+                    // This plugin doesn't exist in the database, so let's add an entry for it
+                    return db.models.Service.create({
+                        'name': plugin_directory_map.plugin.name,
+                        'directory_name': plugin_directory_map.subdirectory,
+                        'initialized': false
+                    })
+                } else {
+                    // This plugin does exist, but let's make sure that Voluble doesn't think it's ready yet
+                    service.initialized = false
+                    return service.save()
+                }
+            }).then(function (service) {
+                // Add event listeners, so Voluble can react to message state changes
+                plugin_directory_map.plugin._eventEmitter.on('message-state-update', function (msg: db.MessageInstance, message_state: string) {
+                    //MessageManager.updateMessageState(msg, message_state, svc)
+                })
+
+            }).then(function () {
+                return true
+            })
+        }).then(function () {
+            return Promise.resolve(plugin_list)
+        })
     }
 
     /**
@@ -112,11 +122,24 @@ export namespace PluginManager {
         __plugin_dir = path.resolve(plugin_dir || path.join(__dirname, "../../plugins"))
         winston.info("Loading plugins from\n\t" + plugin_dir)
         return discoverPlugins(__plugin_dir)
-            .then(function (plugin_list) {
-                return Promise.map(plugin_list, function(plugin){
-                    createServiceDataTables(plugin)
-                })
+        .then(function (plugin_list) {
+            return synchronizePluginDatabase(plugin_list)
+        })
+        .then(function (plugin_list) {
+            return Promise.each(plugin_list, function (plugin) {
+                createPluginDataTables(plugin)
             })
+        })
+    }
+
+    function createPluginDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any[]> {
+        if (plugin_dir_map.plugin.data_tables) {
+            return Promise.map(Object.keys(plugin_dir_map.plugin.data_tables), function (table) {
+                return db.sequelize.define(`${plugin_dir_map.subdirectory}_${table}`, {})
+            })
+        } else {
+            return Promise.resolve([])
+        }
     }
 
     /**
@@ -168,19 +191,5 @@ export namespace PluginManager {
     export function getServiceById(id: number): Promise<db.ServiceInstance | null> {
         return db.models.Service.findById(id)
         // TODO: Validate plugin exists, fail otherwise
-    }
-
-    function createPluginDataTables(service: db.ServiceInstance, table_names: string[]): Promise<any[]> {
-        // `data_structure` must be laid out as follows:
-        // { table_name: { columnOne: typeName, columnTwo: typeName }, ... }
-
-        let prefix = createPluginDataTablePrefix(service.directory_name)
-        return Promise.map(Object.keys(table_names), function (table) {
-            return db.sequelize.define(`${prefix}_${table}`, {})
-        })
-    }
-
-    function createPluginDataTablePrefix(plugin_dir: string): string {
-        return crypto.createHash('md5').update(plugin_dir).digest('base64')
     }
 }
