@@ -6,10 +6,7 @@ class MyExamplePlugin extends plugin_base.voluble_plugin{
     api_secret: string | undefined
 
     constructor(){
-        super()
-        this.name = manifest.plugin_name
-        this.description = manifest.plugin_description
-    
+        super(manifest)
         this.api_key = manifest.data_tables.custom['api_key']
         this.api_secret = manifest.data_tables.custom['api_secret']
     }

@@ -5,6 +5,12 @@ import * as events from 'events'
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
 
+interface Manifest {
+    plugin_name: string,
+    plugin_description: string,
+    data_tables?: Object,
+    npm_modules?: string[]
+}
 
 /**
  * The voluble_plugin forms the basis of any given Voluble plugin, and should be extended by any new plugin.
@@ -15,7 +21,6 @@ export type messageInstance = db.MessageInstance
 interface IVolublePluginBase {
     name: string | undefined
     description: string | undefined
-    plugin_uid: string | undefined
     _eventEmitter: events.EventEmitter
 
     shutdown(): boolean
@@ -24,13 +29,30 @@ interface IVolublePluginBase {
 }
 
 export class voluble_plugin implements IVolublePluginBase {
-    name: string = ""
-    description: string = ""
-    plugin_uid: string = ""
+    name: string
+    description: string
     _eventEmitter: events.EventEmitter
+    data_tables: Object | undefined
 
-    constructor() {
+    constructor(manifest: Manifest) {
         this._eventEmitter = new events.EventEmitter()
+
+        if (manifest.hasOwnProperty("plugin_name")) {
+            this.name = manifest["plugin_name"]
+        } else {
+            throw new errors.NotImplementedError(`Plugin in the following directory has not defined the field 'plugin_name' in it's manifest: ${__dirname}`)
+        }
+
+        if (manifest.hasOwnProperty("plugin_description")) {
+            this.description = manifest["plugin_description"]
+        } else {
+            throw new errors.NotImplementedError(`Plugin ${this.name} has not defined the field 'plugin_description' in it's manifest.`)
+        }
+
+        if (manifest.hasOwnProperty("data_tables")) {
+            this.data_tables = manifest["data_tables"]
+        }
+
     }
 
     shutdown(): boolean {
