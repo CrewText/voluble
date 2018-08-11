@@ -3,16 +3,10 @@ import * as path from 'path'
 const winston = require('winston')
 import * as Promise from "bluebird"
 const errs = require('common-errors')
-import * as crypto from 'crypto'
 
 import { voluble_plugin } from '../plugins/plugin_base'
 import * as db from '../models'
 const voluble_errors = require('../voluble-errors')
-
-interface IPluginIDMap {
-    id: number,
-    plugin: voluble_plugin
-}
 
 interface IPluginDirectoryMap {
     subdirectory: string,
@@ -26,24 +20,28 @@ const PluginImportFailedError = errs.helpers.generateClass('PluginImportFailedEr
  * It also handles all plugin- and service-related operations.
  */
 export namespace PluginManager {
-    var __plugin_dir: string = ""
-    var __loaded_plugins: Array<IPluginIDMap> = []
+    let __plugin_dir:string = path.resolve(path.join(__dirname, "../plugins"))
 
-    export function getPluginById(id: number): Promise<voluble_plugin> {
-        let p: voluble_plugin
-        console.log(__loaded_plugins)
-        __loaded_plugins.forEach(function (plugin: IPluginIDMap) {
-            console.log(`Plugin ID: ${plugin.id}, ${plugin.id == id}`)
-            if (plugin.id == id) {
-                p = plugin.plugin
-            }
-        })
-
-        if (!p) {
-            return Promise.reject(new errs.NotFoundError("Plugin with ID " + id + " does not exist."))
-        } else {
-            return Promise.resolve(p)
-        }
+    export function getPluginById(id: number): Promise<voluble_plugin | null> {
+        /** Find a service relating to a given plugin by it's ID.
+         * If a service is found, create a new instance of that plugin and return it
+         */
+        return db.models.Service.findById(id)
+            .then(function (service) {
+                if (service) {
+                    try {
+                        let plugin_directory_name = path.join(__plugin_dir, service.directory_name, "plugin.js")
+                        winston.debug("Importing plugin from:" + plugin_directory_name)
+                        let p: voluble_plugin = require(plugin_directory_name)()
+                        return Promise.resolve(p)
+                    } catch (e) {
+                        errs.log(e, `Could not import plugin in directory '${service.directory_name}': ${e.message}`)
+                        return Promise.reject(new PluginImportFailedError(`Failed to import plugin in directory ${service.directory_name}`))
+                    }
+                } else {
+                    return Promise.reject(new errs.NotFoundError(`Plugin with ID ${id} cannot be found`))
+                }
+            })
     }
 
     function discoverPlugins(directory: string): Promise<IPluginDirectoryMap[]> {
@@ -53,7 +51,7 @@ export namespace PluginManager {
         let plugin_subdirs = fs.readdirSync(directory).filter(function (element) {
             let plugin_subdir_fullpath = path.join(directory, element)
 
-            if (fs.statSync(plugin_subdir_fullpath).isDirectory()) { return true }
+            if (fs.statSync(plugin_subdir_fullpath).isDirectory() && fs.existsSync(path.join(plugin_subdir_fullpath, "plugin.js"))) { return true }
             else { return false }
         })
 
@@ -62,24 +60,17 @@ export namespace PluginManager {
         // Create a list of all the plugins we're able to import
         let plugin_list: IPluginDirectoryMap[] = []
         plugin_subdirs.forEach(function (plugin_subdir_rel) {
-            let plugin_file_abs = path.join(__plugin_dir, plugin_subdir_rel, "plugin.js")
-
-            if (fs.existsSync(plugin_file_abs)) {
-                try {
-                    let plug_obj: voluble_plugin = require(plugin_file_abs)()
-                    winston.info("Loaded plugin:\n\t" + plug_obj.name)
-                    let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir_rel }
-                    plugin_list.push(p)
-                } catch (e) {
-                    //throw new PluginImportFailedError(e)
-                    winston.error(`Could not load plugin in subdirectory ${plugin_subdir_rel}`)
-                    errs.log(e, `Could not load plugin in subdirectory ${plugin_subdir_rel}`)
-                }
+            let plugin_file_abs = path.join(directory, plugin_subdir_rel, "plugin.js")
+            try {
+                let plug_obj: voluble_plugin = require(plugin_file_abs)()
+                winston.info("Loaded plugin:\n\t" + plug_obj.name)
+                let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir_rel }
+                plugin_list.push(p)
+            } catch (e) {
+                errs.log(e, `Could not load plugin in subdirectory ${plugin_subdir_rel}: ${e.message}`)
             }
         })
-
         return Promise.resolve(plugin_list)
-
     }
 
     function synchronizePluginDatabase(plugin_list: IPluginDirectoryMap[]) {
@@ -92,12 +83,9 @@ export namespace PluginManager {
                     return db.models.Service.create({
                         'name': plugin_directory_map.plugin.name,
                         'directory_name': plugin_directory_map.subdirectory,
-                        'initialized': false
                     })
                 } else {
-                    // This plugin does exist, but let's make sure that Voluble doesn't think it's ready yet
-                    service.initialized = false
-                    return service.save()
+                    return service
                 }
             }).then(function (service) {
                 // Add event listeners, so Voluble can react to message state changes
@@ -117,19 +105,18 @@ export namespace PluginManager {
  * Set the plugin directory and load all of the plugins in it.
  * @param {string} plugin_dir The path to the directory containing the plugins that Voluble should use.
  */
-    export function initAllPlugins(plugin_dir: string) {
-        winston.debug("Attempting to load plugins from " + plugin_dir)
-        __plugin_dir = path.resolve(plugin_dir || path.join(__dirname, "../../plugins"))
-        winston.info("Loading plugins from\n\t" + plugin_dir)
+    export function initAllPlugins() {
+        winston.debug("Attempting to load plugins from " + __plugin_dir)
+        winston.info("Loading plugins from\n\t" + __plugin_dir)
         return discoverPlugins(__plugin_dir)
-        .then(function (plugin_list) {
-            return synchronizePluginDatabase(plugin_list)
-        })
-        .then(function (plugin_list) {
-            return Promise.each(plugin_list, function (plugin) {
-                createPluginDataTables(plugin)
+            .then(function (plugin_list) {
+                return synchronizePluginDatabase(plugin_list)
             })
-        })
+            .then(function (plugin_list) {
+                return Promise.each(plugin_list, function (plugin) {
+                    return createPluginDataTables(plugin)
+                })
+            })
     }
 
     function createPluginDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any[]> {
@@ -140,38 +127,6 @@ export namespace PluginManager {
         } else {
             return Promise.resolve([])
         }
-    }
-
-    /**
-     * For each loaded plugin, call it's `shutdown()` function.
-     */
-    export function shutdownAllPlugins() {
-
-        db.models.Service.findAll({
-            where: { initialized: true }
-        })
-            .then(function (svcs: db.ServiceInstance[]) {
-                Promise.map(svcs, function (svc: db.ServiceInstance) {
-                    return PluginManager.getPluginById(svc.id)
-                        .then(function (plugin) {
-                            plugin.shutdown()
-                            plugin._eventEmitter.removeAllListeners()
-
-                            let i = 0
-                            __loaded_plugins.forEach(element => {
-                                if (element.plugin == plugin) {
-                                    i = __loaded_plugins.indexOf(element)
-                                }
-                            });
-                            if (i > -1) { __loaded_plugins.splice(i, 1) }
-                            svc.initialized = false
-                            return svc.save()
-                        })
-                })
-            })
-            .catch(function (err: any) {
-                winston.error(err.message)
-            })
     }
 
     /**

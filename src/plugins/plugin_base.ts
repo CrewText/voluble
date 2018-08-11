@@ -23,7 +23,6 @@ interface IVolublePluginBase {
     description: string | undefined
     _eventEmitter: events.EventEmitter
 
-    shutdown(): boolean
     send_message(message: db.MessageInstance, contact: db.ContactInstance): boolean
     message_state_update(msg: db.MessageInstance, message_state: string): null | undefined | void
 }
@@ -53,10 +52,6 @@ export class voluble_plugin implements IVolublePluginBase {
             this.data_tables = manifest["data_tables"]
         }
 
-    }
-
-    shutdown(): boolean {
-        throw new errors.NotImplementedError("Plugin " + this.name + "has not defined the function 'shutdown'. Contact the plugin author for a fix.")
     }
 
     send_message(message: db.MessageInstance, contact: db.ContactInstance): boolean {

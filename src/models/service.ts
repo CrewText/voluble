@@ -3,7 +3,6 @@ import * as Sequelize from "sequelize"
 export interface ServiceAttributes {
     name: string,
     directory_name: string,
-    initialized: boolean
 }
 
 export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes> {
@@ -13,7 +12,6 @@ export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes> {
 
     name: string,
     directory_name: string,
-    initialized: boolean
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
@@ -25,7 +23,6 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         },
         name: DataTypes.STRING,
         directory_name: DataTypes.STRING,
-        initialized: DataTypes.BOOLEAN
     })
 
     return Service

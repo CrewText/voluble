@@ -118,7 +118,7 @@ app.use('/servicechains', routes_servicechains)
 
 // Set up plugin manager
 winston.info("Initing all plugins")
-PluginManager.initAllPlugins(process.env.PLUGIN_DIR || "./bin/plugins")
+PluginManager.initAllPlugins()
 
 
 // catch 404 and forward to error handler
