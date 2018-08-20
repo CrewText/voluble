@@ -1,6 +1,6 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
-let errors = require('common-errors')
+let errs = require('common-errors')
 import * as db from '../models'
 import { ContactManager } from '../contact-manager/'
 
@@ -10,6 +10,8 @@ import { ContactManager } from '../contact-manager/'
  * Like all Voluble Managers, ServicechainManager does not need to be instantiated and can be accessed directly.
  */
 export namespace ServicechainManager {
+    export const EmptyServicechainError = errs.helpers.generateClass('EmptyServicechainError')
+
     /**
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
@@ -41,6 +43,44 @@ export namespace ServicechainManager {
 
     export function getServicechainById(id: number): Promise<db.ServicechainInstance | null> {
         return db.models.Servicechain.findById(id)
+    }
+
+    export function getServiceInServicechainByPriority(sc_id: number, priority: number): Promise<db.ServiceInstance|null>{
+        return db.models.Servicechain.findById(sc_id, {
+            include: [
+                {
+                    model: db.models.Service,
+                    through: {
+                        where: {
+                            priority: priority
+                        }
+                    }
+                }
+            ]
+        }).then(function(sc){
+            if (sc) {
+                //@ts-ignore
+                if (sc.Services.length) {
+                    //@ts-ignore
+                    let sc_to_ret:db.ServiceInstance = sc.Services[0]
+                    return sc_to_ret 
+                } else {
+                    return Promise.reject(new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`))
+                }
+            } else {
+                return Promise.reject(new errs.NotFoundError(`Servicechain with ID ${sc_id} does not exist`))
+            }
+        })
+    }
+
+    export function getServiceCountInServicechain(sc_id: number):Promise<number>{
+        return db.models.Servicechain.findById(sc_id)
+        .then(function(sc){
+            if (sc){
+                //@ts-ignore
+                return sc.getServices().then(function(svcs:db.ServiceInstance[]){return svcs.length})
+            }
+        })
     }
 
     /**
@@ -85,7 +125,7 @@ export namespace ServicechainManager {
         return db.models.Servicechain.destroy({ where: { id: id } })
             .then(function (destroyedRowsCount) {
                 if (!destroyedRowsCount) {
-                    return Promise.reject(new errors.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+                    return Promise.reject(new errs.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
                 } else {
                     return Promise.resolve(destroyedRowsCount)
                 }

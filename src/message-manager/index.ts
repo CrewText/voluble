@@ -1,13 +1,11 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
-import * as events from "events"
 import * as db from '../models'
 import * as volubleErrors from '../voluble-errors'
 import { ServicechainManager } from '../servicechain-manager'
 import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'
-import servicechain from "../models/servicechain";
 const errs = require('common-errors')
 
 /**
@@ -75,46 +73,113 @@ export namespace MessageManager {
         return msg
     }
 
-    export function doMessageSend(msg: db.MessageInstance) {//: Promise<boolean> {
+    export function doMessageSend(msg: db.MessageInstance): Promise<db.MessageInstance> {
         // First, acquire the first service in the servicechain
 
-        return db.models.Servicechain.findById(msg.ServicechainId, {
-            include: [
-                {
-                    model: db.models.Service,
-                    through: {
-                        where: {
-                            priority: 1
-                        }
-                    }
+        return ServicechainManager.getServiceCountInServicechain(msg.ServicechainId).then(function (svc_count) {
+
+            let continue_trying = true
+            //let svc_priority = 1
+
+            winston.debug(`MM: Beginning message send attempt loop for message ${msg.id}; ${svc_count} plugins in servicechain ${msg.ServicechainId}`)
+
+            let svc_prorities: number[] = []
+            let i = 1
+            while (i != svc_count + 1) {
+                svc_prorities.push(i)
+                i++
+            }
+
+            return Promise.mapSeries(svc_prorities, function (svc_priority) {
+                if (continue_trying) {
+
+                    winston.debug(`MM: Attempting to find plugin with priority ${svc_priority} in servicechain ${msg.ServicechainId}`)
+
+                    return ServicechainManager.getServiceInServicechainByPriority(msg.ServicechainId, svc_priority)
+                        .then(function (svc) {
+                            if (svc) {
+                                winston.debug(`MM: Servicechain ${msg.ServicechainId} priority ${svc_priority}: ${svc.directory_name}. Attempting message ${msg.id} send...`)
+                                return sendMessageWithService(msg, svc)
+                            } else {
+                                // return Promise.reject(`No service with priority ${svc_priority} in servicechain ${msg.ServicechainId}`)
+                                return false
+                            }
+                        })
+                        .then(function (message_sent) {
+                            if (message_sent) {
+                                QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_SENT")
+                                continue_trying = false
+                                return true
+                            } else {
+                                winston.debug(`MM: Failed to send message ${msg.id}, trying next priority plugin...`)
+                                // return Promise.reject(`Failed to send message`)
+                                return false
+                                // Wasn't able to send the message with this service, try the next one
+                            }
+                        })
+                        .catch(ServicechainManager.EmptyServicechainError, function (error) {
+                            errs.log(error, error.message)
+                            continue_trying = false
+                            QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
+                            return false
+                        })
+                } else { //end if continue_trying
+                    winston.info(`MM: Not trying with prio ${svc_priority}`)
+                    return false
                 }
-            ]
+            })
         })
-            .then(function (sc) {
-                if (sc) {
-                    if (sc.Services.length) {
-                        //console.log("Found plug " + sc.Services[0].name)
-                        sendMessageWithService(msg, sc.Services[0])
-                    } else {
-                        throw new errs.NotFoundError(`No service available with priority 1 in SC ${sc.id}`)
-                    }
+            .reduce(function (total, item) {
+                if (total) {
+                    return total
                 } else {
-                    throw new errs.NotFoundError(`No SC found with ID ${msg.ServicechainId}`)
+                    return item
+                }
+            }, false)
+            .then(function(message_sent_success){
+                if (message_sent_success){
+                    return msg
+                } else {
+                    QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
                 }
             })
     }
 
-    function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance): Promise<Boolean> {
+    function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance): Promise<boolean> {
         return PluginManager.getPluginById(svc.id)
             .then(function (plugin) {
-                return ContactManager.getContactWithId(msg.contact)
-                    .then(function (contact) {
-                        if (contact) {
-                            return plugin.send_message(msg, contact) // Init first?
-                        } else {
-                            return Promise.reject(new errs.NotFoundError(`Could not find contact with ID ${msg.contact}`))
-                        }
-                    })
+                if (plugin) {
+                    winston.debug(`MM: Loaded plugin ${plugin.name}`)
+                    return ContactManager.getContactWithId(msg.contact)
+                        .then(function (contact) {
+                            if (contact) {
+                                winston.debug(`MM: Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
+                                return Promise.try(function () {
+                                    let message_sent_success = plugin.send_message(msg, contact)
+                                    // winston.info(`MM: Message send attempt state for message ${msg.id} with plugin ${plugin.name}: ${message_sent_success}`)
+                                    return message_sent_success
+                                })
+                            } else {
+                                return Promise.reject(new errs.NotFoundError(`Could not find contact with ID ${msg.contact}`))
+                            }
+                        })
+                } else {
+                    return Promise.reject(new errs.NotFoundError(`Could not find plugin with ID ${svc.id}`))
+                }
+            })
+    }
+
+    export function updateMessageState(msg_id: number, msg_state: string): Promise<db.MessageInstance> {
+        winston.info("MM: Updating message state")
+        return getMessageFromId(msg_id)
+            .then(function (msg) {
+                if (msg) {
+                    msg.message_state = msg_state
+                    return msg.save()
+                } else {
+                    winston.info(`MM: Could not find message with ID ${msg_id}`)
+                    return Promise.reject(new errs.NotFoundError(`Message with ID ${msg_id} was not found`))
+                }
             })
     }
 
