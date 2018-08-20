@@ -1,0 +1,15 @@
+{
+  "plugin_name": "My Example Plugin 2",
+  "plugin_description": "This is what my plugin does!",
+  "npm_modules": [],
+  "data_tables": {
+    "contact": [
+      "ExampleDataField1",
+      "ExampleDataField2"
+    ],
+    "custom": {
+      "api_key": "THISISTHEAPIKEY0123546789",
+      "api_secret": "VERYLONGOBFUSCATEDAPISECRET9876543210"
+    }
+  }
+}
