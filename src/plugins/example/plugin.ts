@@ -18,7 +18,7 @@ class MyExamplePlugin extends plugin_base.voluble_plugin{
 
     send_message(message: plugin_base.messageInstance, contact:plugin_base.contactInstance){
         console.log(`EXAMPLE: Sending message ${message.id} to contact ${contact.id}`)
-        return true
+        return false
     }
 }
 
