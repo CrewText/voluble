@@ -2,6 +2,7 @@ var errors = require('common-errors')
 //var voluble_errors = require('../../bin/voluble-errors')
 import * as db from '../models'
 import * as events from 'events'
+import {QueueManager} from '../queue-manager'
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
 
@@ -59,6 +60,7 @@ export class voluble_plugin implements IVolublePluginBase {
     }
 
     message_state_update(msg: db.MessageInstance, message_state: string) {
-        this._eventEmitter.emit('message-state-update', msg, message_state)
+        //this._eventEmitter.emit('message-state-update', msg, message_state)
+        QueueManager.addMessageStateUpdateRequest(msg.id, message_state)
     }
 }

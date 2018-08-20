@@ -6,6 +6,7 @@ const errs = require('common-errors')
 
 import { voluble_plugin } from '../plugins/plugin_base'
 import * as db from '../models'
+import { QueueManager } from '../queue-manager';
 const voluble_errors = require('../voluble-errors')
 
 interface IPluginDirectoryMap {
@@ -90,7 +91,7 @@ export namespace PluginManager {
             }).then(function (service) {
                 // Add event listeners, so Voluble can react to message state changes
                 plugin_directory_map.plugin._eventEmitter.on('message-state-update', function (msg: db.MessageInstance, message_state: string) {
-                    //MessageManager.updateMessageState(msg, message_state, svc)
+                    QueueManager.addMessageStateUpdateRequest(msg.id, message_state)
                 })
 
             }).then(function () {
