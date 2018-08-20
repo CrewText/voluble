@@ -107,14 +107,12 @@ export namespace MessageManager {
                         })
                         .then(function (message_sent) {
                             if (message_sent) {
-                                QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_SENT")
                                 continue_trying = false
                                 return true
                             } else {
-                                winston.debug(`MM: Failed to send message ${msg.id}, trying next priority plugin...`)
-                                // return Promise.reject(`Failed to send message`)
-                                return false
                                 // Wasn't able to send the message with this service, try the next one
+                                winston.debug(`MM: Failed to send message ${msg.id}, trying next priority plugin...`)
+                                return false
                             }
                         })
                         .catch(ServicechainManager.EmptyServicechainError, function (error) {
@@ -124,23 +122,27 @@ export namespace MessageManager {
                             return false
                         })
                 } else { //end if continue_trying
+                    // The message has been sent, no need to try with other plugins!
                     winston.info(`MM: Not trying with prio ${svc_priority}`)
                     return false
                 }
             })
         })
-            .reduce(function (total, item) {
+            .reduce(function (total, item: boolean) {
                 if (total) {
                     return total
                 } else {
                     return item
                 }
             }, false)
-            .then(function(message_sent_success){
-                if (message_sent_success){
-                    return msg
+            .then(function (message_sent_success) {
+                if (message_sent_success) {
+                    QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_SENT")
+                    return Promise.resolve(msg)
                 } else {
+                    winston.info(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
                     QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
+                    return Promise.reject(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
                 }
             })
     }
