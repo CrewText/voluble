@@ -61,7 +61,7 @@ router.post('/', function (req, res, next) {
   MessageManager.createMessage(
     req.body.msg_body,
     req.body.contact_id,// TODO: Validate me!
-    req.body.direction || "INBOUND",
+    req.body.direction || "OUTBOUND",
     req.body.is_reply_to || null,
     req.body.servicechain_id || null
   )
