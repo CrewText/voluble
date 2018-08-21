@@ -32,6 +32,7 @@ import { PluginManager } from '../plugin-manager'
 
 winston.info("Loading queue manager")
 import { QueueManager } from '../queue-manager'
+QueueManager.init_queues()
 
 winston.info("Starting Express server")
 const app = express();
