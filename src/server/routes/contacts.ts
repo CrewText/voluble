@@ -1,9 +1,10 @@
 import * as express from "express"
 const router = express.Router();
-import * as Promise from "bluebird"
+import * as jsend from 'jsend'
 import * as utils from '../../utilities'
+const errs = require('common-errors')
 //const contactManager = require('../bin/contact-manager/contact-manager')
-import {ContactManager} from '../../contact-manager'
+import { ContactManager } from '../../contact-manager'
 
 /**
  * Handles the route `GET /contacts`.
@@ -19,10 +20,12 @@ router.get('/', function (req, res, next) {
       return ContactManager.getHundredContacts(offset)
     })
     .then(function (rows: any) {
-      res.status(200).json(rows)
+      res.jsend.success(rows)
+      //res.status(200).json(rows)
     })
     .catch(function (err: any) {
-      res.status(500).json(err.message)
+      res.jsend.error(err.message)
+      //res.status(500).json(err.message)
     })
 })
 
@@ -37,11 +40,19 @@ router.get('/:contact_id', function (req, res, next) {
     })
     .then(function (id) {
       return ContactManager.getContactWithId(id)
-    }).then(function (user) {
-      res.status(200).json(user)
+    })
+    .then(function (user) {
+      if (user) {
+        res.jsend.success(user)
+      }
+      //res.status(200).json(user)
+    })
+    .catch(errs.NotFoundError, function (error) {
+      res.jsend.fail({ "id": "No user exists with this ID." })
     })
     .catch(function (error: any) {
-      res.status(500).send(error.message)
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 
 })
@@ -54,11 +65,12 @@ router.post('/', function (req, res, next) {
 
   return ContactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
     .then(function (newContact) {
-      res.status(200).json(newContact)
+      res.jsend.success(newContact)
+      //res.status(200).json(newContact)
     })
     .catch(function (error: any) {
-      console.log(error)
-      res.status(500).end()
+      res.jsend.error(error.message)
+      //res.status(500).end()
     })
 })
 
@@ -67,7 +79,6 @@ router.post('/', function (req, res, next) {
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
 router.put('/:contact_id', function (req, res, next) {
-
   utils.verifyNumberIsInteger(req.params.contact_id)
     .then(function (id) {
       return ContactManager.checkContactWithIDExists(id)
@@ -75,12 +86,17 @@ router.put('/:contact_id', function (req, res, next) {
     .then(function (id) {
       return ContactManager.updateContactDetailsWithId(id, req.body)
     })
-    .then(function () {
-      res.status(200).end()
+    .then(function (updateDetails) {
+      res.jsend.success(updateDetails[1][0])
+      //      res.status(200).end()
     })
-    .catch(function (err: any) {
-      console.log(err)
-      res.status(500).send(err)
+    .catch(errs.NotFoundError, function (err) {
+      res.jsend.fail({ "id": "No user exists with this ID." })
+    })
+    .catch(function (error: any) {
+      //console.log(err)
+      res.jsend.error(error.message)
+      //res.status(500).send(err)
     })
 })
 
@@ -96,15 +112,20 @@ router.delete('/:contact_id', function (req, res, next) {
       return ContactManager.deleteContactFromDB(contact_id)
     })
     .then(function (resp) {
-      res.status(200).json(resp)
+      res.jsend.success(resp)
+      //res.status(200).json(resp)
+    })
+    .catch(errs.TypeError, function (error) {
+      res.jsend.fail({'id': "ID supplied is not an integer."})
     })
     .catch(function (error: any) {
-      console.log(error.message)
-      res.status(500).end()
+      res.jsend.error(error.message)
+      //console.log(error.message)
+      //res.status(500).end()
     })
 })
 
-router.get('/:contact_id/messages', function(req,res,next){
+router.get('/:contact_id/messages', function (req, res, next) {
   //TODO: #11 - Make this work!
 })
 

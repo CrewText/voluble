@@ -1,5 +1,6 @@
 import * as express from "express";
 import * as fs from 'fs'
+import * as jsend from 'jsend'
 const path = require('path');
 const bodyParser = require('body-parser');
 const winston = require('winston')
@@ -36,6 +37,7 @@ QueueManager.init_queues()
 
 winston.info("Starting Express server")
 const app = express();
+app.use(jsend.middleware)
 
 /**
  * Get port from environment and store in Express.

@@ -7,15 +7,17 @@ import * as utils from '../../utilities'
 import {ServicechainManager} from '../../servicechain-manager/'
 import {PluginManager} from '../../plugin-manager/'
 import { ServicesInSCInstance } from "../../models/servicesInServicechain";
+const errs = require('common-errors')
 
 router.get('/', function (req, res, next) {
   ServicechainManager.getAllServicechains()
     .then(function (rows) {
-      res.status(200).json(rows)
+      res.jsend.success(rows)
+      //res.status(200).json(rows)
     })
-    .catch(function (err) {
-      res.status(500).json(err)
-      winston.error(err)
+    .catch(function (error: any) {
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 })
 
@@ -27,11 +29,11 @@ router.post('/', function (req, res, next) {
 
   ServicechainManager.createNewServicechain(req.body.name, services_list)
     .then(function (sc) {
-      res.status(200).json(sc)
+      res.jsend.success(sc)
     })
-    .catch(function (err) {
-      res.status(500).json(err)
-      winston.error(err)
+    .catch(function (error: any) {
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
     
 })
@@ -61,14 +63,16 @@ router.get('/:sc_id', function (req, res, next) {
     .then(function (sc_with_svcs) {
       res.status(200).json(sc_with_svcs)
     })
-    .catch(function (err) {
-      res.status(500).json(err)
-      winston.error(err)
+    .catch(errs.TypeError, function(){
+      res.jsend.fail({'id': 'Supplied ID is not an integer'})
+    })
+    .catch(function (error: any) {
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 })
 
 
-/* Note: this is boilerplate and has NOT been implemented yet */
 router.put('/:id', function (req, res, next) {
   res.render('servicechains_update', { group_id: req.params.id, data: req.params }) //TODO: Make PUT/servicechains/ID work
 })
@@ -79,11 +83,11 @@ router.delete('/:sc_id', function (req, res, next) {
       return ServicechainManager.deleteServicechain(sc_id)
     })
     .then(function (row) {
-      res.status(200).json(row)
+      res.jsend.success(row)
     })
-    .catch(function (err) {
-      res.status(500).json(err)
-      winston.error(err)
+    .catch(function (error: any) {
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 })
 
