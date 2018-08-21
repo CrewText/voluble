@@ -1,6 +1,6 @@
 import * as express from "express"
 const router = express.Router();
-import * as Promise from "bluebird"
+import * as jsend from 'jsend'
 import * as utils from '../../utilities'
 //const contactManager = require('../bin/contact-manager/contact-manager')
 import {ContactManager} from '../../contact-manager'
@@ -19,10 +19,12 @@ router.get('/', function (req, res, next) {
       return ContactManager.getHundredContacts(offset)
     })
     .then(function (rows: any) {
-      res.status(200).json(rows)
+      res.jsend.success(rows)
+      //res.status(200).json(rows)
     })
     .catch(function (err: any) {
-      res.status(500).json(err.message)
+      res.jsend.error(err.message)
+      //res.status(500).json(err.message)
     })
 })
 
