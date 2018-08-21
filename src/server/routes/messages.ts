@@ -3,6 +3,7 @@ import * as Promise from "bluebird"
 const router = express.Router();
 const winston = require('winston')
 import * as utils from '../../utilities'
+const errs = require('common-errors')
 import { MessageManager } from '../../message-manager/'
 import * as volubleErrors from '../../voluble-errors'
 
@@ -11,23 +12,23 @@ import * as volubleErrors from '../../voluble-errors'
  * Lists the first 100 messages available to the user, with a given offset.
  */
 router.get('/', function (req, res, next) {
-  console.log("got a req")
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-  console.log("Offset: " + offset)
-
   utils.verifyNumberIsInteger(offset)
     .then(function (off) {
-      console.log("verified offset")
       return MessageManager.getHundredMessageIds(off)
     })
     .then(function (rows) {
-      console.log("Got " + rows.length + " rows")
-      res.status(200).json(rows)
+      res.jsend.success(rows)
+      //res.status(200).json(rows)
+    })
+    .catch(errs.TypeError, function (error) {
+      res.jsend.fail({ 'id': "Supplied ID is not an integer" })
     })
     .catch(function (error: any) {
-      res.status(500).send(error.message)
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 
 })
@@ -43,11 +44,16 @@ router.get('/:message_id', function (req, res, next) {
       return MessageManager.getMessageFromId(id)
     })
     .then(function (msg) {
-      res.status(200).json(msg)
+      if (msg) {
+        res.jsend.success(msg)
+      }
+    })
+    .catch(errs.TypeError, function (error) {
+      res.jsend.fail({ 'id': "Supplied ID is not an integer" })
     })
     .catch(function (error: any) {
-      res.status(500).json(error.message)
-      winston.error(error.message)
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 })
 
@@ -71,13 +77,9 @@ router.post('/', function (req, res, next) {
     .then(function (msg) {
       res.status(200).json(msg)
     })
-    .catch(volubleErrors.MessageFailedError, function (err: any) {
-      res.status(500).json(err)
-      winston.error("Failed to send message: " + err)
-    })
-    .catch(function (err: any) {
-      res.status(500).json(err)
-      winston.error(err)
+    .catch(function (error: any) {
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 })
 
