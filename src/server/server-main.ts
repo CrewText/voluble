@@ -15,6 +15,7 @@ const https = require('https');
 
 winston.info("Connecting to database")
 import * as db from '../models'
+db.initialize_database()
 
 winston.info("Loading routes")
 const routes_index = require('./routes')

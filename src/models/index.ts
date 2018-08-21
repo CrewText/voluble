@@ -61,7 +61,7 @@ models.Organization.hasMany(models.Contact)
 models.Contact.belongsTo(models.Organization)
 
 models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
-models.Servicechain.belongsToMany(models.Service, {through: models.ServicesInSC})
+models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC })
 
 models.Servicechain.hasOne(models.Contact)
 models.Contact.belongsTo(models.Servicechain)
@@ -71,6 +71,11 @@ models.Message.belongsTo(models.Servicechain)
 
 models.Blast.hasMany(models.Message)
 
-sequelize.sync()
+/**
+ * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
+ */
+export function initialize_database(): void {
+    sequelize.sync()
+}
 
 models.Sequelize = Sequelize;
