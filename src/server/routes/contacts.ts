@@ -2,8 +2,9 @@ import * as express from "express"
 const router = express.Router();
 import * as jsend from 'jsend'
 import * as utils from '../../utilities'
+const errs = require('common-errors')
 //const contactManager = require('../bin/contact-manager/contact-manager')
-import {ContactManager} from '../../contact-manager'
+import { ContactManager } from '../../contact-manager'
 
 /**
  * Handles the route `GET /contacts`.
@@ -39,11 +40,19 @@ router.get('/:contact_id', function (req, res, next) {
     })
     .then(function (id) {
       return ContactManager.getContactWithId(id)
-    }).then(function (user) {
-      res.status(200).json(user)
+    })
+    .then(function (user) {
+      if (user) {
+        res.jsend.success(user)
+      }
+      //res.status(200).json(user)
+    })
+    .catch(errs.NotFoundError, function (error) {
+      res.jsend.fail({ "id": "No user exists with this ID." })
     })
     .catch(function (error: any) {
-      res.status(500).send(error.message)
+      res.jsend.error(error.message)
+      //res.status(500).send(error.message)
     })
 
 })
@@ -106,7 +115,7 @@ router.delete('/:contact_id', function (req, res, next) {
     })
 })
 
-router.get('/:contact_id/messages', function(req,res,next){
+router.get('/:contact_id/messages', function (req, res, next) {
   //TODO: #11 - Make this work!
 })
 
