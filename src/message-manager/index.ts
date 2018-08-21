@@ -30,11 +30,13 @@ export namespace MessageManager {
                 winston.error(NFError)
                 return Promise.reject(new volubleErrors.MessageFailedError(NFError))
             })
-
             .then(function (verified_contact_id) {
                 if (servicechain_id) {
+                    // Servicechain to use is explicitly supplied, using that
                     return ServicechainManager.getServicechainById(servicechain_id)
                 } else {
+                    // Using default servicechain for contact
+                    winston.debug(`MM: Finding default servicechain for contact ${verified_contact_id}`)
                     return ServicechainManager.getServicechainFromContactId(verified_contact_id)
                 }
             })
