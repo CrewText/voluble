@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@types/auth0": "^2.9.3",
+    "@types/jsend": "^1.0.28",
     "@types/jsonwebtoken": "^7.2.7",
     "@types/request-promise": "^4.1.41",
     "@types/rsmq-worker": "^0.3.28",
@@ -20,6 +21,7 @@
     "debug": "~2.6.3",
     "esendex": "^0.1.8",
     "express": "^4.16.3",
+    "jsend": "^1.0.2",
     "jsonwebtoken": "^8.3.0",
     "mariasql": "^0.2.6",
     "mysql2": "^1.5.3",
