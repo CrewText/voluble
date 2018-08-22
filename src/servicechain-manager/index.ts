@@ -45,7 +45,7 @@ export namespace ServicechainManager {
         return db.models.Servicechain.findById(id)
     }
 
-    export function getServiceInServicechainByPriority(sc_id: number, priority: number): Promise<db.ServiceInstance|null>{
+    export function getServiceInServicechainByPriority(sc_id: number, priority: number): Promise<db.ServiceInstance | null> {
         return db.models.Servicechain.findById(sc_id, {
             include: [
                 {
@@ -57,13 +57,13 @@ export namespace ServicechainManager {
                     }
                 }
             ]
-        }).then(function(sc){
+        }).then(function (sc) {
             if (sc) {
                 //@ts-ignore
                 if (sc.Services.length) {
                     //@ts-ignore
-                    let sc_to_ret:db.ServiceInstance = sc.Services[0]
-                    return sc_to_ret 
+                    let sc_to_ret: db.ServiceInstance = sc.Services[0]
+                    return sc_to_ret
                 } else {
                     return Promise.reject(new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`))
                 }
@@ -73,14 +73,23 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServiceCountInServicechain(sc_id: number):Promise<number>{
+    export function getServiceCountInServicechain(sc_id: number): Promise<number> {
         return db.models.Servicechain.findById(sc_id)
-        .then(function(sc){
-            if (sc){
-                //@ts-ignore
-                return sc.getServices().then(function(svcs:db.ServiceInstance[]){return svcs.length})
-            }
-        })
+            .then(function (sc) {
+                if (sc) {
+                    //@ts-ignore
+                    return sc.getServices()
+                        .then(function (svcs: db.ServiceInstance[]) {
+                            if (svcs) {
+                                return svcs.length
+                            } else {
+                                return Promise.reject(errs.NotFoundError(`No plugins found in servicechain ${sc_id}`))
+                            }
+                        })
+                } else {
+                    return Promise.reject(errs.NotFoundError(`No servicechain found with ID ${sc_id}`))
+                }
+            })
     }
 
     /**
