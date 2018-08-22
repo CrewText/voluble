@@ -1,23 +1,25 @@
-import { voluble_plugin, contactInstance, messageInstance } from '../plugin_base'
+import * as plugin_base from '../plugin_base'
 var manifest = require('./manifest.json')
 const esendex = require('esendex')
+import * as Promise from 'bluebird'
 
-class EsendexPlugin extends voluble_plugin {
+class EsendexPlugin extends plugin_base.voluble_plugin {
   username: string | undefined
   password: string | undefined
   account_ref: string | undefined
   client: any
+  esendex_client_messages_send:Promise<{}>|undefined
 
   constructor() {
-    super()
-    this.name = manifest.plugin_name
-    this.description = manifest.plugin_description
+    super(manifest)
     this.username = process.env.ESENDEX_USERNAME
     this.password = process.env.ESENDEX_PASSWORD
     this.account_ref = process.env.ESENDEX_ACCOUNT_REF
   }
 
-  createPluginDataTables(): boolean {
+
+
+  createClient() {
 
     try {
       this.client = esendex({
@@ -39,7 +41,7 @@ class EsendexPlugin extends voluble_plugin {
     return true
   }
 
-  send_message(message: messageInstance, contact: contactInstance) {
+  send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
     let esendex_message = {
       accountreference: this.account_ref,
       message: [{
@@ -48,18 +50,26 @@ class EsendexPlugin extends voluble_plugin {
       }]
     }
 
-    let t = this
+    let status = false
 
-    return this.client.messages.send(esendex_message, function (err: any, response: any) {
-      if (err) {
-        t.message_state_update(message, "MSG_FAILED")
-        return false
-        console.log(err)
-      } else {
-        t.message_state_update(message, "MSG_SENT")
-        return true
-      }
+    let esendex_client_messages_send = Promise.promisify(this.client.messages.send)
+
+    return esendex_client_messages_send(esendex_message).then(function(response:any){
+      return response
     })
+
+    // this.client.messages.send(esendex_message, function (err: any, response: any) {
+    //   if (err) {
+    //     status = false
+    //     console.log(err)
+    //   } else {
+    //     status = true
+    //     return true
+    //   }
+    // })
+
+    //return status
+
   }
 
 }
