@@ -1,10 +1,15 @@
 {
   "plugin_name": "Esendex",
-  "plugin_description": "Send an SMS with the Esendex service",
-  "npm_modules": [
-    "esendex"
-  ],
-  "data_fields": {
-    "contact": []
+  "plugin_description": "Sends an SMS using Esendex",
+  "npm_modules": [],
+  "data_tables": {
+    "contact": [
+      "ExampleDataField1",
+      "ExampleDataField2"
+    ],
+    "custom": {
+      "api_key": "THISISTHEAPIKEY0123546789",
+      "api_secret": "VERYLONGOBFUSCATEDAPISECRET9876543210"
+    }
   }
 }
