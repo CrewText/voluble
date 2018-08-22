@@ -25,7 +25,7 @@ interface IVolublePluginBase {
     description: string | undefined
     _eventEmitter: events.EventEmitter
 
-    send_message(message: db.MessageInstance, contact: db.ContactInstance): boolean
+    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean>
     message_state_update(msg: db.MessageInstance, message_state: string): null | undefined | void
 }
 
