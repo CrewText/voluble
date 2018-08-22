@@ -3,6 +3,7 @@ var errors = require('common-errors')
 import * as db from '../models'
 import * as events from 'events'
 import {QueueManager} from '../queue-manager'
+import * as Promise from 'bluebird'
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
 
@@ -55,7 +56,7 @@ export class voluble_plugin implements IVolublePluginBase {
 
     }
 
-    send_message(message: db.MessageInstance, contact: db.ContactInstance): boolean {
+    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> {
         throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
     }
 
