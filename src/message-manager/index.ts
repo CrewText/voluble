@@ -130,6 +130,10 @@ export namespace MessageManager {
                 }
             })
         })
+            .catch(errs.NotFoundError, function (error) {
+                errs.log(error.message, error)
+                return false
+            })
             .reduce(function (total, item: boolean) {
                 if (total) {
                     return total
