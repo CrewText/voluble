@@ -7,6 +7,7 @@ const errs = require('common-errors')
 import { voluble_plugin } from '../plugins/plugin_base'
 import * as db from '../models'
 import { QueueManager } from '../queue-manager';
+import { DefineAttributes } from '../../node_modules/@types/sequelize';
 const voluble_errors = require('../voluble-errors')
 
 interface IPluginDirectoryMap {
@@ -123,7 +124,21 @@ export namespace PluginManager {
     function createPluginDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any[]> {
         if (plugin_dir_map.plugin.data_tables) {
             return Promise.map(Object.keys(plugin_dir_map.plugin.data_tables), function (table) {
-                return db.sequelize.define(`${plugin_dir_map.subdirectory}_${table}`, {})
+                let table_name = `pl_${plugin_dir_map.subdirectory}_${table}`
+                winston.info(`Creating table ${table_name}`)
+                
+                let cols = {}
+                let current_table:string[] = plugin_dir_map.plugin.data_tables[table]
+
+                winston.debug(current_table)
+                //console.log(current_table)
+
+                current_table.forEach(function(col){
+                    cols[col] = db.models.Sequelize.STRING
+                })
+
+                db.sequelize.define(table_name,cols).sync()
+
             })
         } else {
             return Promise.resolve([])
