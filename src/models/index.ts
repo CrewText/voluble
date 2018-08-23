@@ -70,6 +70,7 @@ models.Servicechain.hasOne(models.Message)
 models.Message.belongsTo(models.Servicechain)
 
 models.Blast.hasMany(models.Message)
+models.Sequelize = Sequelize;
 
 /**
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
@@ -77,5 +78,3 @@ models.Blast.hasMany(models.Message)
 export function initialize_database(): void {
     sequelize.sync()
 }
-
-models.Sequelize = Sequelize;
