@@ -6,10 +6,6 @@
     "contact": [
       "ExampleDataField1",
       "ExampleDataField2"
-    ],
-    "custom": {
-      "api_key": "THISISTHEAPIKEY0123546789",
-      "api_secret": "VERYLONGOBFUSCATEDAPISECRET9876543210"
-    }
+    ]
   }
 }

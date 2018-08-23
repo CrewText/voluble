@@ -7,8 +7,8 @@ class MyExamplePlugin2 extends plugin_base.voluble_plugin{
 
     constructor(){
         super(manifest)
-        this.api_key = manifest.data_tables.custom['api_key']
-        this.api_secret = manifest.data_tables.custom['api_secret']
+        // this.api_key = manifest.data_tables.custom['api_key']
+        // this.api_secret = manifest.data_tables.custom['api_secret']
     }
 
     init():boolean{
