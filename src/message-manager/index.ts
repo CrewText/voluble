@@ -134,6 +134,10 @@ export namespace MessageManager {
                 errs.log(error.message, error)
                 return false
             })
+            .catch(Promise.TimeoutError, function (error) {
+                errs.log(error.message, error)
+                return false
+            })
             .reduce(function (total, item: boolean) {
                 if (total) {
                     return total
@@ -166,7 +170,7 @@ export namespace MessageManager {
                                     let message_sent_success = plugin.send_message(msg, contact)
                                     // winston.info(`MM: Message send attempt state for message ${msg.id} with plugin ${plugin.name}: ${message_sent_success}`)
                                     return message_sent_success
-                                })
+                                }).timeout(30000, `Message ${msg.id} could not be sent within 30 seconds, timing out...`)
                             } else {
                                 return Promise.reject(new errs.NotFoundError(`Could not find contact with ID ${msg.contact}`))
                             }
