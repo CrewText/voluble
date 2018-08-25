@@ -39,27 +39,38 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       })
       .catch(function (reason) {
         let error_msg
-        switch (reason.statusCode) {
-          case 400:
-            error_msg = "400 Bad Request: Invalid/Malformed request body or more than 50,000 messages in request."
+        switch (reason.name) {
+          case "StatusCodeError":
+            switch (reason.statusCode) {
+              case 400:
+                error_msg = "400 Bad Request: Invalid/Malformed request body or more than 50,000 messages in request."
+                break
+              case 401:
+                error_msg = "401 Not Authorised: No authentication header provided."
+                break
+              case 402:
+                error_msg = "402 Payment Required: Not enough message credits."
+                break
+              case 403:
+                error_msg = "403 Forbidden: Failed authentication or not authorised to access feature."
+                break
+              case 404:
+                error_msg = "404 Not Found: The specified contact or contact group doesn't exist."
+                break
+              case 406:
+                error_msg = "406 Not Acceptable: Empty message body provided."
+                break
+              case 415:
+                error_msg = "415 Unsupported Media Type: Content type is not supported or unspecified."
+                break
+              default:
+                error_msg = "Unknown error"
+                break
+            }
             break
-          case 401:
-            error_msg = "401 Not Authorised: No authentication header provided."
-            break
-          case 402:
-            error_msg = "402 Payment Required: Not enough message credits."
-            break
-          case 403:
-            error_msg = "403 Forbidden: Failed authentication or not authorised to access feature."
-            break
-          case 404:
-            error_msg = "404 Not Found: The specified contact or contact group doesn't exist."
-            break
-          case 406:
-            error_msg = "406 Not Acceptable: Empty message body provided."
-            break
-          case 415:
-            error_msg = "415 Unsupported Media Type: Content type is not supported or unspecified."
+
+          case "RequestError":
+            error_msg = reason.message
             break
           default:
             error_msg = "Unknown error"
