@@ -14,6 +14,13 @@ interface Manifest {
     npm_modules?: string[]
 }
 
+interface ObjectData {
+    Message?: any,
+    Organization?: any,
+    User?: any,
+    Contact?: any
+}
+
 /**
  * The voluble_plugin forms the basis of any given Voluble plugin, and should be extended by any new plugin.
  * This defines the basic methods that must be defined by new plugins, as well as various internal parts of the plugin
@@ -34,6 +41,7 @@ export class voluble_plugin implements IVolublePluginBase {
     description: string
     _eventEmitter: events.EventEmitter
     data_tables: Object | undefined
+    object_data: ObjectData | undefined
 
     constructor(manifest: Manifest) {
         this._eventEmitter = new events.EventEmitter()
