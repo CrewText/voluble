@@ -1,11 +1,10 @@
 {
   "plugin_name": "Esendex",
   "plugin_description": "Sends an SMS using Esendex",
-  "npm_modules": [],
-  "data_tables": {
-    "organization":[
-      "organization_id",
-      "esendex_acct_ref"
+  "object_data":{
+    "contact": [
+      "field_num_one",
+      "field_num_two"
     ]
   }
 }
