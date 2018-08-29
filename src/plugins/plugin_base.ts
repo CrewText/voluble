@@ -39,7 +39,7 @@ export class voluble_plugin implements IVolublePluginBase {
     description: string
     _eventEmitter: events.EventEmitter
     data_tables: Object | undefined
-    object_data: ObjectData | undefined
+    object_data: ObjectData = {}
 
     constructor(manifest: Manifest) {
         this._eventEmitter = new events.EventEmitter()
@@ -59,6 +59,8 @@ export class voluble_plugin implements IVolublePluginBase {
         if (manifest.hasOwnProperty("data_tables")) {
             this.data_tables = manifest["data_tables"]
         }
+
+        // insert information into data_tables
 
     }
 
