@@ -14,13 +14,13 @@ interface IPluginDirectoryMap {
     plugin: voluble_plugin
 }
 
-export const PluginImportFailedError = errs.helpers.generateClass('PluginImportFailedError')
-
 /**
  * The PluginManager keeps track of all loaded plugins, as well as initializing, loading and shutting down all detected plugins.
  * It also handles all plugin- and service-related operations.
  */
 export namespace PluginManager {
+    export const PluginImportFailedError = errs.helpers.generateClass('PluginImportFailedError')
+
     let __plugin_dir: string = path.resolve(path.join(__dirname, "../plugins"))
 
     export function getPluginById(id: number): Promise<voluble_plugin | null> {

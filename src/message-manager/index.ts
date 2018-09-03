@@ -178,6 +178,9 @@ export namespace MessageManager {
                 } else {
                     return Promise.reject(new errs.NotFoundError(`Could not find plugin with ID ${svc.id}`))
                 }
+            }).catch(PluginManager.PluginImportFailedError, function (error) {
+                errs.log(error.message, error)
+                return Promise.reject(error)
             })
     }
 
