@@ -5,7 +5,9 @@ const winston = require('winston')
 import * as utils from '../../utilities'
 const errs = require('common-errors')
 import { MessageManager } from '../../message-manager/'
+import { ContactManager } from '../../contact-manager'
 import * as volubleErrors from '../../voluble-errors'
+import { Errors } from "sequelize";
 
 /**
  * Handles the route GET /messages
@@ -72,10 +74,16 @@ router.post('/', function (req, res, next) {
     req.body.servicechain_id || null
   )
     .then(function (msg) {
+      return ContactManager.checkContactWithIDExists(req.body.contact_id)
+    })
+    .then(function (msg) {
       return MessageManager.sendMessage(msg)
     })
     .then(function (msg) {
       res.jsend.success(msg)
+    })
+    .catch(errs.NotFoundError, function (error) {
+      res.jsend.fail(`Contact with ID ${req.body.contact_id} does not exist.`)
     })
     .catch(function (error: any) {
       res.jsend.error(error.message)
