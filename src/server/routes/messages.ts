@@ -68,13 +68,16 @@ router.post('/', function (req, res, next) {
   winston.info("Creating new message")
   MessageManager.createMessage(
     req.body.msg_body,
-    req.body.contact_id,// TODO: Validate me!
+    req.body.contact_id,
     req.body.direction || "OUTBOUND",
     req.body.is_reply_to || null,
     req.body.servicechain_id || null
   )
     .then(function (msg) {
       return ContactManager.checkContactWithIDExists(req.body.contact_id)
+        .then(function (id) {
+          return msg
+        })
     })
     .then(function (msg) {
       return MessageManager.sendMessage(msg)
