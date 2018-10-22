@@ -6,18 +6,18 @@ import { EventEmitter } from 'events';
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
 
-interface ObjectData {
-    message?: string[],
-    organization?: string[],
-    user?: string[],
-    contact?: string[]
-}
+// interface ObjectData {
+//     message?: string[],
+//     organization?: string[],
+//     user?: string[],
+//     contact?: string[]
+// }
 
 interface Manifest {
     plugin_name: string,
     plugin_description: string,
-    data_tables?: Object,
-    object_data?: ObjectData,
+    // data_tables?: Object,
+    // object_data?: ObjectData,
     npm_modules?: string[]
 }
 
@@ -37,8 +37,8 @@ interface IVolublePluginBase {
 export class voluble_plugin implements IVolublePluginBase {
     name: string
     description: string
-    data_tables: Object | undefined
-    object_data: ObjectData | undefined
+    // data_tables: Object | undefined
+    // object_data: ObjectData | undefined
     _eventEmitter = new EventEmitter()
     _plugin_dir = __dirname
 
@@ -62,14 +62,14 @@ export class voluble_plugin implements IVolublePluginBase {
             throw new errors.NotImplementedError(`Plugin ${this.name} has not defined the field 'plugin_description' in it's manifest.`)
         }
 
-        // And grab the `data_tables` and `object_data_tables` from the manifest
-        if (manifest.hasOwnProperty("data_tables")) {
-            this.data_tables = manifest["data_tables"]
-        }
+        // // And grab the `data_tables` and `object_data_tables` from the manifest
+        // if (manifest.hasOwnProperty("data_tables")) {
+        //     this.data_tables = manifest["data_tables"]
+        // }
 
-        if (manifest.hasOwnProperty("object_data")) {
-            this.object_data = manifest["object_data"]
-        }
+        // if (manifest.hasOwnProperty("object_data")) {
+        //     this.object_data = manifest["object_data"]
+        // }
     }
 
     send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> {

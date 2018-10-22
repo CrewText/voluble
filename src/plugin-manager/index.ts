@@ -59,14 +59,6 @@ export namespace PluginManager {
             .then(function (plugin_list) {
                 return synchronizePluginDatabase(plugin_list)
             })
-            .then(function (plugin_list) {
-                return Promise.each(plugin_list, function (plugin) {
-                    return createPluginDataTables(plugin)
-                        .then(function () {
-                            return createPluginObjectDataTables(plugin)
-                        })
-                })
-            })
     }
 
     function discoverPlugins(directory: string): Promise<IPluginDirectoryMap[]> {
