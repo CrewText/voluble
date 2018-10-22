@@ -31,9 +31,11 @@ export namespace PluginManager {
             .then(function (service) {
                 if (service) {
                     try {
-                        let plugin_directory_name = path.join(__plugin_dir, service.directory_name, "plugin.js")
-                        winston.debug("Importing plugin from:" + plugin_directory_name)
-                        let p: voluble_plugin = require(plugin_directory_name)()
+                        let plugin_directory = path.join(__plugin_dir, service.directory_name)
+                        let plugin_fullpath = path.join(plugin_directory, "plugin.js")
+                        winston.debug("Importing plugin from:" + plugin_fullpath)
+                        let p: voluble_plugin = require(plugin_fullpath)()
+                        p._plugin_dir = plugin_directory
                         return Promise.resolve(p)
                     } catch (e) {
                         errs.log(e, `Could not import plugin in directory '${service.directory_name}': ${e.message}`)
@@ -124,76 +126,76 @@ export namespace PluginManager {
         })
     }
 
-    function createPluginDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any[]> {
-        if (plugin_dir_map.plugin.data_tables) {
-            return Promise.map(Object.keys(plugin_dir_map.plugin.data_tables), function (table) {
-                let table_name = `pl_${plugin_dir_map.subdirectory}_${table}`
-                winston.info(`Creating table ${table_name}`)
+    // function createPluginDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any[]> {
+    //     if (plugin_dir_map.plugin.data_tables) {
+    //         return Promise.map(Object.keys(plugin_dir_map.plugin.data_tables), function (table) {
+    //             let table_name = `pl_${plugin_dir_map.subdirectory}_${table}`
+    //             winston.info(`Creating table ${table_name}`)
 
-                let cols = {}
-                let current_table: string[] = plugin_dir_map.plugin.data_tables[table]
+    //             let cols = {}
+    //             let current_table: string[] = plugin_dir_map.plugin.data_tables[table]
 
-                winston.debug(current_table)
-                //console.log(current_table)
+    //             winston.debug(current_table)
+    //             //console.log(current_table)
 
-                current_table.forEach(function (col) {
-                    cols[col] = db.models.Sequelize.STRING
-                })
+    //             current_table.forEach(function (col) {
+    //                 cols[col] = db.models.Sequelize.STRING
+    //             })
 
-                db.sequelize.define(table_name, cols).sync()
+    //             db.sequelize.define(table_name, cols).sync()
 
-            })
-        } else {
-            return Promise.resolve([])
-        }
-    }
+    //         })
+    //     } else {
+    //         return Promise.resolve([])
+    //     }
+    // }
 
-    function createPluginObjectDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any> {
-        let plugin = plugin_dir_map.plugin
-        let db_define_proms: Promise<any>[] = []
+    // function createPluginObjectDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any> {
+    //     let plugin = plugin_dir_map.plugin
+    //     let db_define_proms: Promise<any>[] = []
 
-        Object.keys(plugin.object_data).forEach(object_type => {
-            let cols = {
-                id: {
-                    type: db.models.Sequelize.INTEGER,
-                    primaryKey: true,
-                }
-            }
+    //     Object.keys(plugin.object_data).forEach(object_type => {
+    //         let cols = {
+    //             id: {
+    //                 type: db.models.Sequelize.INTEGER,
+    //                 primaryKey: true,
+    //             }
+    //         }
 
-            plugin.object_data[object_type].forEach(attr => {
-                cols[attr] = db.models.Sequelize.STRING
-            });
+    //         plugin.object_data[object_type].forEach(attr => {
+    //             cols[attr] = db.models.Sequelize.STRING
+    //         });
 
-            let table_name = `pl_${plugin.name.replace(' ', '')}_${object_type}`
+    //         let table_name = `pl_${plugin.name.replace(' ', '')}_${object_type}`
 
-            // For the sake of convenience, since we know that our table is referencing a particulary entry in a table
-            // that alreasy exists, we can set up the foreign keys too. This will help us populate the `plugin.object_data` field later.
-            let related_model
-            switch (object_type) {
-                case "message":
-                    related_model = db.models.Message
-                    break
-                case "contact":
-                    related_model = db.models.Contact
-                    break
-                case "organization":
-                    related_model = db.models.Organization
-                    break
-                case "user":
-                    related_model = db.models.User
-                    break
-            }
+    //         // For the sake of convenience, since we know that our table is referencing a particulary entry in a table
+    //         // that alreasy exists, we can set up the foreign keys too. This will help us populate the `plugin.object_data` field later.
+    //         let related_model
+    //         switch (object_type) {
+    //             case "message":
+    //                 related_model = db.models.Message
+    //                 break
+    //             case "contact":
+    //                 related_model = db.models.Contact
+    //                 break
+    //             case "organization":
+    //                 related_model = db.models.Organization
+    //                 break
+    //             case "user":
+    //                 related_model = db.models.User
+    //                 break
+    //         }
 
-            let model = db.sequelize.define(table_name, cols)
-            if (related_model) {
-                related_model.hasOne(model, { foreignKey: "object_id" })
-            }
-            let prom = model.sync()
-            db_define_proms.push(prom)
-        });
+    //         let model = db.sequelize.define(table_name, cols)
+    //         if (related_model) {
+    //             related_model.hasOne(model, { foreignKey: "object_id" })
+    //         }
+    //         let prom = model.sync()
+    //         db_define_proms.push(prom)
+    //     });
 
-        return Promise.all(db_define_proms)
-    }
+    //     return Promise.all(db_define_proms)
+    // }
 
     /**
      * Gets the list of services from the DB with their status.
