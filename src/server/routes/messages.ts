@@ -75,7 +75,7 @@ router.post('/', function (req, res, next) {
       return MessageManager.sendMessage(msg)
     })
     .then(function (msg) {
-      res.status(200).json(msg)
+      res.jsend.success(msg)
     })
     .catch(function (error: any) {
       res.jsend.error(error.message)
