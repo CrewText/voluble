@@ -10,6 +10,12 @@ import { ContactManager } from '../contact-manager/'
  * Like all Voluble Managers, ServicechainManager does not need to be instantiated and can be accessed directly.
  */
 export namespace ServicechainManager {
+
+    interface ServicechainPriority {
+        service_id: string,
+        priority: number
+    }
+
     export const EmptyServicechainError = errs.helpers.generateClass('EmptyServicechainError')
 
     /**
@@ -63,7 +69,7 @@ export namespace ServicechainManager {
                 if (sc.Services.length) {
                     //@ts-ignore
                     let sc_to_ret: db.ServiceInstance = sc.Services[0]
-                    return sc_to_ret
+                    return Promise.resolve(sc_to_ret)
                 } else {
                     return Promise.reject(new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`))
                 }
@@ -98,7 +104,7 @@ export namespace ServicechainManager {
      * @param {string} name The name of the new Servicechain
      * @param {array} services The list of priority/service doubles to add
      */
-    export function createNewServicechain(name: string, services: Array<[number, number]>): Promise<db.ServicechainInstance> {
+    export function createNewServicechain(name: string, services: Array<ServicechainPriority>): Promise<db.ServicechainInstance> {
         winston.debug("Creating new SC - " + name)
         // First, create the new SC itself
         return db.models.Servicechain.create({
@@ -108,8 +114,8 @@ export namespace ServicechainManager {
             .then(function (sc) {
                 winston.debug("Created new SC:")
                 winston.debug(sc)
-                return Promise.map(services, function (svc: [number, number]) {
-                    return ServicechainManager.addServiceToServicechain(sc.id, svc[1], svc[0])
+                return Promise.map(services, function (scp: ServicechainPriority) {
+                    return ServicechainManager.addServiceToServicechain(sc.id, scp.service_id, scp.priority)
                 })
                     .then(function (svcs_in_scs) {
                         return sc
@@ -118,7 +124,7 @@ export namespace ServicechainManager {
 
     }
 
-    export function addServiceToServicechain(sc_id: number, service_id: number, priority: number): Promise<db.ServicesInSCInstance> {
+    export function addServiceToServicechain(sc_id: number, service_id: string, priority: number): Promise<db.ServicesInSCInstance> {
         return db.models.ServicesInSC.create({
             servicechain_id: sc_id,
             service_id: service_id,
