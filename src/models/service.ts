@@ -6,7 +6,7 @@ export interface ServiceAttributes {
 }
 
 export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes> {
-    id: number,
+    id: string,
     createdAt: Date,
     updatedAt: Date,
 
