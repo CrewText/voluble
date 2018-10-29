@@ -23,7 +23,7 @@ export namespace PluginManager {
 
     let __plugin_dir: string = path.resolve(path.join(__dirname, "../plugins"))
 
-    export function getPluginById(id: number): Promise<voluble_plugin | null> {
+    export function getPluginById(id: string): Promise<voluble_plugin | null> {
         /** Find a service relating to a given plugin by it's ID.
          * If a service is found, create a new instance of that plugin and return it
          */
@@ -203,7 +203,7 @@ export namespace PluginManager {
      * @param {Number} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
-    export function getServiceById(id: number): Promise<db.ServiceInstance | null> {
+    export function getServiceById(id: string): Promise<db.ServiceInstance | null> {
         return db.models.Service.findById(id)
         // TODO: Validate plugin exists, fail otherwise
     }

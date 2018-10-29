@@ -17,9 +17,9 @@ export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes> {
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Service = sequelize.define('Service', {
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUID,
             primaryKey: true,
-            autoIncrement: true,
+            defaultValue: DataTypes.UUIDV4
         },
         name: DataTypes.STRING,
         directory_name: DataTypes.STRING,

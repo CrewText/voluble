@@ -36,8 +36,6 @@ export interface DbConnection {
 export var models: DbConnection = {}
 export var sequelize = new Sequelize(process.env.CLEARDB_DATABASE_URL || "localhost", { dialect: 'mysql', logging: false })
 
-// TODO: #5 Set up associations between models, reduce the need for validation
-
 fs
     .readdirSync(__dirname)
     .filter(file => {
