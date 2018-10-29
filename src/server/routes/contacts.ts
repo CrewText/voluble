@@ -34,10 +34,7 @@ router.get('/', function (req, res, next) {
  * Lists all of the details available about the contact with a given ID.
  */
 router.get('/:contact_id', function (req, res, next) {
-  utils.verifyNumberIsInteger(req.params.contact_id)
-    .then(function (id) {
-      return ContactManager.checkContactWithIDExists(id)
-    })
+  ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
     })
@@ -79,10 +76,7 @@ router.post('/', function (req, res, next) {
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
 router.put('/:contact_id', function (req, res, next) {
-  utils.verifyNumberIsInteger(req.params.contact_id)
-    .then(function (id) {
-      return ContactManager.checkContactWithIDExists(id)
-    })
+  return ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.updateContactDetailsWithId(id, req.body)
     })
@@ -108,15 +102,13 @@ router.put('/:contact_id', function (req, res, next) {
 router.delete('/:contact_id', function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
-    .then(function (contact_id) {
-      return ContactManager.deleteContactFromDB(contact_id)
-    })
+  return ContactManager.deleteContactFromDB(req.params.contact_id)
     .then(function (resp) {
       res.jsend.success(resp)
       //res.status(200).json(resp)
     })
     .catch(errs.TypeError, function (error) {
-      res.jsend.fail({'id': "ID supplied is not an integer."})
+      res.jsend.fail({ 'id': "ID supplied is not an integer." })
     })
     .catch(function (error: any) {
       res.jsend.error(error.message)

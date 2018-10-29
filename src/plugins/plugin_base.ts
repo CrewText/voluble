@@ -31,7 +31,7 @@ interface IVolublePluginBase {
     name: string | undefined
     description: string | undefined
     _eventEmitter: EventEmitter
-    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean>
+    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean
 }
 
 export class voluble_plugin implements IVolublePluginBase {
@@ -72,7 +72,7 @@ export class voluble_plugin implements IVolublePluginBase {
         // }
     }
 
-    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> {
+    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean {
         throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
     }
 
