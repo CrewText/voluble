@@ -25,7 +25,7 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServicechainFromContactId(contact_id: number): Promise<db.ServicechainInstance | null> {
+    export function getServicechainFromContactId(contact_id: string): Promise<db.ServicechainInstance | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
                 return db.models.Servicechain.findOne({

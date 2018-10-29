@@ -17,13 +17,13 @@ export namespace ContactManager {
      * @param {string} phone_num The phone number (with leading country code) of the contact
      * @param {Number} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
-    export function createContact (first_name: string, surname: string, email: string, phone_num: string, default_servicechain: number): Promise<ContactInstance> {
+    export function createContact(first_name: string, surname: string, email: string, phone_num: string, default_servicechain: string): Promise<ContactInstance> {
         return db.models.Contact.create({
             first_name: first_name,
             surname: surname,
             email_address: email,
             phone_number: phone_num,
-            default_servicechain: default_servicechain
+            defaultServicechainId: default_servicechain
         })
     }
 
@@ -33,7 +33,7 @@ export namespace ContactManager {
      * @returns {promise} Promise resolving to sequelize confirmation of deleted row
      */
 
-    export function deleteContactFromDB (id: number): Promise<number> {
+    export function deleteContactFromDB(id: string): Promise<number> {
         return db.models.Contact.destroy({
             where: {
                 id: id
@@ -46,7 +46,7 @@ export namespace ContactManager {
      * @param {Number} id Contact ID number
      * @returns {promise} Promise resolving to the id of the contact, if it exists.
      */
-    export function checkContactWithIDExists (id: number): Promise<number> {
+    export function checkContactWithIDExists(id: string): Promise<string> {
         return Promise.try(function () {
             /* Do a COUNT of all of the contacts in the DB with this ID. If it doesn't exist (i.e. COUNT = 0,)
              * throw an error.
@@ -68,7 +68,7 @@ export namespace ContactManager {
      * @param {Number} offset The amount of values to skip over, before returning the next hundred.
      * @returns {promise} Promise resolving to the most recent hundred  Sequelize rows representing messages.
      */
-    export function getHundredContacts (offset: number):Promise<ContactInstance[]> {
+    export function getHundredContacts(offset: number): Promise<ContactInstance[]> {
         return db.models.Contact.findAll({
             offset: offset, limit: 100
         })
@@ -79,7 +79,7 @@ export namespace ContactManager {
      * @param {Number} id Contact ID number
      * @returns { promise} Promise resolving to a Sequelize row representing the given contact
      */
-    export function getContactWithId (id: number): Promise<ContactInstance|null> {
+    export function getContactWithId(id: string): Promise<ContactInstance | null> {
         return db.models.Contact.findById(id)
 
     }
@@ -90,7 +90,7 @@ export namespace ContactManager {
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */
-    export function updateContactDetailsWithId (id: number, updatedDetails: any): Promise<[number, db.ContactInstance[]]> {
+    export function updateContactDetailsWithId(id: string, updatedDetails: any): Promise<[number, db.ContactInstance[]]> {
         return db.models.Contact.update(updatedDetails,
             {
                 where: { id: id }

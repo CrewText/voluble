@@ -22,7 +22,7 @@ export namespace MessageManager {
      * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
-    export function createMessage(body: string, contact_id: number, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null,
+    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null,
         servicechain_id: number | null = null): Promise<db.MessageInstance> {
 
         return ContactManager.checkContactWithIDExists(contact_id)

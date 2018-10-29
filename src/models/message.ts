@@ -3,21 +3,21 @@ import * as Sequelize from "sequelize"
 export interface MessageAttributes {
     body: string
     ServicechainId: number,
-    contact: number,
+    contact: string
     is_reply_to: number | null | undefined
     direction: string,
     sent_time?: Date,
     message_state: string
 }
 
-export interface MessageInstance extends Sequelize.Instance<MessageAttributes>{
+export interface MessageInstance extends Sequelize.Instance<MessageAttributes> {
     id: number,
     createdAt: Date,
     updatedAt: Date,
 
     body: string
     ServicechainId: number,
-    contact: number,
+    contact: string
     is_reply_to: number | null | undefined
     direction: string,
     sent_time: Date,
