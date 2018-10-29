@@ -1,6 +1,7 @@
 import { voluble_plugin, contactInstance, messageInstance } from '../plugin_base'
 var manifest = require('./manifest.json')
 import * as telegram from 'node-telegram-bot-api'
+import * as Promise from 'bluebird'
 //import MTProto from 'telegram-mtproto'
 
 class TelegramPlugin extends voluble_plugin {
@@ -10,19 +11,11 @@ class TelegramPlugin extends voluble_plugin {
 
 
     constructor() {
-        super()
+        super(manifest)
         this.name = manifest.plugin_name
         this.description = manifest.plugin_description
         this.api_id = process.env.TELEGRAM_API_ID
         this.api_hash = process.env.TELEGRAM_API_HASH
-    }
-
-    createPluginDataTables(): boolean {
-        let server = { dev: true }
-        let api = {}
-        this.client = MTProto({ server, api })
-
-        return (!!this.client)
     }
 
     shutdown(): boolean {
@@ -31,15 +24,17 @@ class TelegramPlugin extends voluble_plugin {
 
     send_message(message: messageInstance, contact: contactInstance) {
         let t = this
-        this.checkPhoneNumExists(contact.phone_number)
+        return this.checkPhoneNumExists(contact.phone_number)
             .then(function (phoneNumExists) {
                 if (!phoneNumExists) {
-                    t.message_state_update(message, "MSG_FAILED")
+                    return false
+                } else {
+                    return true
                 }
             })
             .catch(function (err) {
                 console.log(err)
-                t.message_state_update(message, "MSG_FAILED")
+                return false
             })
     }
 
