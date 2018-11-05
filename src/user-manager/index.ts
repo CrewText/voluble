@@ -41,11 +41,11 @@ export namespace UserManager {
             })
     }
 
-    export function deleteUser(user_id:string){
+    export function deleteUser(user_id: string) {
         return deleteUserFromVoluble(user_id)
-        .then(function(){
-            return Auth0Manager.deleteUserFromAuth0(user_id)
-        })
+            .then(function () {
+                return Auth0Manager.deleteUserFromAuth0(user_id)
+            })
     }
 
     /**
@@ -57,7 +57,7 @@ export namespace UserManager {
             .then(function (created_user) {
                 db.models.Contact.create({
                     id: <string>created_user.user_id,
-                    default_servicechain: 0,
+                    defaultServicechainId: null,
                     email_address: email,
                     first_name: first_name,
                     surname: surname,
