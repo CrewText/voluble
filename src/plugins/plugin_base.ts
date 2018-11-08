@@ -21,6 +21,12 @@ interface Manifest {
     npm_modules?: string[]
 }
 
+interface InterpretedIncomingMessage {
+    message_body: string,
+    contact: string,
+    is_reply_to: number | null,
+}
+
 /**
  * The voluble_plugin forms the basis of any given Voluble plugin, and should be extended by any new plugin.
  * This defines the basic methods that must be defined by new plugins, as well as various internal parts of the plugin
@@ -32,6 +38,7 @@ interface IVolublePluginBase {
     description: string | undefined
     _eventEmitter: EventEmitter
     send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean
+    handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage
 }
 
 export class voluble_plugin implements IVolublePluginBase {
@@ -61,33 +68,13 @@ export class voluble_plugin implements IVolublePluginBase {
         } else {
             throw new errors.NotImplementedError(`Plugin ${this.name} has not defined the field 'plugin_description' in it's manifest.`)
         }
-
-        // // And grab the `data_tables` and `object_data_tables` from the manifest
-        // if (manifest.hasOwnProperty("data_tables")) {
-        //     this.data_tables = manifest["data_tables"]
-        // }
-
-        // if (manifest.hasOwnProperty("object_data")) {
-        //     this.object_data = manifest["object_data"]
-        // }
     }
 
     send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean {
         throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
     }
 
-    // populate_object_data_tables(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> {
-    //     // For each object type in `object_data`, find an entry in the appropriate table and pull in the data with ID matching the object ID
-    //     if (!this.object_data) {
-    //         return Promise.resolve(true)
-    //     }
-
-    //     console.log(`PB: Contact Keys:`)
-    //     if (this.object_data.contact) {
-    //         //let tbl_name = `pl_${this.name.replace(' ', '')}_contacts`
-    //         //console.log(contact[`get${tbl_name}`])
-    //         console.log(contact.getDataValue(""))
-    //         return Promise.resolve(true)
-    //     }
-    //}
+    handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage {
+        throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined the `handle_incoming_message` method. Contact the plugin author for a fix.');
+    }
 }

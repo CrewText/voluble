@@ -9,6 +9,11 @@ const errs = require('common-errors')
 
 export namespace QueueManager {
 
+    export interface MessageReceivedRequest {
+        request_data: any,
+        service_id: string
+    }
+
     let client: redis.RedisClient;
     if (process.env.REDISTOGO_URL) {
         let rtg = require("url").parse(process.env.REDISTOGO_URL);
@@ -76,7 +81,7 @@ export namespace QueueManager {
     }
 
     export function addMessageReceivedRequest(request_data: any, service_id: string) {
-        let q_msg = { request_data: request_data, service_id: service_id }
+        let q_msg: MessageReceivedRequest = { request_data: request_data, service_id: service_id }
         rsmq.sendMessage({
             qname: "message-recv",
             message: JSON.stringify(q_msg)
