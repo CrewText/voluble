@@ -47,14 +47,20 @@ export namespace PluginManager {
             })
     }
 
+    export function getServiceByDirName(id: string): Promise<db.ServiceInstance | null> {
+        return db.models.Service.find({
+            where: { directory_name: id }
+        })
+    }
+
 
     /**
  * Set the plugin directory and load all of the plugins in it.
  * @param {string} plugin_dir The path to the directory containing the plugins that Voluble should use.
  */
     export function initAllPlugins() {
-        winston.debug("Attempting to load plugins from " + __plugin_dir)
-        winston.info("Loading plugins from\n\t" + __plugin_dir)
+        winston.debug("PM: Attempting to load plugins from " + __plugin_dir)
+        winston.info("PM: Loading plugins from\n\t" + __plugin_dir)
         return discoverPlugins(__plugin_dir)
             .then(function (plugin_list) {
                 return synchronizePluginDatabase(plugin_list)
@@ -72,7 +78,7 @@ export namespace PluginManager {
             else { return false }
         })
 
-        winston.debug("Found plugins at:\n\t" + plugin_subdirs)
+        winston.debug("PM: Found plugins at:\n\t" + plugin_subdirs)
 
         // Create a list of all the plugins we're able to import
         let plugin_list: IPluginDirectoryMap[] = []
@@ -80,7 +86,7 @@ export namespace PluginManager {
             let plugin_file_abs = path.join(directory, plugin_subdir_rel, "plugin.js")
             try {
                 let plug_obj: voluble_plugin = require(plugin_file_abs)()
-                winston.info("Loaded plugin:\n\t" + plug_obj.name)
+                winston.info("PM: Loaded plugin: " + plug_obj.name)
                 let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir_rel }
                 plugin_list.push(p)
             } catch (e) {

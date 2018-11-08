@@ -28,7 +28,7 @@ const routes_messages = require('./routes/messages')
 const routes_services = require('./routes/services')
 const routes_blasts = require('./routes/blasts')
 const routes_servicechains = require('./routes/servicechains')
-const service_endpoint_generic = require('./routes/service_endpoint')
+const routes_service_endpoint_generic = require('./routes/service_endpoint')
 
 winston.info("Loading plugin manager")
 import { PluginManager } from '../plugin-manager'
@@ -119,20 +119,13 @@ app.use('/groups', routes_groups)
 app.use('/contacts', routes_contacts)
 app.use('/messages', routes_messages)
 app.use('/services', routes_services)
+app.use('/services', routes_service_endpoint_generic)
 app.use('/blasts', routes_blasts)
 app.use('/servicechains', routes_servicechains)
 
 // Set up plugin manager
 winston.info("Initing all plugins")
 PluginManager.initAllPlugins()
-  .then(function (plugins) {
-    // Once we have inited all the plugins, register an endpoint to access the plugin by for received messages
-    return Promise.map(plugins, function (plugin) {
-      let endpoint = `/services/${plugin.subdirectory}/endpoint`
-      winston.debug(`Setting up the endpoint ${endpoint}`)
-      app.use(endpoint, service_endpoint_generic)
-    })
-  })
 
 // catch 404 and forward to error handler
 app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {

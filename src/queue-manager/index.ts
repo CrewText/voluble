@@ -5,7 +5,6 @@ const winston = require('winston')
 import * as RedisSMQ from 'rsmq'
 import * as redis from 'redis'
 import * as rsmqWorker from 'rsmq-worker'
-//import * as kue from 'kue'
 const errs = require('common-errors')
 
 export namespace QueueManager {
@@ -76,8 +75,23 @@ export namespace QueueManager {
         })
     }
 
+    export function addMessageReceivedRequest(request_data: any, service_id: string) {
+        let q_msg = { request_data: request_data, service_id: service_id }
+        rsmq.sendMessage({
+            qname: "message-recv",
+            message: JSON.stringify(q_msg)
+        }, function (err, resp) {
+            if (resp) {
+                return true
+            } else {
+                winston.error(err)
+                throw err
+            }
+        })
+    }
+
     function createQueues() {
-        let queues_to_create = ["message-send", "message-state-update"]
+        let queues_to_create = ["message-send", "message-state-update", "message-recv"]
         rsmq.listQueues(function (err, queues) {
             if (err || !queues) { winston.error(err) }
             else {
