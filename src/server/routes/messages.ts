@@ -6,8 +6,6 @@ import * as utils from '../../utilities'
 const errs = require('common-errors')
 import { MessageManager } from '../../message-manager/'
 import { ContactManager } from '../../contact-manager'
-import * as volubleErrors from '../../voluble-errors'
-import { Errors } from "sequelize";
 
 /**
  * Handles the route GET /messages
