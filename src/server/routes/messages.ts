@@ -69,7 +69,8 @@ router.post('/', function (req, res, next) {
     req.body.contact_id,
     req.body.direction || "OUTBOUND",
     req.body.is_reply_to || null,
-    req.body.servicechain_id || null
+    req.body.servicechain_id || null,
+    null
   )
     .then(function (msg) {
       return ContactManager.checkContactWithIDExists(req.body.contact_id)
