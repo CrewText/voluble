@@ -4,6 +4,19 @@ import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import winston = require('winston');
 
+interface IncomingEsendexMessage {
+  inboundmessage: InboundEsendexMessage
+}
+
+interface InboundEsendexMessage {
+  id: string,
+  messageid: string,
+  accountid: string,
+  messagetext: string,
+  from: string,
+  to: string
+}
+
 class EsendexPlugin extends plugin_base.voluble_plugin {
   username: string | undefined
   password: string | undefined
@@ -84,7 +97,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       })
   }
 
-  handle_incoming_message(message_data: string): plugin_base.InterpretedIncomingMessage {
+  handle_incoming_message(message_data: any): plugin_base.InterpretedIncomingMessage {
     /* If all has gone well, we're expecting a message from Esendex of the form:
     <InboundMessage>
         <Id>{guid-of-push-notification}</Id>
@@ -97,13 +110,20 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
             (the virtual number of the Esendex account in use)}
         </To>
     </InboundMessage>
+
+    which converts to JSON from xmlParser as:
+    { inboundmessage:
+      { id: 'guid-of-push-notification',
+      messageid: 'guid-of-inbound-message',
+      accountid: 'guid-of-esendex-account-for-message',
+      messagetext: 'This is the inbound message',
+      from: '00447426437449',
+      to: '00353879409420' } }
     */
 
-    winston.info("ESENDEX: Handling incoming message")
-    let parser = new DOMParser()
-    let message_data_dom = parser.parseFromString(message_data, "application/xml")
-    let message_body = message_data_dom.getElementsByName("MessageText")[0].childNodes[0].nodeValue
-    winston.debug("ESENDEX: " + message_body)
+    let parsed_message = <IncomingEsendexMessage>message_data
+    let interpreted_message: plugin_base.InterpretedIncomingMessage = { contact: "1", message_body: parsed_message.inboundmessage.messagetext, is_reply_to: null }
+    return interpreted_message
   }
 }
 

@@ -4,6 +4,7 @@ import * as jsend from 'jsend'
 import * as Promise from 'bluebird'
 const path = require('path');
 const bodyParser = require('body-parser');
+var xmlParser = require('express-xml-bodyparser');
 const winston = require('winston')
 
 if (!process.env.IS_PRODUCTION) {
@@ -111,6 +112,7 @@ winston.info("Listening on port " + port)
 //app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(xmlParser({ explicitArray: false }))
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes_index);

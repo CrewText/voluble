@@ -56,7 +56,6 @@ export namespace QueueManager {
         }, function (err, resp) {
             if (resp) {
                 winston.info("QM: Added send request for message " + message.id)
-                winston.debug("QM: " + resp)
                 return true
             } else {
                 winston.error(err)
@@ -82,6 +81,8 @@ export namespace QueueManager {
 
     export function addMessageReceivedRequest(request_data: any, service_id: string) {
         let q_msg: MessageReceivedRequest = { request_data: request_data, service_id: service_id }
+        winston.debug(`Sending queue message`)
+        // console.log(JSON.stringify(q_msg))
         rsmq.sendMessage({
             qname: "message-recv",
             message: JSON.stringify(q_msg)
@@ -96,15 +97,17 @@ export namespace QueueManager {
     }
 
     function createQueues() {
-        let queues_to_create = ["message-send", "message-state-update", "message-recv"]
-        rsmq.listQueues(function (err, queues) {
-            if (err || !queues) { winston.error(err) }
+        let total_queue_list = ["message-send", "message-state-update", "message-recv"]
+        let queues_to_create: string[] = []
+        rsmq.listQueues(function (err, queues_in_redis) {
+            if (err || !queues_in_redis) { winston.error(err) }
             else {
-                queues.forEach(function (queue) {
-                    queues_to_create.forEach(function (q_to_create) {
-                        if (queue == q_to_create) {
+                queues_in_redis.forEach(function (queue_in_redis) {
+                    total_queue_list.forEach(function (q_to_create) {
+                        if (queue_in_redis == q_to_create) {
                             winston.info("Not creating queue " + q_to_create)
-                            queues_to_create.splice(queues_to_create.indexOf(q_to_create))
+                        } else {
+                            queues_to_create.push(q_to_create)
                         }
                     })
                 })

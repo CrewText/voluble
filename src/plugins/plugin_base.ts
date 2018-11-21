@@ -24,7 +24,7 @@ interface Manifest {
 export interface InterpretedIncomingMessage {
     message_body: string,
     contact: string,
-    is_reply_to: number | null,
+    is_reply_to: number | null | undefined,
 }
 
 /**

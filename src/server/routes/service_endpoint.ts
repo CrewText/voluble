@@ -24,6 +24,7 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
                 res.jsend.fail(`Plugin ${request_service_dir} does not exist`)
                 return
             }
+            winston.debug(`Passing message on to ${service.directory_name}`)
 
             QueueManager.addMessageReceivedRequest(req.body, service.id)
             res.jsend.success(request_service_dir)
