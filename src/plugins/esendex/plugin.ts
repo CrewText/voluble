@@ -5,10 +5,10 @@ import * as Promise from 'bluebird'
 import winston = require('winston');
 
 interface IncomingEsendexMessage {
-  inboundmessage: InboundEsendexMessage
+  inboundmessage: ReceivedEsendexMessageData
 }
 
-interface InboundEsendexMessage {
+interface ReceivedEsendexMessageData {
   id: string,
   messageid: string,
   accountid: string,
@@ -122,7 +122,14 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     */
 
     let parsed_message = <IncomingEsendexMessage>message_data
-    let interpreted_message: plugin_base.InterpretedIncomingMessage = { contact: "1", message_body: parsed_message.inboundmessage.messagetext, is_reply_to: null }
+
+    // TODO: Actually find the contact out
+    let interpreted_message: plugin_base.InterpretedIncomingMessage = {
+      contact: "1",
+      message_body: parsed_message.inboundmessage.messagetext,
+      is_reply_to: null
+    }
+
     return interpreted_message
   }
 }
