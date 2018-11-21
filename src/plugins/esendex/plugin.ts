@@ -2,7 +2,7 @@ import * as plugin_base from '../plugin_base'
 var manifest = require('./manifest.json')
 import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
-
+import winston = require('winston');
 
 class EsendexPlugin extends plugin_base.voluble_plugin {
   username: string | undefined
@@ -82,6 +82,28 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
         console.info(`ESENDEX: Got error while sending message ${message.id}: ${error_msg}`)
         return false
       })
+  }
+
+  handle_incoming_message(message_data: string): plugin_base.InterpretedIncomingMessage {
+    /* If all has gone well, we're expecting a message from Esendex of the form:
+    <InboundMessage>
+        <Id>{guid-of-push-notification}</Id>
+        <MessageId>{guid-of-inbound-message}</MessageId>
+        <AccountId>{guid-of-esendex-account-for-message}</AccountId>
+        <MessageText>{Message text of inbound message}</MessageText>
+        <From>{phone number of sender of the message}</From>
+        <To>
+            {phone number for the recipient of the inbound message 
+            (the virtual number of the Esendex account in use)}
+        </To>
+    </InboundMessage>
+    */
+
+    winston.info("ESENDEX: Handling incoming message")
+    let parser = new DOMParser()
+    let message_data_dom = parser.parseFromString(message_data, "application/xml")
+    let message_body = message_data_dom.getElementsByName("MessageText")[0].childNodes[0].nodeValue
+    winston.debug("ESENDEX: " + message_body)
   }
 }
 

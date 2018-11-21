@@ -21,7 +21,7 @@ interface Manifest {
     npm_modules?: string[]
 }
 
-interface InterpretedIncomingMessage {
+export interface InterpretedIncomingMessage {
     message_body: string,
     contact: string,
     is_reply_to: number | null,
