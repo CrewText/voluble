@@ -35,7 +35,7 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         body: DataTypes.STRING(1024),
         contact: DataTypes.BIGINT,
         is_reply_to: DataTypes.BIGINT,
-        direction: DataTypes.ENUM('INBOUND', 'OUTBOUND'), // TODO: Can we make this an ENUM? (INBOUND, OUTBOUND)
+        direction: DataTypes.ENUM('INBOUND', 'OUTBOUND'),
         sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',
             'MSG_SENDING',
@@ -44,8 +44,8 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
             'MSG_DELIVERED_USER',
             'MSG_READ',
             'MSG_REPLIED',
-            'MSG_FAILED')
-
+            'MSG_FAILED',
+            'MSG_ARRIVED')
     })
 
     return Message

@@ -14,6 +14,18 @@ const errs = require('common-errors')
  */
 export namespace MessageManager {
 
+    export enum MessageStates {
+        MSG_PENDING = "MSG_PENDING",
+        MSG_SENDING = "MSG_SENDING",
+        MSG_SENT = "MSG_SENT",
+        MSG_DELIVERED_SERVICE = "MSG_DELIVERED_SERVICE",
+        MSG_DELIVERED_USER = "MSG_DELIVERED_USER",
+        MSG_READ = "MSG_READ",
+        MSG_REPLIED = "MSG_REPLIED",
+        MSG_FAILED = "MSG_FAILED",
+        MSG_ARRIVED = "MSG_ARRIVED"
+    }
+
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
@@ -23,7 +35,7 @@ export namespace MessageManager {
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
     export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null,
-        servicechain_id: number | null = null): Promise<db.MessageInstance> {
+        servicechain_id: number | null = null, message_state: MessageStates | null | undefined): Promise<db.MessageInstance> {
 
         return ContactManager.checkContactWithIDExists(contact_id)
             .catch(errs.NotFoundError, function (NFError) {
@@ -41,6 +53,8 @@ export namespace MessageManager {
                 }
             })
             .then(function (servicechain) {
+                let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
+                console.log(`Message_state: ${msg_state}`)
                 if (servicechain) {
                     let msg = db.models.Message.build({
                         body: body,
@@ -48,7 +62,7 @@ export namespace MessageManager {
                         contact: contact_id,
                         is_reply_to: is_reply_to,
                         direction: direction,
-                        message_state: 'MSG_PENDING'
+                        message_state: msg_state
                     })
 
                     return msg.save()

@@ -60,7 +60,7 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                 return plugin.handle_incoming_message(incoming_message_request.request_data)
             })
             .then(function (message_info) {
-                return MessageManager.createMessage(message_info.message_body, message_info.contact, "INBOUND", message_info.is_reply_to || null, null)
+                return MessageManager.createMessage(message_info.message_body, message_info.contact, "INBOUND", message_info.is_reply_to || null, null, MessageManager.MessageStates.MSG_ARRIVED)
             })
             .catch(errs.NotFoundError, function (err) {
                 errs.log(err, err.message)
