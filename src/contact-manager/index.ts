@@ -81,7 +81,22 @@ export namespace ContactManager {
      */
     export function getContactWithId(id: string): Promise<ContactInstance | null> {
         return db.models.Contact.findById(id)
+    }
 
+    export function getContactFromEmail(email_address: string): Promise<ContactInstance | null> {
+        return db.models.Contact.find({
+            where: {
+                email_address: email_address
+            }
+        })
+    }
+
+    export function getContactFromPhone(phone_number: string): Promise<ContactInstance | null> {
+        return db.models.Contact.find({
+            where: {
+                phone_number: phone_number
+            }
+        })
     }
 
     /**
