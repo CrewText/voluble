@@ -88,20 +88,21 @@ function onError(error: any) {
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-if (!fs.existsSync(process.env.SSL_KEY_PATH || "")) {
-  throw new Error("SSL key does not exist at " + process.env.SSL_KEY_PATH)
-}
+// if (!fs.existsSync(process.env.SSL_KEY_PATH || "")) {
+//   throw new Error("SSL key does not exist at " + process.env.SSL_KEY_PATH)
+// }
 
-if (!fs.existsSync(process.env.SSL_CERT_PATH || "")) {
-  throw new Error("SSL certificate does not exist at " + process.env.SSL_CERT_PATH)
-}
+// if (!fs.existsSync(process.env.SSL_CERT_PATH || "")) {
+//   throw new Error("SSL certificate does not exist at " + process.env.SSL_CERT_PATH)
+// }
 
-let https_options = {
-  key: fs.readFileSync(process.env.SSL_KEY_PATH || ""),
-  cert: fs.readFileSync(process.env.SSL_CERT_PATH || "")
-}
-// TODO: (branch: implement-ssl) Use Helmet for HSTS
-var server = https.createServer(https_options, app);
+// let https_options = {
+//   key: fs.readFileSync(process.env.SSL_KEY_PATH || ""),
+//   cert: fs.readFileSync(process.env.SSL_CERT_PATH || "")
+// }
+// // TODO: (branch: implement-ssl) Use Helmet for HSTS
+// var server = https.createServer(https_options, app);
+var server = https.createServer()
 
 server.listen(port);
 server.on('error', onError);
