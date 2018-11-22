@@ -123,11 +123,10 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
 
     let parsed_message = <IncomingEsendexMessage>message_data
 
-    // TODO: Actually find the contact out
+    // TODO: Actually find the contact out?
     let interpreted_message: plugin_base.InterpretedIncomingMessage = {
-      contact: "1",
-      message_body: parsed_message.inboundmessage.messagetext,
-      is_reply_to: null
+      phone_number: parsed_message.inboundmessage.from,
+      message_body: parsed_message.inboundmessage.messagetext
     }
 
     return interpreted_message

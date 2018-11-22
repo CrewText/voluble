@@ -23,8 +23,10 @@ interface Manifest {
 
 export interface InterpretedIncomingMessage {
     message_body: string,
-    contact: string,
-    is_reply_to: number | null | undefined,
+    contact_id?: string,
+    is_reply_to?: number | null | undefined,
+    phone_number?: string,
+    email_address?: string
 }
 
 /**
