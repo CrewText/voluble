@@ -31,39 +31,40 @@ router.post('/', function (req, res, next) {
     return
   }
 
-
-  UserManager.getUserEntryByAuth0ID(req.body.auth0_id)
-    .then(function (user_entry) {
-      if (!user_entry) {
-        UserManager.addNewUser(req.body.auth0_id, req.body.org_id || null)
-          .then(function (new_user_entry) {
-            res.status(201).json(new_user_entry)
-            //res.jsend...!
-          })
-      } else {
-        res.status(200).json(user_entry)
-      }
-    })
-    .catch(function (error: any) {
-      res.status(500).send(error.message)
-    })
+  //FIXME: Sort out user addition again
+  // UserManager.getUserEntryByAuth0ID(req.body.auth0_id)
+  //   .then(function (user_entry) {
+  //     if (!user_entry) {
+  //       UserManager.addNewUser(req.body.auth0_id, req.body.org_id || null)
+  //         .then(function (new_user_entry) {
+  //           res.status(201).json(new_user_entry)
+  //           //res.jsend...!
+  //         })
+  //     } else {
+  //       res.status(200).json(user_entry)
+  //     }
+  //   })
+  //   .catch(function (error: any) {
+  //     res.status(500).send(error.message)
+  //   })
 })
 
 router.delete('/:voluble_user_id', function (req, res, next) {
+  //FIXME: Sort out user deletion again
 
-  UserManager.deleteUserFromVoluble(req.params.voluble_user_id)
-    .then(function (user_deleted) {
-      if (user_deleted) {
-        res.status(204).send()
-      } else {
-        res.status(500).send()
-      }
-    })
-    .catch(errs.NotFoundError, function (error) {
-      res.status(404).json({
-          error: `User not found: ${req.params.voluble_user_id}`
-        })
-    })
+  // UserManager.deleteUserFromVoluble(req.params.voluble_user_id)
+  //   .then(function (user_deleted) {
+  //     if (user_deleted) {
+  //       res.status(204).send()
+  //     } else {
+  //       res.status(500).send()
+  //     }
+  //   })
+  //   .catch(errs.NotFoundError, function (error) {
+  //     res.status(404).json({
+  //         error: `User not found: ${req.params.voluble_user_id}`
+  //       })
+  //   })
 
 })
 

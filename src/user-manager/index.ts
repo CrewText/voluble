@@ -57,7 +57,7 @@ export namespace UserManager {
             .then(function (created_user) {
                 db.models.Contact.create({
                     id: <string>created_user.user_id,
-                    defaultServicechainId: null,
+                    //defaultServicechainId: null,
                     email_address: email,
                     first_name: first_name,
                     surname: surname,

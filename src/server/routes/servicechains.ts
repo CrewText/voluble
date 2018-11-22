@@ -58,6 +58,7 @@ router.get('/:sc_id', function (req, res, next) {
             .then(function (full_svcs) {
               // And now we have all of the info for the services, add them into
               // the SC object so we have one big object to return.
+              //@ts-ignore
               return Object.assign(sc.dataValues, { services: full_svcs })
             })
 

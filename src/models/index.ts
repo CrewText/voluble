@@ -33,6 +33,7 @@ export interface DbConnection {
 }
 
 
+//@ts-ignore
 export var models: DbConnection = {}
 export var sequelize = new Sequelize(process.env.CLEARDB_DATABASE_URL || "localhost", { dialect: 'mysql', logging: false })
 
