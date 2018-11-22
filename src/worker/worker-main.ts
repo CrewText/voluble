@@ -15,6 +15,7 @@ import * as db from '../models';
 import { QueueManager } from '../queue-manager';
 import { PluginManager } from '../plugin-manager'
 import * as Promise from 'bluebird'
+import { ContactManager } from '../contact-manager';
 const errs = require('common-errors')
 
 
@@ -60,7 +61,51 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                 return plugin.handle_incoming_message(incoming_message_request.request_data)
             })
             .then(function (message_info) {
-                return MessageManager.createMessage(message_info.message_body, message_info.contact, "INBOUND", message_info.is_reply_to || null, null, MessageManager.MessageStates.MSG_ARRIVED)
+                /* At this point, the plugin has returned an InterpretedIncomingMessage.
+                * This contains the message body, and if the plugin has been able to identify the origin contact, the contacts' ID.
+                * However, if not, it must contain one of the following: contact phone number or contact email.
+                * This is so voluble can attempt to determine the origin of the message.
+                * It may also contain the is_reply_to field.
+                */
+
+                Promise.try(function () {
+                    if (message_info.contact_id) {
+                        return message_info.contact_id
+                    }
+                    else if (message_info.phone_number) {
+                        // The contact ID has not been supplied, we need to try and determine it from the phone number
+                        //TODO: Normalize the phone number, just so it matches our records
+                        return ContactManager.getContactFromPhone(message_info.phone_number)
+                            .then(function (contact) {
+                                if (contact) {
+                                    return contact.id
+                                } else {
+                                    throw new errs.NotFoundError(`No contact found with phone number ${message_info.phone_number}`)
+                                }
+                            })
+                    } else if (message_info.email_address) {
+                        // Neither the contact ID or the phone number are supplied, we need to determine it from the email address
+                        return ContactManager.getContactFromEmail(message_info.email_address)
+                            .then(function (contact) {
+                                if (contact) {
+                                    return contact.id
+                                } else {
+                                    throw new errs.NotFoundError(`No contact found with email ${message_info.email_address}`)
+                                }
+                            })
+                    } else {
+                        // plugin has not specified any crucial information
+                        //TODO: What do we do now?
+                        throw new errs.ArgumentError(`Plugin did not specify contact details for incoming message!`)
+                    }
+                }).then(function (determined_contact_id) {
+                    return MessageManager.createMessage(message_info.message_body,
+                        determined_contact_id,
+                        "INBOUND",
+                        message_info.is_reply_to || null,
+                        null,
+                        MessageManager.MessageStates.MSG_ARRIVED)
+                })
             })
             .catch(errs.NotFoundError, function (err) {
                 errs.log(err, err.message)
