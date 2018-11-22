@@ -4,9 +4,9 @@
   "private": true,
   "main": "app.js",
   "scripts": {
-    "start": "node dist/server/server-main.js",
-    "start-server": "node dist/server/server-main.js",
-    "start-worker": "node dist/worker/worker-main.js"
+    "start": "node ./dist/server/server-main.js",
+    "start-server": "node ./dist/server/server-main.js",
+    "start-worker": "node ./dist/worker/worker-main.js"
   },
   "dependencies": {
     "auth0": "^2.10.0",
