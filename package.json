@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node dist/server/server-main.js",
+    "start-server": "node dist/server/server-main.js",
     "start-worker": "node dist/worker/worker-main.js"
   },
   "dependencies": {
