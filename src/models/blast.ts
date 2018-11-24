@@ -5,7 +5,7 @@ export interface BlastAttributes {
 }
 
 export interface BlastInstance extends Sequelize.Instance<BlastAttributes> {
-    id: number,
+    id: string,
     createdAt: Date,
     updatedAt: Date,
 
@@ -15,9 +15,9 @@ export interface BlastInstance extends Sequelize.Instance<BlastAttributes> {
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Blast = sequelize.define('Blast', {
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUID,
             primaryKey: true,
-            autoIncrement: true,
+            defaultValue: DataTypes.UUIDV4
         },
         name: DataTypes.STRING
     })

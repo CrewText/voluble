@@ -2,23 +2,23 @@ import * as Sequelize from "sequelize"
 
 export interface MessageAttributes {
     body: string
-    ServicechainId: number,
+    ServicechainId: string,
     contact: string
-    is_reply_to: number | null | undefined
+    is_reply_to: string | null | undefined
     direction: string,
     sent_time?: Date,
     message_state: string
 }
 
 export interface MessageInstance extends Sequelize.Instance<MessageAttributes> {
-    id: number,
+    id: string,
     createdAt: Date,
     updatedAt: Date,
 
     body: string
-    ServicechainId: number,
+    ServicechainId: string,
     contact: string
-    is_reply_to: number | null | undefined
+    is_reply_to: string | null | undefined
     direction: string,
     sent_time: Date,
     message_state: string
@@ -28,9 +28,9 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
     var Message = sequelize.define('Message', {
 
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUIDV4,
             primaryKey: true,
-            autoIncrement: true,
+            defaultValue: DataTypes.UUIDV4
         },
         body: DataTypes.STRING(1024),
         contact: DataTypes.BIGINT,

@@ -1,17 +1,17 @@
 import * as Sequelize from "sequelize"
 
 export interface ServicesInSCAttributes {
-    servicechain_id: number,
+    servicechain_id: string,
     service_id: string,
     priority: number
 }
 
 export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAttributes> {
-    id: number,
+    id: string,
     createdAt: Date,
     updatedAt: Date,
 
-    servicechain_id: number,
+    servicechain_id: string,
     service_id: string,
     priority: number
 }
@@ -19,9 +19,9 @@ export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAtt
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var ServicesInSC = sequelize.define('ServicesInSC', {
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUID,
             primaryKey: true,
-            autoIncrement: true,
+            defaultValue: DataTypes.UUIDV4
         },
         priority: DataTypes.INTEGER
     })

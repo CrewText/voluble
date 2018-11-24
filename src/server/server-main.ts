@@ -136,7 +136,7 @@ function forceSSL(req: express.Request, res: express.Response, next: express.Nex
 }
 
 // Force SSL
-if (process.env.NODE_ENV = "development") {
+if (process.env.NODE_ENV == "development") {
   winston.debug("Not forcing SSL")
 } else {
   winston.debug("Forcing SSL redirects")

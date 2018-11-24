@@ -5,7 +5,7 @@ export interface ServicechainAttributes {
 }
 
 export interface ServicechainInstance extends Sequelize.Instance<ServicechainAttributes> {
-    id: number,
+    id: string,
     createdAt: Date,
     updatedAt: Date,
 
@@ -15,9 +15,9 @@ export interface ServicechainInstance extends Sequelize.Instance<ServicechainAtt
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Servicechain = sequelize.define('Servicechain', {
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUID,
             primaryKey: true,
-            autoIncrement: true,
+            defaultValue: DataTypes.UUIDV4
         },
         name: DataTypes.STRING
     })

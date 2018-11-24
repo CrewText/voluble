@@ -5,8 +5,8 @@ export interface OrgAttributes {
     auth0_id: string
 }
 
-export interface OrgInstance extends Sequelize.Instance<OrgAttributes>{
-    id: number,
+export interface OrgInstance extends Sequelize.Instance<OrgAttributes> {
+    id: string,
     createdAt: Date,
     updatedAt: Date,
 
@@ -16,9 +16,9 @@ export interface OrgInstance extends Sequelize.Instance<OrgAttributes>{
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Organization = sequelize.define('Organization', {
         id: {
-            type: DataTypes.BIGINT,
+            type: DataTypes.UUID,
             primaryKey: true,
-            autoIncrement: true,
+            defaultValue: DataTypes.UUIDV4
         },
         name: DataTypes.STRING
     })
