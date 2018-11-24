@@ -1,5 +1,5 @@
 const winston = require('winston')
-if (!process.env.IS_PRODUCTION) {
+if (process.env.NODE_ENV = "development") {
     winston.info("Main: Detected dev environment")
     winston.level = 'debug'
 } else {
@@ -50,7 +50,7 @@ worker_msg_send.on("message", function (message, next, message_id) {
 }).start()
 
 worker_msg_recv.on("message", function (message: string, next, message_id) {
-    Promise.try(function () {
+    return Promise.try(function () {
         // The incoming message will be a serialized JSON of a QM.MessageReceivedRequest, so reconstitute it first to ensure type-correctness
         let incoming_message_request = <QueueManager.MessageReceivedRequest>JSON.parse(message)
 
@@ -68,7 +68,7 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                 * It may also contain the is_reply_to field.
                 */
 
-                Promise.try(function () {
+                return Promise.try(function () {
                     if (message_info.contact_id) {
                         return message_info.contact_id
                     }
