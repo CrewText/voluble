@@ -30,11 +30,11 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         id: {
             type: DataTypes.UUIDV4,
             primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
+            defaultValue: DataTypes.UUIDV4,
         },
         body: DataTypes.STRING(1024),
-        contact: DataTypes.BIGINT,
-        is_reply_to: DataTypes.STRING,
+        contact: DataTypes.UUID,
+        is_reply_to: DataTypes.UUID,
         direction: DataTypes.ENUM('INBOUND', 'OUTBOUND'),
         sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',
