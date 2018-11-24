@@ -7,14 +7,14 @@ const bodyParser = require('body-parser');
 var xmlParser = require('express-xml-bodyparser');
 const winston = require('winston')
 
-if (!process.env.IS_PRODUCTION) {
+if (process.env.NODE_ENV = "development") {
   winston.info("Detected dev environment")
   winston.level = 'debug'
 } else {
   winston.info("Detected prod environment")
   winston.level = 'info'
 }
-const https = require('https');
+const http = require('https');
 
 winston.info("Connecting to database")
 import * as db from '../models'
@@ -102,10 +102,10 @@ app.set('port', port);
 // }
 // // TODO: (branch: implement-ssl) Use Helmet for HSTS
 // var server = https.createServer(https_options, app);
-var server = https.createServer()
+//var server = http.createServer()
 
-server.listen(port);
-server.on('error', onError);
+//server.listen(port);
+//server.on('error', onError);
 winston.info("Listening on port " + port)
 
 // uncomment after placing your favicon in /public
@@ -126,6 +126,23 @@ app.use('/services', routes_service_endpoint_generic)
 app.use('/blasts', routes_blasts)
 app.use('/servicechains', routes_servicechains)
 
+function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (req.headers['x-forwarded-proto'] !== 'https') {
+    let secure_url = ['https://', req.get('Host'), req.url].join('')
+    winston.debug("Got insecure request, redirecting to " + secure_url)
+    return res.redirect(secure_url);
+  }
+  return next();
+}
+
+// Force SSL
+if (process.env.NODE_ENV = "development") {
+  winston.debug("Not forcing SSL")
+} else {
+  winston.debug("Forcing SSL redirects")
+  app.use(forceSSL)
+}
+
 // Set up plugin manager
 winston.info("Initing all plugins")
 PluginManager.initAllPlugins()
@@ -141,10 +158,14 @@ app.use(function (req: express.Request, res: express.Response, next: express.Nex
 app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = process.env.IS_PRODUCTION ? err : {};
+  res.locals.error = process.env.NODE_ENV = "development" ? err : {};
 
   // render the error page
   res.status(err.status || 500);
 });
+
+app.listen(port, function () {
+  winston.info("Server running on port " + port)
+})
 
 module.exports = app;
