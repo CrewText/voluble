@@ -1,9 +1,0 @@
-{
-  "plugin_name": "Telegram",
-  "plugin_description": "Implements an interface to the Telegram service",
-  "npm_modules": [],
-  "data_tables": [
-    "contacts",
-    "messages"
-  ]
-}

@@ -1,5 +1,4 @@
 import * as plugin_base from '../plugin_base'
-var manifest = require('./manifest.json')
 import * as rp from 'request-promise'
 import * as Promise from 'bluebird'
 import winston = require('winston');
@@ -23,7 +22,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
   account_ref: string | undefined
 
   constructor() {
-    super(manifest)
+    super("Esendex", "Sends an SMS using Esendex")
     this.username = process.env.ESENDEX_USERNAME
     this.password = process.env.ESENDEX_PASSWORD
     this.account_ref = process.env.ESENDEX_ACCOUNT_REF

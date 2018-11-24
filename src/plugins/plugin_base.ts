@@ -56,19 +56,16 @@ export class voluble_plugin implements IVolublePluginBase {
     }
 
 
-    constructor(manifest: Manifest) {
+    constructor(plugin_name: string, plugin_description: string) {
 
-        // Populate the mandatory plugin fields
-        if (manifest.hasOwnProperty("plugin_name")) {
-            this.name = manifest["plugin_name"]
-        } else {
-            throw new errors.NotImplementedError(`Plugin in the following directory has not defined the field 'plugin_name' in it's manifest: ${__dirname}`)
+        // Check for mandatory fields
+        this.name = plugin_name
+        if (!this.name) {
+            throw new errors.NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_name' in it's constructor: ${__dirname}`)
         }
-
-        if (manifest.hasOwnProperty("plugin_description")) {
-            this.description = manifest["plugin_description"]
-        } else {
-            throw new errors.NotImplementedError(`Plugin ${this.name} has not defined the field 'plugin_description' in it's manifest.`)
+        this.description = plugin_description
+        if (!this.description) {
+            throw new errors.NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_description' in it's constructor: ${__dirname}`)
         }
     }
 
