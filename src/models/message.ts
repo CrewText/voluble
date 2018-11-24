@@ -28,7 +28,7 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
     var Message = sequelize.define('Message', {
 
         id: {
-            type: DataTypes.UUIDV4,
+            type: DataTypes.UUID,
             primaryKey: true,
             defaultValue: DataTypes.UUIDV4,
         },
