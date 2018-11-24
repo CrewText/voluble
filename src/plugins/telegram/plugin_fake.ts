@@ -11,7 +11,7 @@ class TelegramPlugin extends voluble_plugin {
 
 
     constructor() {
-        super(manifest)
+        super("Telegram", "Sends a message using Telegram")
         this.name = manifest.plugin_name
         this.description = manifest.plugin_description
         this.api_id = process.env.TELEGRAM_API_ID
