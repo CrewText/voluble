@@ -1,5 +1,4 @@
 import { voluble_plugin, contactInstance, messageInstance } from '../plugin_base'
-var manifest = require('./manifest.json')
 import * as telegram from 'node-telegram-bot-api'
 import * as Promise from 'bluebird'
 //import MTProto from 'telegram-mtproto'
@@ -12,8 +11,6 @@ class TelegramPlugin extends voluble_plugin {
 
     constructor() {
         super("Telegram", "Sends a message using Telegram")
-        this.name = manifest.plugin_name
-        this.description = manifest.plugin_description
         this.api_id = process.env.TELEGRAM_API_ID
         this.api_hash = process.env.TELEGRAM_API_HASH
     }

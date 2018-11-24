@@ -1,6 +1,4 @@
 import * as plugin_base from '../plugin_base'
-import * as http from 'http'
-var manifest = require('./manifest.json')
 
 class MyExamplePlugin extends plugin_base.voluble_plugin {
     api_key: string | undefined
