@@ -29,13 +29,13 @@ export namespace MessageManager {
     /**
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
-     * @param {Number} contact_id The ID number of the contact that this message is sent to/recieved from
+     * @param {string} contact_id The ID number of the contact that this message is sent to/recieved from
      * @param {string} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
-     * @param {Number} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
+     * @param {string} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
      */
-    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", is_reply_to: number | null = null,
-        servicechain_id: number | null = null, message_state: MessageStates | null | undefined): Promise<db.MessageInstance> {
+    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", is_reply_to: string | null = null,
+        servicechain_id: string | null = null, message_state: MessageStates | null | undefined): Promise<db.MessageInstance> {
 
         return ContactManager.checkContactWithIDExists(contact_id)
             .catch(errs.NotFoundError, function (NFError) {
@@ -198,7 +198,7 @@ export namespace MessageManager {
             })
     }
 
-    export function updateMessageState(msg_id: number, msg_state: string): Promise<db.MessageInstance> {
+    export function updateMessageState(msg_id: string, msg_state: string): Promise<db.MessageInstance> {
         winston.info("MM: Updating message state")
         return getMessageFromId(msg_id)
             .then(function (msg) {
@@ -230,7 +230,7 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export function getMessageFromId(id: number): Promise<db.MessageInstance | null> {
+    export function getMessageFromId(id: string): Promise<db.MessageInstance | null> {
         return db.models.Message.findById(id)
     }
 }

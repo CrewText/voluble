@@ -15,9 +15,9 @@ export namespace ContactManager {
      * @param {string} surname The surname of the new Contact.
      * @param {string} email The email address of the new Contact.
      * @param {string} phone_num The phone number (with leading country code) of the contact
-     * @param {Number} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
+     * @param {string} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
-    export function createContact(first_name: string, surname: string, email: string, phone_num: string, default_servicechain: number): Promise<ContactInstance> {
+    export function createContact(first_name: string, surname: string, email: string, phone_num: string, default_servicechain: string): Promise<ContactInstance> {
         return db.models.Contact.create({
             first_name: first_name,
             surname: surname,
@@ -29,7 +29,7 @@ export namespace ContactManager {
 
     /**
      * Removes a contact with ID `id` from the database
-     * @param {Number} id ID of contact to remove
+     * @param {string} id ID of contact to remove
      * @returns {promise} Promise resolving to sequelize confirmation of deleted row
      */
 
@@ -43,7 +43,7 @@ export namespace ContactManager {
 
     /**
      * Queries the database to make sure confirm that the contact with id `id` exists
-     * @param {Number} id Contact ID number
+     * @param {string} id Contact ID number
      * @returns {promise} Promise resolving to the id of the contact, if it exists.
      */
     export function checkContactWithIDExists(id: string): Promise<string> {
@@ -76,7 +76,7 @@ export namespace ContactManager {
 
     /**
      * Queries the database to retrieve the info for contact with ID `id`
-     * @param {Number} id Contact ID number
+     * @param {string} id Contact ID number
      * @returns { promise} Promise resolving to a Sequelize row representing the given contact
      */
     export function getContactWithId(id: string): Promise<ContactInstance | null> {
@@ -101,7 +101,7 @@ export namespace ContactManager {
 
     /**
      * Updates the details of a single Contact.
-     * @param {Number} id ID of the Contact whose details will be updated
+     * @param {string} id ID of the Contact whose details will be updated
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */

@@ -22,7 +22,7 @@ export namespace ServicechainManager {
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
-    export function getServicesInServicechain(servicechain_id: number): Promise<db.ServicesInSCInstance[]> {
+    export function getServicesInServicechain(servicechain_id: string): Promise<db.ServicesInSCInstance[]> {
         return db.models.ServicesInSC.findAll({
             where: {
                 servicechain_id: servicechain_id
@@ -47,11 +47,11 @@ export namespace ServicechainManager {
         return db.models.Servicechain.findAll()
     }
 
-    export function getServicechainById(id: number): Promise<db.ServicechainInstance | null> {
+    export function getServicechainById(id: string): Promise<db.ServicechainInstance | null> {
         return db.models.Servicechain.findById(id)
     }
 
-    export function getServiceInServicechainByPriority(sc_id: number, priority: number): Promise<db.ServiceInstance | null> {
+    export function getServiceInServicechainByPriority(sc_id: string, priority: number): Promise<db.ServiceInstance | null> {
         return db.models.Servicechain.findById(sc_id, {
             include: [
                 {
@@ -79,7 +79,7 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServiceCountInServicechain(sc_id: number): Promise<number> {
+    export function getServiceCountInServicechain(sc_id: string): Promise<number> {
         return db.models.Servicechain.findById(sc_id)
             .then(function (sc) {
                 if (sc) {
@@ -124,7 +124,7 @@ export namespace ServicechainManager {
 
     }
 
-    export function addServiceToServicechain(sc_id: number, service_id: string, priority: number): Promise<db.ServicesInSCInstance> {
+    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): Promise<db.ServicesInSCInstance> {
         return db.models.ServicesInSC.create({
             servicechain_id: sc_id,
             service_id: service_id,
@@ -136,7 +136,7 @@ export namespace ServicechainManager {
      * Removes a Servicechain from the database. Returns the ID number of the servicechain removed.
      * @param {Number} id ID number of the Servicechain to remove.
      */
-    export function deleteServicechain(id: number): Promise<number> {
+    export function deleteServicechain(id: string): Promise<number> {
         return db.models.Servicechain.destroy({ where: { id: id } })
             .then(function (destroyedRowsCount) {
                 if (!destroyedRowsCount) {

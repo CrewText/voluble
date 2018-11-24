@@ -34,7 +34,7 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         },
         body: DataTypes.STRING(1024),
         contact: DataTypes.BIGINT,
-        is_reply_to: DataTypes.BIGINT,
+        is_reply_to: DataTypes.STRING,
         direction: DataTypes.ENUM('INBOUND', 'OUTBOUND'),
         sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',

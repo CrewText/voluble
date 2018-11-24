@@ -33,7 +33,7 @@ export namespace PluginManager {
                     try {
                         let plugin_directory = path.join(__plugin_dir, service.directory_name)
                         let plugin_fullpath = path.join(plugin_directory, "plugin.js")
-                        winston.debug("Importing plugin from:" + plugin_fullpath)
+                        winston.debug("PM: Importing plugin from:" + plugin_fullpath)
                         let p: voluble_plugin = require(plugin_fullpath)()
                         p._plugin_dir = plugin_directory
                         return Promise.resolve(p)
@@ -206,7 +206,7 @@ export namespace PluginManager {
 
     /**
      * Gets a single service from the DB by its' ID.
-     * @param {Number} id The ID of the service to find.
+     * @param {string} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
     export function getServiceById(id: string): Promise<db.ServiceInstance | null> {

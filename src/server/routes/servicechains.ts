@@ -39,11 +39,8 @@ router.post('/', function (req, res, next) {
 })
 
 router.get('/:sc_id', function (req, res, next) {
-  utils.verifyNumberIsInteger(req.params.sc_id)
-    .then(function (sc_id) {
-      // First, get the servicechain itself
-      return ServicechainManager.getServicechainById(sc_id)
-    })
+  // First, get the servicechain itself
+  return ServicechainManager.getServicechainById(req.params.sc_id)
     .then(function (sc) {
       // Then, find out which services are in the chain
       if (!sc) {
@@ -82,10 +79,7 @@ router.put('/:id', function (req, res, next) {
 })
 
 router.delete('/:sc_id', function (req, res, next) {
-  utils.verifyNumberIsInteger(req.params.sc_id)
-    .then(function (sc_id) {
-      return ServicechainManager.deleteServicechain(sc_id)
-    })
+  return ServicechainManager.deleteServicechain(req.params.sc_id)
     .then(function (row) {
       res.jsend.success(row)
     })

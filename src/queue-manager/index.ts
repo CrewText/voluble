@@ -64,7 +64,7 @@ export namespace QueueManager {
         })
     }
 
-    export function addMessageStateUpdateRequest(message_id: number, message_state: string) {
+    export function addMessageStateUpdateRequest(message_id: string, message_state: string) {
         let q_msg = { message_id: message_id, status: message_state }
         rsmq.sendMessage({
             qname: "message-state-update",

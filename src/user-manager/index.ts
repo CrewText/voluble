@@ -56,7 +56,7 @@ export namespace UserManager {
         Auth0Manager.createNewAuth0User(email, password)
             .then(function (created_user) {
                 db.models.Contact.create({
-                    id: <string>created_user.user_id,
+                    //id: <string>created_user.user_id,
                     //defaultServicechainId: null,
                     email_address: email,
                     first_name: first_name,

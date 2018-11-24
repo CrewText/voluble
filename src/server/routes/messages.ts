@@ -39,10 +39,7 @@ router.get('/', function (req, res, next) {
  */
 router.get('/:message_id', function (req, res, next) {
 
-  return utils.verifyNumberIsInteger(req.params.message_id)
-    .then(function (id) {
-      return MessageManager.getMessageFromId(id)
-    })
+  return MessageManager.getMessageFromId(req.params.message_id)
     .then(function (msg) {
       if (msg) {
         res.jsend.success(msg)
