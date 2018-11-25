@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node ./dist/server/server-main.js",
     "postinstall": "tsc -v; tsc",
+    "test": "mocha dist/test",
     "start-server": "node ./dist/server/server-main.js",
     "start-worker": "node ./dist/worker/worker-main.js"
   },
@@ -34,15 +35,23 @@
   "devDependencies": {
     "@types/auth0": "^2.9.3",
     "@types/bluebird": "^3.5.20",
+    "@types/chai": "^4.1.7",
+    "@types/chai-as-promised": "^7.1.0",
     "@types/express": "^4.16.0",
+    "@types/faker": "^4.1.4",
     "@types/jsend": "^1.0.28",
     "@types/jsonwebtoken": "^7.2.7",
+    "@types/mocha": "^5.2.5",
     "@types/node-telegram-bot-api": "^0.28.4",
     "@types/request-promise": "^4.1.42",
     "@types/rsmq": "^0.3.27",
     "@types/rsmq-worker": "^0.3.28",
     "@types/sequelize": "^4.27.23",
     "@types/winston": "^2.3.9",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "faker": "^4.1.0",
+    "mocha": "^5.2.0",
     "typedoc": "^0.9.0",
     "typescript": "^3.1.6"
   },
