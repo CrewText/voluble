@@ -32,45 +32,21 @@ export namespace MessageManager {
      * @param {string} contact_id The ID number of the contact that this message is sent to/recieved from
      * @param {string} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
      * @param {string} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
-     * @returns {promise} Promise resolving to the confirmation that the new message has been entered Numbero the database
+     * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
-    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", is_reply_to: string | null = null,
-        servicechain_id: string | null = null, message_state: MessageStates | null | undefined): Promise<db.MessageInstance> {
+    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND",
+        servicechain_id: string | null = null, message_state: MessageStates, is_reply_to?: string): Promise<db.MessageInstance> {
+        let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
 
-        return ContactManager.checkContactWithIDExists(contact_id)
-            .catch(errs.NotFoundError, function (NFError) {
-                winston.error(NFError)
-                return Promise.reject(new volubleErrors.MessageFailedError(NFError))
-            })
-            .then(function (verified_contact_id) {
-                if (servicechain_id) {
-                    // Servicechain to use is explicitly supplied, using that
-                    return ServicechainManager.getServicechainById(servicechain_id)
-                } else {
-                    // Using default servicechain for contact
-                    winston.debug(`MM: Finding default servicechain for contact ${verified_contact_id}`)
-                    return ServicechainManager.getServicechainFromContactId(verified_contact_id)
-                }
-            })
-            .then(function (servicechain) {
-                let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
-                console.log(`Message_state: ${msg_state}`)
-                if (servicechain) {
-                    let msg = db.models.Message.build({
-                        body: body,
-                        ServicechainId: servicechain.id,
-                        contact: contact_id,
-                        is_reply_to: is_reply_to,
-                        direction: direction,
-                        message_state: msg_state
-                    })
-
-                    return msg.save()
-                }
-                else {
-                    return Promise.reject(new errs.NotFoundError(`Could not find servicechain for contact ${contact_id}`))
-                }
-            })
+        let msg = db.models.Message.build({
+            body: body,
+            ServicechainId: servicechain_id,
+            contact: contact_id,
+            is_reply_to: is_reply_to,
+            direction: direction,
+            message_state: msg_state
+        })
+        return msg.save()
     }
 
     /**

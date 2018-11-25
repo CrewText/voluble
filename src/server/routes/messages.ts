@@ -6,6 +6,7 @@ import * as utils from '../../utilities'
 const errs = require('common-errors')
 import { MessageManager } from '../../message-manager/'
 import { ContactManager } from '../../contact-manager'
+import { ServicechainManager } from '../../servicechain-manager'
 
 /**
  * Handles the route GET /messages
@@ -61,18 +62,29 @@ router.get('/:message_id', function (req, res, next) {
  */
 router.post('/', function (req, res, next) {
   winston.info("Creating new message")
-  MessageManager.createMessage(
-    req.body.msg_body,
-    req.body.contact_id,
-    req.body.direction || "OUTBOUND",
-    req.body.is_reply_to || null,
-    req.body.servicechain_id || null,
-    null
-  )
-    .then(function (msg) {
-      return ContactManager.checkContactWithIDExists(req.body.contact_id)
-        .then(function (id) {
-          return msg
+
+  ContactManager.checkContactWithIDExists(req.body.contact_id)
+    .then(function (id) {
+
+      // Verify the info we've been provided and fill in the gaps
+      return Promise.try(function () {
+        if (req.body.servicechain_id) {
+          // Servicechain to use is explicitly supplied, using that
+          return ServicechainManager.getServicechainById(req.body.servicechain_id)
+        } else {
+          // Using default servicechain for contact
+          winston.debug(`MM: Finding default servicechain for contact ${id}`)
+          return ServicechainManager.getServicechainFromContactId(id)
+        }
+      })
+        .then(function (sc) {
+          return MessageManager.createMessage(
+            req.body.msg_body,
+            req.body.id,
+            req.body.direction || "OUTBOUND",
+            sc.id || null,
+            MessageManager.MessageStates.MSG_PENDING
+          )
         })
     })
     .then(function (msg) {

@@ -16,6 +16,7 @@ import { QueueManager } from '../queue-manager';
 import { PluginManager } from '../plugin-manager'
 import * as Promise from 'bluebird'
 import { ContactManager } from '../contact-manager';
+import { ServicechainManager } from '../servicechain-manager';
 const errs = require('common-errors')
 
 
@@ -70,7 +71,10 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
 
                 return Promise.try(function () {
                     if (message_info.contact_id) {
-                        return message_info.contact_id
+                        return ContactManager.checkContactWithIDExists(message_info.contact_id)
+                            .then(function () {
+                                return message_info.contact_id
+                            })
                     }
                     else if (message_info.phone_number) {
                         // The contact ID has not been supplied, we need to try and determine it from the phone number
@@ -99,12 +103,14 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                         throw new errs.ArgumentError(`Plugin did not specify contact details for incoming message!`)
                     }
                 }).then(function (determined_contact_id) {
-                    return MessageManager.createMessage(message_info.message_body,
-                        determined_contact_id,
-                        "INBOUND",
-                        message_info.is_reply_to || null,
-                        null,
-                        MessageManager.MessageStates.MSG_ARRIVED)
+                    return ServicechainManager.getServicechainFromContactId(determined_contact_id)
+                        .then(function (sc) {
+                            return MessageManager.createMessage(message_info.message_body,
+                                determined_contact_id,
+                                "INBOUND",
+                                sc.id,
+                                MessageManager.MessageStates.MSG_ARRIVED)
+                        })
                 })
             })
             .catch(errs.NotFoundError, function (err) {
