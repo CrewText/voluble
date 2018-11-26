@@ -104,23 +104,23 @@ export namespace ServicechainManager {
      * @param {string} name The name of the new Servicechain
      * @param {array} services The list of priority/service doubles to add
      */
-    export function createNewServicechain(name: string, services: Array<ServicechainPriority>): Promise<db.ServicechainInstance> {
-        winston.debug("Creating new SC - " + name)
+    export function createNewServicechain(name: string): Promise<db.ServicechainInstance> {
+        winston.debug("SCM: Creating new SC - " + name)
         // First, create the new SC itself
         return db.models.Servicechain.create({
             name: name
         })
-            // Then add services to it!
-            .then(function (sc) {
-                winston.debug("Created new SC:")
-                winston.debug(sc)
-                return Promise.map(services, function (scp: ServicechainPriority) {
-                    return ServicechainManager.addServiceToServicechain(sc.id, scp.service_id, scp.priority)
-                })
-                    .then(function (svcs_in_scs) {
-                        return sc
-                    })
-            })
+        // // Then add services to it!
+        // .then(function (sc) {
+        //     winston.debug("Created new SC:")
+        //     winston.debug(sc)
+        //     return Promise.map(services, function (scp: ServicechainPriority) {
+        //         return ServicechainManager.addServiceToServicechain(sc.id, scp.service_id, scp.priority)
+        //     })
+        //         .then(function (svcs_in_scs) {
+        //             return sc
+        //         })
+        // })
 
     }
 
