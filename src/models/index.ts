@@ -20,6 +20,7 @@ export type ServiceInstance = Service.ServiceInstance
 export type ServicechainInstance = Servicechain.ServicechainInstance
 export type ServicesInSCInstance = ServiceInSC.ServicesInSCInstance
 export type BlastInstance = Blast.BlastInstance
+export type OrganizationInstance = Organization.OrgInstance
 
 export interface DbConnection {
     Contact: Sequelize.Model<Contact.ContactInstance, Contact.ContactAttributes>,
@@ -29,7 +30,7 @@ export interface DbConnection {
     ServicesInSC: Sequelize.Model<ServiceInSC.ServicesInSCInstance, ServiceInSC.ServicesInSCAttributes>,
     Blast: Sequelize.Model<Blast.BlastInstance, Blast.BlastAttributes>,
     User: Sequelize.Model<User.UserInstance, User.UserAttributes>
-    Organization: Sequelize.Model<Organization.OrgAttributes, Organization.OrgInstance>
+    Organization: Sequelize.Model<Organization.OrgInstance, Organization.OrgAttributes>
     [key: string]: any
 }
 
