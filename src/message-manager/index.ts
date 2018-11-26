@@ -35,7 +35,7 @@ export namespace MessageManager {
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
     export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND",
-        servicechain_id: string | null = null, message_state: MessageStates, is_reply_to?: string): Promise<db.MessageInstance> {
+        servicechain_id: string, message_state: MessageStates, is_reply_to?: string): Promise<db.MessageInstance> {
         let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
 
         let msg = db.models.Message.build({
