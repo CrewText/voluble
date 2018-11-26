@@ -17,9 +17,17 @@ if (process.env.NODE_ENV == "development") {
 }
 const http = require('https');
 
+winston.info("Loading plugin manager")
+import { PluginManager } from '../plugin-manager'
+
+winston.info("Loading queue manager")
+import { QueueManager } from '../queue-manager'
+QueueManager.init_queues()
+
 winston.info("Connecting to database")
 import * as db from '../models'
-db.initialize_database()
+
+
 
 winston.info("Loading routes")
 const routes_index = require('./routes')
@@ -31,13 +39,6 @@ const routes_services = require('./routes/services')
 const routes_blasts = require('./routes/blasts')
 const routes_servicechains = require('./routes/servicechains')
 const routes_service_endpoint_generic = require('./routes/service_endpoint')
-
-winston.info("Loading plugin manager")
-import { PluginManager } from '../plugin-manager'
-
-winston.info("Loading queue manager")
-import { QueueManager } from '../queue-manager'
-QueueManager.init_queues()
 
 winston.info("Starting Express server")
 const app = express();
@@ -144,29 +145,33 @@ if (process.env.NODE_ENV == "development") {
   app.use(forceSSL)
 }
 
-// Set up plugin manager
-winston.info("Initing all plugins")
-PluginManager.initAllPlugins()
+db.initialize_database()
+  .then(function () {
+    // Set up plugin manager
+    winston.info("Initing all plugins")
+    PluginManager.initAllPlugins()
 
-// catch 404 and forward to error handler
-app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
-  let err: any = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+    // catch 404 and forward to error handler
+    app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
+      let err: any = new Error('Not Found');
+      err.status = 404;
+      next(err);
+    });
 
-// error handler
-app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = process.env.NODE_ENV = "development" ? err : {};
+    // error handler
+    app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+      // set locals, only providing error in development
+      res.locals.message = err.message;
+      res.locals.error = process.env.NODE_ENV = "development" ? err : {};
 
-  // render the error page
-  res.status(err.status || 500);
-});
+      // render the error page
+      res.status(err.status || 500);
+    });
 
-app.listen(port, function () {
-  winston.info("Server running on port " + port)
-})
+    app.listen(port, function () {
+      winston.info("Server running on port " + port)
+    })
 
-module.exports = app;
+    module.exports = app;
+  })
+

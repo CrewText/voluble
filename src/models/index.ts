@@ -2,6 +2,7 @@ import * as Sequelize from "sequelize"
 import * as path from "path"
 const basename = path.basename(__filename);
 import * as fs from "fs"
+import * as Promise from 'bluebird'
 const winston = require('winston')
 
 import * as Contact from './contact'
@@ -39,10 +40,14 @@ let db_url: string
 if (process.env.NODE_ENV == "production") {
     db_url = process.env.CLEARDB_DATABASE_URL
     winston.debug("DB: Using ClearDB database")
-} else {
+} else if (process.env.NODE_ENV == "development") {
+    db_url = "mysql://root@localhost/voluble_dev"
+    winston.debug("DB: Using localhost dev database")
+} else if (process.env.NODE_ENV == "test") {
     db_url = "mysql://root@localhost/voluble_test"
-    winston.debug("DB: Using localhost database")
+    winston.debug("DB: Using localhost test database")
 }
+//export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: process.env.NODE_ENV == "production" ? false : true })
 export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: false })
 
 fs
@@ -82,6 +87,9 @@ models.Sequelize = Sequelize;
 /**
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
  */
-export function initialize_database(): void {
-    sequelize.sync()
+export function initialize_database(): Promise<any> {
+    if (process.env.NODE_ENV == "test") {
+        return sequelize.sync({ force: true })
+    }
+    return sequelize.sync()
 }
