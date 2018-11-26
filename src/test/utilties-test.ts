@@ -12,9 +12,14 @@ describe('Utilities', function () {
             chai.expect(utilities.verifyNumberIsInteger(x)).to.eventually.equal(x)
         })
 
-        it('should fail when passing a decimal as an integer', function () {
-            let x = "100.6"
-            chai.expect(utilities.verifyNumberIsInteger(x)).to.eventually.be.rejected
+        it('should convert a decimal to an integer', function () {
+            let x = 100.6
+            chai.expect(utilities.verifyNumberIsInteger(x)).to.eventually.equal(100)
+        })
+
+        it('should convert a string to an integer', function () {
+            let x = "100"
+            chai.expect(utilities.verifyNumberIsInteger(x)).to.eventually.equal(100)
         })
     })
 })
