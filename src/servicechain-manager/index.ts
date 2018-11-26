@@ -11,7 +11,7 @@ import { ContactManager } from '../contact-manager/'
  */
 export namespace ServicechainManager {
 
-    interface ServicechainPriority {
+    export interface ServicechainPriority {
         service_id: string,
         priority: number
     }
@@ -100,12 +100,9 @@ export namespace ServicechainManager {
 
     /**
      * Creates a new Servicechain from the name and service IDs provided. Returns a Promise for the Sequelize object representing the new Servicechain.
-     * Services must be in the format: [ [priority_num , service_id] , [ priority_num , service_id ] , ... ]
      * @param {string} name The name of the new Servicechain
-     * @param {array} services The list of priority/service doubles to add
      */
     export function createNewServicechain(name: string): Promise<db.ServicechainInstance> {
-        winston.debug("SCM: Creating new SC - " + name)
         // First, create the new SC itself
         return db.models.Servicechain.create({
             name: name
