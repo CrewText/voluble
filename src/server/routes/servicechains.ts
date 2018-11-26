@@ -23,14 +23,27 @@ router.get('/', function (req, res, next) {
 
 
 router.post('/', function (req, res, next) {
-  let services_list = req.body.services
+  let services_list: ServicechainManager.ServicechainPriority[] = <ServicechainManager.ServicechainPriority[]>req.body.services
   winston.debug("Request for new SC: " + req.body.name + ", with services:")
   winston.debug(services_list)
 
-  ServicechainManager.createNewServicechain(req.body.name, services_list)
+  ServicechainManager.createNewServicechain(req.body.name)
     .then(function (sc) {
-      res.jsend.success(sc)
+      return Promise.try(function () {
+        if (services_list) {
+          return Promise.map(services_list,
+            function (svc_prio_pair) {
+              return ServicechainManager.addServiceToServicechain(sc.id,
+                svc_prio_pair.service_id,
+                svc_prio_pair.priority)
+            })
+        } else { return Promise.resolve([]) }
+      })
+        .then(function () {
+          res.jsend.success(sc)
+        })
     })
+
     .catch(function (error: any) {
       res.jsend.error(error.message)
       //res.status(500).send(error.message)
