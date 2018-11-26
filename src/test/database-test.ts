@@ -39,6 +39,7 @@ describe('Database', function () {
     })
 
     it('should create a new contact (no org) with SC created, and save without error', function () {
+        this.retries(3) // Sometimes, faker generates an email address that doesn't jive with sequelize
         let new_contact = ContactManager.createContact(
             contact_fname,
             contact_sname,
@@ -62,4 +63,12 @@ describe('Database', function () {
         )
         return chai.expect(new_message).to.eventually.be.fulfilled.with.instanceof(db.models.Message)
     })
+
+    it('should create a new (fictional) service')
+
+    it('should add the created service to the created servicechain, priority 1')
+
+    it('should create a new blast')
+
+    it('should create a new organization')
 })
