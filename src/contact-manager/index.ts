@@ -23,7 +23,7 @@ export namespace ContactManager {
             surname: surname,
             email_address: email,
             phone_number: phone_num,
-            defaultServicechainId: default_servicechain
+            ServicechainId: default_servicechain
         })
     }
 

@@ -5,7 +5,7 @@ export interface ContactAttributes {
     surname: string,
     email_address: string,
     phone_number: string,
-    defaultServicechainId?: string,
+    ServicechainId?: string,
     id?: string
 }
 
@@ -18,7 +18,7 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes> {
     surname: string,
     email_address: string,
     phone_number: string,
-    defaultServicechainId: string
+    ServicechainId: string
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
