@@ -8,6 +8,7 @@ chai.use(chaiAsPromised)
 import { MessageManager } from '../message-manager'
 import { ServicechainManager } from '../servicechain-manager';
 import { ContactManager } from '../contact-manager';
+import { OrgManager } from '../org-manager';
 
 console.log("Node Env: " + process.env.NODE_ENV)
 
@@ -29,6 +30,8 @@ describe('Database', function () {
     let contact_phone = faker.phone.phoneNumber("+447#########")
     let sc_id: string
     let sc_name = faker.random.word()
+    let org_name = faker.company.companyName()
+    let org_auth0_id = faker.random.uuid()
 
     it('should create a new servicechain and save without error', function () {
         let new_sc = ServicechainManager.createNewServicechain(sc_name).then(function (sc) {
@@ -70,5 +73,10 @@ describe('Database', function () {
 
     it('should create a new blast')
 
-    it('should create a new organization')
+    it('should create a new organization', function () {
+        let new_org = OrgManager.createNewOrganization(org_name, org_auth0_id)
+        return chai.expect(new_org).to.eventually.be.fulfilled.with.instanceof(db.models.Organization)
+    })
+
+    it('should add the created user to the organization')
 })
