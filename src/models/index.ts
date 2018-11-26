@@ -35,7 +35,15 @@ export interface DbConnection {
 
 //@ts-ignore
 export var models: DbConnection = {}
-export var sequelize = new Sequelize(process.env.CLEARDB_DATABASE_URL || "localhost", { dialect: 'mysql', logging: false })
+let db_url: string
+if (process.env.NODE_ENV == "production") {
+    db_url = process.env.CLEARDB_DATABASE_URL
+    winston.debug("DB: Using ClearDB database")
+} else {
+    db_url = "mysql://root@localhost/voluble_test"
+    winston.debug("DB: Using localhost database")
+}
+export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: false })
 
 fs
     .readdirSync(__dirname)

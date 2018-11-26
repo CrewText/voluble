@@ -6,8 +6,9 @@ const path = require('path');
 const bodyParser = require('body-parser');
 var xmlParser = require('express-xml-bodyparser');
 const winston = require('winston')
+console.log(process.env.NODE_ENV)
 
-if (process.env.NODE_ENV = "development") {
+if (process.env.NODE_ENV == "development") {
   winston.info("Detected dev environment")
   winston.level = 'debug'
 } else {
