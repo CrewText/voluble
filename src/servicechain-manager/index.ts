@@ -83,13 +83,12 @@ export namespace ServicechainManager {
         return db.models.Servicechain.findById(sc_id)
             .then(function (sc) {
                 if (sc) {
-                    //@ts-ignore
                     return sc.getServices()
-                        .then(function (svcs: db.ServiceInstance[]) {
+                        .then(function (svcs) {
                             if (svcs) {
                                 return svcs.length
                             } else {
-                                return Promise.reject(errs.NotFoundError(`No plugins found in servicechain ${sc_id}`))
+                                throw new errs.NotFoundError(`No plugins found in servicechain ${sc_id}`)
                             }
                         })
                 } else {

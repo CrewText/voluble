@@ -1,17 +1,28 @@
 import * as Sequelize from "sequelize"
+import { ServicechainInstance, ServicechainAttributes } from "./servicechain";
+import { ServicesInSCAttributes } from "./servicesInServicechain";
 
 export interface ServiceAttributes {
+    id?: string,
+    createdAt?: Date,
+    updatedAt?: Date,
+
     name: string,
     directory_name: string,
 }
 
-export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes> {
-    id: string,
-    createdAt: Date,
-    updatedAt: Date,
+export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes>, ServiceAttributes {
+    createServicechain: Sequelize.BelongsToManyCreateAssociationMixin<ServicechainAttributes, ServicechainInstance, ServicesInSCAttributes>
+    getServicechains: Sequelize.BelongsToManyGetAssociationsMixin<ServicechainInstance>,
+    addServicechain: Sequelize.BelongsToManyAddAssociationMixin<ServicechainInstance, ServicechainInstance['id'], ServicesInSCAttributes>,
+    addServicechains: Sequelize.BelongsToManyAddAssociationsMixin<ServicechainInstance, ServicechainInstance['id'], ServicesInSCAttributes>,
+    countServicechains: Sequelize.BelongsToManyCountAssociationsMixin,
+    hasServicechain: Sequelize.BelongsToManyHasAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
+    hasServicechains: Sequelize.BelongsToManyHasAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
+    removeServicechain: Sequelize.BelongsToManyRemoveAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
+    removeServicechains: Sequelize.BelongsToManyRemoveAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
+    setServicechains: Sequelize.BelongsToManySetAssociationsMixin<ServicechainInstance, ServicechainInstance['id'], ServicesInSCAttributes>
 
-    name: string,
-    directory_name: string,
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {

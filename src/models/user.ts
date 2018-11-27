@@ -1,15 +1,22 @@
 import * as Sequelize from "sequelize"
+import { OrgInstance } from "./organization";
+import { ContactInstance } from "./contact";
 
 export interface UserAttributes {
+    id?: string,
+    createdAt?: Date,
+    updatedAt?: Date,
     auth0_id: string,
 }
 
-export interface UserInstance extends Sequelize.Instance<UserAttributes> {
-    id: string,
-    createdAt: Date,
-    updatedAt: Date,
+export interface UserInstance extends Sequelize.Instance<UserAttributes>, UserAttributes {
+    getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
+    setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,
+    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgInstance>,
 
-    auth0_id: string,
+    getContact: Sequelize.BelongsToGetAssociationMixin<ContactInstance>,
+    setContact: Sequelize.BelongsToSetAssociationMixin<ContactInstance, ContactInstance['id']>,
+    createContact: Sequelize.BelongsToCreateAssociationMixin<ContactInstance>,
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {

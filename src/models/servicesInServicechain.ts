@@ -1,19 +1,15 @@
 import * as Sequelize from "sequelize"
 
 export interface ServicesInSCAttributes {
+    id?: string,
+    createdAt?: Date,
+    updatedAt?: Date,
     servicechain_id: string,
     service_id: string,
     priority: number
 }
 
-export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAttributes> {
-    id: string,
-    createdAt: Date,
-    updatedAt: Date,
-
-    servicechain_id: string,
-    service_id: string,
-    priority: number
+export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAttributes>, ServicesInSCAttributes {
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {

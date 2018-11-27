@@ -73,6 +73,8 @@ models.User.belongsTo(models.Organization)
 models.Organization.hasMany(models.Contact)
 models.Contact.belongsTo(models.Organization)
 
+models.User.belongsTo(models.Contact)
+
 models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
 models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC })
 
