@@ -16,4 +16,8 @@ export namespace OrgManager {
         })
     }
 
+    export function getOrganizationById(id: string): Promise<db.OrganizationInstance> {
+        return db.models.Organization.findById(id)
+    }
+
 }

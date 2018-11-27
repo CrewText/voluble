@@ -30,6 +30,7 @@ describe('Database', function () {
     let contact_phone = faker.phone.phoneNumber("+447#########")
     let sc_id: string
     let sc_name = faker.random.word()
+    let org_id: string
     let org_name = faker.company.companyName()
     let org_auth0_id = faker.random.uuid()
 
@@ -75,8 +76,24 @@ describe('Database', function () {
 
     it('should create a new organization', function () {
         let new_org = OrgManager.createNewOrganization(org_name, org_auth0_id)
+            .then(function (org) {
+                org_id = org.id
+                return org
+            })
         return chai.expect(new_org).to.eventually.be.fulfilled.with.instanceof(db.models.Organization)
     })
 
-    it('should add the created user to the organization')
+    it('should add the created user to the organization', function () {
+        let org_has_contact = OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                return ContactManager.getContactWithId(contact_id)
+                    .then(function (contact) {
+                        return org.addContact(contact)
+                    }).then(function () {
+                        return org.hasContact(contact_id)
+                    })
+            })
+
+        chai.expect(org_has_contact).to.eventually.be.true
+    })
 })
