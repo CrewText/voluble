@@ -4,6 +4,7 @@ import * as jsend from 'jsend'
 import * as utils from '../../utilities'
 const errs = require('common-errors')
 import { ContactManager } from '../../contact-manager'
+import { checkJwt, checkScopes } from '../security/jwt'
 
 /**
  * Handles the route `GET /contacts`.
@@ -32,7 +33,7 @@ router.get('/', function (req, res, next) {
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:contact_id', function (req, res, next) {
+router.get('/:contact_id', checkJwt, checkScopes(["contact:view"]), function (req, res, next) {
   ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
@@ -41,14 +42,12 @@ router.get('/:contact_id', function (req, res, next) {
       if (user) {
         res.jsend.success(user)
       }
-      //res.status(200).json(user)
     })
     .catch(errs.NotFoundError, function (error) {
       res.jsend.fail({ "id": "No user exists with this ID." })
     })
     .catch(function (error: any) {
       res.jsend.error(error.message)
-      //res.status(500).send(error.message)
     })
 
 })

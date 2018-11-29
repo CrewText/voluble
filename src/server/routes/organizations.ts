@@ -20,7 +20,9 @@ router.get('/', function (req, res, next) {
  * @param name
  */
 router.post('/', function (req, res, next) {
+    let org_name = req.params.name
 
+    OrgManager.createNewOrganization(org_name)
 })
 
 module.exports = router

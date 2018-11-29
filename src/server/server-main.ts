@@ -31,8 +31,8 @@ import * as db from '../models'
 
 winston.info("Loading routes")
 const routes_index = require('./routes')
-const routes_users = require('./routes/users')
-const routes_groups = require('./routes/groups')
+//const routes_users = require('./routes/users')
+const routes_orgs = require('./routes/organizations')
 const routes_contacts = require('./routes/contacts')
 const routes_messages = require('./routes/messages')
 const routes_services = require('./routes/services')
@@ -119,8 +119,8 @@ app.use(xmlParser({ explicitArray: false }))
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes_index);
-app.use('/users', routes_users);
-app.use('/groups', routes_groups)
+//app.use('/users', routes_users);
+app.use('/orgs', routes_orgs)
 app.use('/contacts', routes_contacts)
 app.use('/messages', routes_messages)
 app.use('/services', routes_services)
