@@ -38,15 +38,15 @@ export interface DbConnection {
 //@ts-ignore
 export var models: DbConnection = {}
 let db_url: string
-if (process.env.NODE_ENV == "production") {
-    db_url = process.env.CLEARDB_DATABASE_URL
-    winston.debug("DB: Using ClearDB database")
-} else if (process.env.NODE_ENV == "development") {
+if (process.env.NODE_ENV == "development") {
     db_url = "mysql://root@localhost/voluble_dev"
     winston.debug("DB: Using localhost dev database")
 } else if (process.env.NODE_ENV == "test") {
     db_url = "mysql://root@localhost/voluble_test"
     winston.debug("DB: Using localhost test database")
+} else {
+    db_url = process.env.CLEARDB_DATABASE_URL
+    winston.debug("DB: Using ClearDB database")
 }
 //export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: process.env.NODE_ENV == "production" ? false : true })
 export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: false })
