@@ -193,7 +193,7 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export function getHundredMessageIds(offset: number): Promise<Array<db.MessageInstance>> {
+    export function getHundredMessageIds(offset: number = 0): Promise<Array<db.MessageInstance>> {
         return db.models.Message.findAll({
             offset: offset,
             limit: 100,

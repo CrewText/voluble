@@ -1,6 +1,7 @@
 import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 process.env.NODE_ENV = "test"
+console.log("Node Env: " + process.env.NODE_ENV)
 import * as faker from 'faker'
 import * as db from '../models'
 chai.use(chaiAsPromised)
@@ -9,8 +10,9 @@ import { MessageManager } from '../message-manager'
 import { ServicechainManager } from '../servicechain-manager';
 import { ContactManager } from '../contact-manager';
 import { OrgManager } from '../org-manager';
+import { PluginManager } from '../plugin-manager';
 
-console.log("Node Env: " + process.env.NODE_ENV)
+
 
 describe('Database', function () {
 
@@ -23,6 +25,7 @@ describe('Database', function () {
             })
     })
 
+    let message_id: string
     let contact_id: string
     let contact_fname = faker.name.firstName()
     let contact_sname = faker.name.lastName()
@@ -63,11 +66,25 @@ describe('Database', function () {
             "OUTBOUND",
             sc_id,
             MessageManager.MessageStates.MSG_PENDING
-        )
+        ).then(function (message) {
+            message_id = message.id
+            return message
+        })
         return chai.expect(new_message).to.eventually.be.fulfilled.with.instanceof(db.models.Message)
     })
 
-    it('should create a new (fictional) service')
+    it('should retrieve the last message only through getHundredMessageIds', function () {
+        let messages = MessageManager.getHundredMessageIds()
+        return chai.expect(messages).to.eventually.be.fulfilled
+    })
+
+    it('should update the status of the created message to MSG_SENT', function () {
+        let message_updated = MessageManager.updateMessageState(message_id, MessageManager.MessageStates.MSG_SENT)
+            .then(function (message) {
+                return message.message_state
+            })
+        chai.expect(message_updated).to.eventually.be.equal(MessageManager.MessageStates.MSG_SENT)
+    })
 
     it('should add the created service to the created servicechain, priority 1')
 
