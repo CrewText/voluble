@@ -1,5 +1,4 @@
 const jwt = require('express-jwt');
-const jwtAuthz = require('express-jwt-authz');
 const jwksRsa = require('jwks-rsa');
 
 /**
@@ -25,11 +24,3 @@ export const checkJwt = jwt({
     issuer: `https://${process.env.AUTH0_DOMAIN}/`,
     algorithms: ['RS256']
 });
-
-/**
- * Check that the JWT has at least one of the scopes provided.
- * @param {Array<string>} scopes A list of access scopes, only one of which is required for access.
- */
-export const checkScopes = function (scopes: string[]) {
-    return jwtAuthz(scopes)
-}
