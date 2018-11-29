@@ -8,12 +8,12 @@ var xmlParser = require('express-xml-bodyparser');
 const winston = require('winston')
 console.log(process.env.NODE_ENV)
 
-if (process.env.NODE_ENV == "development") {
-  winston.info("Detected dev environment")
-  winston.level = 'debug'
-} else {
+if (process.env.NODE_ENV == "production") {
   winston.info("Detected prod environment")
   winston.level = 'info'
+} else {
+  winston.info("Detected non-prod environment")
+  winston.level = 'debug'
 }
 const http = require('https');
 
