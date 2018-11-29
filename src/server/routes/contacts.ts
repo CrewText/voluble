@@ -3,7 +3,6 @@ const router = express.Router();
 import * as jsend from 'jsend'
 import * as utils from '../../utilities'
 const errs = require('common-errors')
-//const contactManager = require('../bin/contact-manager/contact-manager')
 import { ContactManager } from '../../contact-manager'
 
 /**

@@ -8,7 +8,6 @@ export interface OrgAttributes {
     updatedAt?: Date,
 
     name: string,
-    auth0_id: string
 }
 
 export interface OrgInstance extends Sequelize.Instance<OrgAttributes>, OrgAttributes {

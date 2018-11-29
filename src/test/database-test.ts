@@ -32,7 +32,6 @@ describe('Database', function () {
     let sc_name = faker.random.word()
     let org_id: string
     let org_name = faker.company.companyName()
-    let org_auth0_id = faker.random.uuid()
 
     it('should create a new servicechain and save without error', function () {
         let new_sc = ServicechainManager.createNewServicechain(sc_name).then(function (sc) {
@@ -75,7 +74,7 @@ describe('Database', function () {
     it('should create a new blast')
 
     it('should create a new organization', function () {
-        let new_org = OrgManager.createNewOrganization(org_name, org_auth0_id)
+        let new_org = OrgManager.createNewOrganization(org_name)
             .then(function (org) {
                 org_id = org.id
                 return org

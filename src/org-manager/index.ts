@@ -9,11 +9,15 @@ export namespace OrgManager {
      * @param name Name of the organization to create.
      * @returns the new Organization entry, if it is successfully created.
      */
-    export function createNewOrganization(name: string, auth0_id: string): Promise<db.OrganizationInstance> {
+    export function createNewOrganization(name: string): Promise<db.OrganizationInstance> {
         return db.models.Organization.create({
-            name: name,
-            auth0_id: auth0_id
+            name: name
         })
+    }
+
+    export function getAllOrganizations(): Promise<db.OrganizationInstance[]> {
+        return db.models.Organization.findAll()
+        // TODO: Add user validation
     }
 
     export function getOrganizationById(id: string): Promise<db.OrganizationInstance> {
