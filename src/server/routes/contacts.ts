@@ -1,11 +1,10 @@
-import * as express from "express"
+import * as express from "express";
+import { ContactManager } from '../../contact-manager';
+import * as utils from '../../utilities';
+import { checkJwt, checkScopes, checkJwtErr } from '../security/jwt';
 const router = express.Router();
-import * as jsend from 'jsend'
-import * as utils from '../../utilities'
 const errs = require('common-errors')
-import { ContactManager } from '../../contact-manager'
-import { checkJwt, checkScopes } from '../security/jwt'
-//const jwtAuthz = require('express-jwt-authz');
+const winston = require('winston')
 
 /**
  * Handles the route `GET /contacts`.
@@ -34,7 +33,7 @@ router.get('/', function (req, res, next) {
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:contact_id', checkJwt, checkScopes(["contact:view"]), checkJwt, function (req, res, next) {
+router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes(["contact:view"]), checkJwt, function (req, res, next) {
   ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
