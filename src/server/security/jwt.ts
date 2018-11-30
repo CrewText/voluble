@@ -1,5 +1,7 @@
+import winston = require("winston");
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
+const jwtAuthz = require('express-jwt-authz');
 
 /**
  * JWT Authentication middleware. When used, the
@@ -7,7 +9,7 @@ const jwksRsa = require('jwks-rsa');
  * the Auth0 JSON Web Key Set.
  * Used from auth0.com
  */
-export const checkJwt = jwt({
+export var checkJwt = jwt({
     /* Dynamically provide a signing key
     * based on the kid in the header and 
     * the signing keys provided by the JWKS endpoint.
@@ -23,4 +25,9 @@ export const checkJwt = jwt({
     audience: process.env.AUTH0_API_IDENT,
     issuer: `https://${process.env.AUTH0_DOMAIN}/`,
     algorithms: ['RS256']
-});
+})
+
+export var checkScopes = function (scopes: string[]) {
+    winston.debug("JWT: Checking scope")
+    return jwtAuthz(scopes)
+}
