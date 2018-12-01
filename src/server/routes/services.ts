@@ -1,9 +1,11 @@
-import * as express from 'express'
+import * as express from 'express';
+import { PluginManager } from '../../plugin-manager';
+import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
+import { scopes } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
-import { PluginManager } from '../../plugin-manager'
 
-router.get('/', function (req, res, next) {
+router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ServiceView]), function (req, res, next) {
   PluginManager.getAllServices()
     .then(function (rows) {
       res.jsend.success(rows)
@@ -14,7 +16,7 @@ router.get('/', function (req, res, next) {
     })
 })
 
-router.get('/:service_id', function (req, res, next) {
+router.get('/:service_id', checkJwt, checkJwtErr, checkScopes([scopes.ServiceView]), function (req, res, next) {
   return PluginManager.getServiceById(req.params.service_id)
     .then(function (service) {
       if (service) { res.jsend.success(service) }

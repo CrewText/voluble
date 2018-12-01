@@ -1,18 +1,20 @@
-import * as express from "express"
-import * as Promise from "bluebird"
+import * as Promise from "bluebird";
+import * as express from "express";
+import { ContactManager } from '../../contact-manager';
+import { MessageManager } from '../../message-manager/';
+import { ServicechainManager } from '../../servicechain-manager';
+import * as utils from '../../utilities';
+import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
+import { scopes } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
-import * as utils from '../../utilities'
 const errs = require('common-errors')
-import { MessageManager } from '../../message-manager/'
-import { ContactManager } from '../../contact-manager'
-import { ServicechainManager } from '../../servicechain-manager'
 
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
  */
-router.get('/', function (req, res, next) {
+router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageRead, scopes.VolubleAdmin]), function (req, res, next) {
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
@@ -38,7 +40,7 @@ router.get('/', function (req, res, next) {
  * Handles the route GET /messages/{id}
  * Lists all of the details about the contact with the specified ID.
  */
-router.get('/:message_id', function (req, res, next) {
+router.get('/:message_id', checkJwt, checkJwtErr, checkScopes([scopes.MessageRead, scopes.VolubleAdmin]), function (req, res, next) {
 
   return MessageManager.getMessageFromId(req.params.message_id)
     .then(function (msg) {
@@ -60,7 +62,7 @@ router.get('/:message_id', function (req, res, next) {
  * Handles the route POST /messages
  * Creates a new message, adds it to the database and attempts to send it.
  */
-router.post('/', function (req, res, next) {
+router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.VolubleAdmin]), function (req, res, next) {
   winston.info("Creating new message")
 
   ContactManager.checkContactWithIDExists(req.body.contact_id)

@@ -11,7 +11,7 @@ const winston = require('winston')
  * Handles the route `GET /contacts`.
  * Lists the first 100 of the contacts available to the user, with a given offset
  */
-router.get('/', function (req, res, next) {
+router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactView, scopes.VolubleAdmin]), function (req, res, next) {
 
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = (req.query.offset == undefined ? 0 : req.query.offset)
@@ -34,7 +34,7 @@ router.get('/', function (req, res, next) {
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactView]), checkJwt, function (req, res, next) {
+router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactView, scopes.VolubleAdmin]), checkJwt, function (req, res, next) {
   ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
@@ -57,7 +57,7 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
  * Handles the route `POST /contacts/`.
  * Inserts a new Contact into the database with the details specified in the request body.
  */
-router.post('/', function (req, res, next) {
+router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), function (req, res, next) {
 
   return ContactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
     .then(function (newContact) {
@@ -74,7 +74,7 @@ router.post('/', function (req, res, next) {
  * Handles the route `PUT /contacts/{id}`.
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
-router.put('/:contact_id', function (req, res, next) {
+router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdit, scopes.VolubleAdmin]), function (req, res, next) {
   return ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.updateContactDetailsWithId(id, req.body)
@@ -98,7 +98,7 @@ router.put('/:contact_id', function (req, res, next) {
  * Removes the contact with the specified ID from the database.
  * Returns 200 even if the contact does not exist, to ensure idempotence. This is why there is no validation that the contact exists first.
  */
-router.delete('/:contact_id', function (req, res, next) {
+router.delete('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
 
   utils.verifyNumberIsInteger(req.params.contact_id)
   return ContactManager.deleteContactFromDB(req.params.contact_id)
@@ -116,7 +116,7 @@ router.delete('/:contact_id', function (req, res, next) {
     })
 })
 
-router.get('/:contact_id/messages', function (req, res, next) {
+router.get('/:contact_id/messages', checkJwt, checkJwtErr, checkScopes([scopes.MessageRead, scopes.VolubleAdmin]), function (req, res, next) {
   //TODO: #11 - Make this work!
 })
 

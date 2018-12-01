@@ -1,16 +1,15 @@
-import * as express from "express"
-import * as Promise from "bluebird"
+import * as express from "express";
+import { UserManager } from '../../user-manager';
+import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
+import { scopes } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
 const errs = require('common-errors')
-import { UserManager } from '../../user-manager'
-import user from "../../models/user";
-
 /* GET users listing. */
-router.get('/', function (req, res, next) {
+router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.UserView]), function (req, res, next) {
 });
 
-router.get('/:user_id', function (req, res, next) {
+router.get('/:user_id', checkJwt, checkJwtErr, checkScopes([scopes.UserView]), function (req, res, next) {
   UserManager.getUserFullProfile(req.params["user_id"])
     .then(function (user_profile) {
       res.jsend.success(user_profile)
@@ -23,7 +22,7 @@ router.get('/:user_id', function (req, res, next) {
   //TODO: Add user authentication, make sure they're able to see the user they're asking for!
 })
 
-router.post('/', function (req, res, next) {
+router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.UserAdd]), function (req, res, next) {
   if (!req.body.auth0_id) {
     res.status(400).json({
       error: "Missing field: auth0_id"
@@ -49,7 +48,7 @@ router.post('/', function (req, res, next) {
   //   })
 })
 
-router.delete('/:voluble_user_id', function (req, res, next) {
+router.delete('/:voluble_user_id', checkJwt, checkJwtErr, checkScopes([scopes.UserDelete]), function (req, res, next) {
   //FIXME: Sort out user deletion again
 
   // UserManager.deleteUserFromVoluble(req.params.voluble_user_id)

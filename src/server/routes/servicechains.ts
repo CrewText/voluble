@@ -1,15 +1,16 @@
-import * as express from "express"
-import * as Promise from "bluebird"
+import * as Promise from "bluebird";
+import * as express from "express";
+import { ServicesInSCInstance } from "../../models/servicesInServicechain";
+import { PluginManager } from '../../plugin-manager/';
+import { ServicechainManager } from '../../servicechain-manager/';
+import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
+import { scopes } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
 
-import * as utils from '../../utilities'
-import { ServicechainManager } from '../../servicechain-manager/'
-import { PluginManager } from '../../plugin-manager/'
-import { ServicesInSCInstance } from "../../models/servicesInServicechain";
 const errs = require('common-errors')
 
-router.get('/', function (req, res, next) {
+router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainView]), function (req, res, next) {
   ServicechainManager.getAllServicechains()
     .then(function (rows) {
       res.jsend.success(rows)
@@ -22,7 +23,7 @@ router.get('/', function (req, res, next) {
 })
 
 
-router.post('/', function (req, res, next) {
+router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainAdd, scopes.VolubleAdmin]), function (req, res, next) {
   let services_list: ServicechainManager.ServicechainPriority[] = <ServicechainManager.ServicechainPriority[]>req.body.services
   winston.debug("Request for new SC: " + req.body.name + ", with services:")
   winston.debug(services_list)
@@ -51,7 +52,7 @@ router.post('/', function (req, res, next) {
 
 })
 
-router.get('/:sc_id', function (req, res, next) {
+router.get('/:sc_id', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainView]), function (req, res, next) {
   // First, get the servicechain itself
   return ServicechainManager.getServicechainById(req.params.sc_id)
     .then(function (sc) {
@@ -87,11 +88,11 @@ router.get('/:sc_id', function (req, res, next) {
 })
 
 
-router.put('/:id', function (req, res, next) {
+router.put('/:id', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainEdit]), function (req, res, next) {
   res.render('servicechains_update', { group_id: req.params.id, data: req.params }) //TODO: Make PUT/servicechains/ID work
 })
 
-router.delete('/:sc_id', function (req, res, next) {
+router.delete('/:sc_id', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainDelete]), function (req, res, next) {
   return ServicechainManager.deleteServicechain(req.params.sc_id)
     .then(function (row) {
       res.jsend.success(row)
