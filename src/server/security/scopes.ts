@@ -17,5 +17,6 @@ export enum scopes {
     ServicechainView = "servicechain:view",
     ServicechainAdd = "servicechain:add",
     ServicechainDelete = "servicechain:delete",
+    ServicechainEdit = "servicechain:edit",
     VolubleAdmin = "voluble:admin"
 }
