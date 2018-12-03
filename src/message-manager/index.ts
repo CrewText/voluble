@@ -30,7 +30,7 @@ export namespace MessageManager {
      * Attempts to create a new Message in the database with the supplied details.
      * @param {string} body The main message text to add to the message.
      * @param {string} contact_id The ID number of the contact that this message is sent to/recieved from
-     * @param {string} direction If this is an outbound message, false. If it's inbound, true. TODO: Make sure this is correct!
+     * @param {string} direction If this is an outbound message, false. If it's inbound, true.
      * @param {string} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
@@ -51,7 +51,7 @@ export namespace MessageManager {
 
     /**
      * Does what it says on the tin - attempts to send a message by finding the service in the messages' servicechain with priority 1.
-     * @param {db.models.Sequelize.Message} msg A Message object (TODO: or id?) representing the message to send.
+     * @param {db.models.Sequelize.Message} msg A Message object representing the message to send.
      * @returns {promise} Promise resolving to the Sequelize message that has been sent.
      */
     export function sendMessage(msg: db.MessageInstance): db.MessageInstance {
