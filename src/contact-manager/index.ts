@@ -53,7 +53,7 @@ export namespace ContactManager {
              */
             return db.models.Contact.count({ where: { id: id } })
                 .then(function (count: number) {
-                    if (count == 0) { //FIXME: Make this: `if (!count)` - in case the query fails and `null | undefined` is returned
+                    if (!count) {
                         return Promise.reject(errs.NotFoundError(`No contact with ID ${id}`))
                     } else {
                         // Contact exists, return the same ID what was provided, for Promise continuity
