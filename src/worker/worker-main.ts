@@ -1,5 +1,5 @@
 const winston = require('winston')
-if (process.env.NODE_ENV = "development") {
+if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
     winston.info("Main: Detected dev environment")
     winston.level = 'debug'
 } else {
