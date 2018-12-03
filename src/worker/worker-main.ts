@@ -79,7 +79,6 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                     }
                     else if (message_info.phone_number) {
                         // The contact ID has not been supplied, we need to try and determine it from the phone number
-                        //TODO: Normalize the phone number, just so it matches our records
                         let phone_number_format = libphonenumber.PhoneNumberFormat
                         let phone_number_util = libphonenumber.PhoneNumberUtil.getInstance()
                         let phone_number_parsed = phone_number_util.parse("+" + message_info.phone_number) // Esendex misses the leading +
