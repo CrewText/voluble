@@ -7,15 +7,16 @@ if (process.env.NODE_ENV = "development") {
     winston.level = 'info'
 }
 
+import * as Promise from 'bluebird';
+import * as libphonenumber from 'google-libphonenumber';
 import * as redis from 'redis';
 import * as rsmq from 'rsmq';
 import * as rsmqWorker from 'rsmq-worker';
+import { ContactManager } from '../contact-manager';
 import { MessageManager } from '../message-manager';
 import * as db from '../models';
+import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
-import { PluginManager } from '../plugin-manager'
-import * as Promise from 'bluebird'
-import { ContactManager } from '../contact-manager';
 import { ServicechainManager } from '../servicechain-manager';
 const errs = require('common-errors')
 
@@ -79,12 +80,17 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                     else if (message_info.phone_number) {
                         // The contact ID has not been supplied, we need to try and determine it from the phone number
                         //TODO: Normalize the phone number, just so it matches our records
-                        return ContactManager.getContactFromPhone(message_info.phone_number)
+                        let phone_number_format = libphonenumber.PhoneNumberFormat
+                        let phone_number_util = libphonenumber.PhoneNumberUtil.getInstance()
+                        let phone_number_parsed = phone_number_util.parse(message_info.phone_number)
+                        let phone_number_e164 = phone_number_util.format(phone_number_parsed, phone_number_format.E164)
+
+                        return ContactManager.getContactFromPhone(phone_number_e164)
                             .then(function (contact) {
                                 if (contact) {
                                     return contact.id
                                 } else {
-                                    throw new errs.NotFoundError(`No contact found with phone number ${message_info.phone_number}`)
+                                    throw new errs.NotFoundError(`No contact found with phone number ${message_info.phone_number} (parsed as ${phone_number_e164})`)
                                 }
                             })
                     } else if (message_info.email_address) {
@@ -103,13 +109,16 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                         throw new errs.ArgumentError(`Plugin did not specify contact details for incoming message!`)
                     }
                 }).then(function (determined_contact_id) {
-                    return ServicechainManager.getServicechainFromContactId(determined_contact_id)
-                        .then(function (sc) {
-                            return MessageManager.createMessage(message_info.message_body,
-                                determined_contact_id,
-                                "INBOUND",
-                                sc.id,
-                                MessageManager.MessageStates.MSG_ARRIVED)
+                    return ContactManager.getContactWithId(determined_contact_id)
+                        .then(function (contact) {
+                            return contact.getServicechain()
+                                .then(function (sc) {
+                                    return MessageManager.createMessage(message_info.message_body,
+                                        determined_contact_id,
+                                        "INBOUND",
+                                        sc.id,
+                                        MessageManager.MessageStates.MSG_ARRIVED)
+                                })
                         })
                 })
             })

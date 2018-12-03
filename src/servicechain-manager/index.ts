@@ -34,12 +34,10 @@ export namespace ServicechainManager {
     export function getServicechainFromContactId(contact_id: string): Promise<db.ServicechainInstance | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
-                return db.models.Servicechain.findOne({
-                    include: [{
-                        model: db.models.Contact,
-                        where: { id: db.sequelize.col('contact.ServicechainId') }
-                    }]
-                })
+                return db.models.Contact.findById(cont_id)
+            })
+            .then(function (contact) {
+                return contact.getServicechain()
             })
     }
 
