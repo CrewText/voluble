@@ -58,6 +58,7 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
  * Inserts a new Contact into the database with the details specified in the request body.
  */
 router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), function (req, res, next) {
+  //TODO: Normalize contact phone number to e164 format
 
   return ContactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
     .then(function (newContact) {
