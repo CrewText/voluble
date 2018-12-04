@@ -83,6 +83,7 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                         let phone_number_util = libphonenumber.PhoneNumberUtil.getInstance()
                         let phone_number_parsed = phone_number_util.parse("+" + message_info.phone_number) // Esendex misses the leading +
                         let phone_number_e164 = phone_number_util.format(phone_number_parsed, phone_number_format.E164)
+                        // TODO: What if we can't determine the phone number or it won't parse?
 
                         return ContactManager.getContactFromPhone(phone_number_e164)
                             .then(function (contact) {
