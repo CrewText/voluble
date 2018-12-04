@@ -90,29 +90,11 @@ function onError(error: any) {
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-// if (!fs.existsSync(process.env.SSL_KEY_PATH || "")) {
-//   throw new Error("SSL key does not exist at " + process.env.SSL_KEY_PATH)
-// }
-
-// if (!fs.existsSync(process.env.SSL_CERT_PATH || "")) {
-//   throw new Error("SSL certificate does not exist at " + process.env.SSL_CERT_PATH)
-// }
-
-// let https_options = {
-//   key: fs.readFileSync(process.env.SSL_KEY_PATH || ""),
-//   cert: fs.readFileSync(process.env.SSL_CERT_PATH || "")
-// }
-// // TODO: (branch: implement-ssl) Use Helmet for HSTS
-// var server = https.createServer(https_options, app);
-//var server = http.createServer()
-
-//server.listen(port);
-//server.on('error', onError);
 winston.info("Listening on port " + port)
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-//app.use(logger('dev'));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(xmlParser({ explicitArray: false }))
