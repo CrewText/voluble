@@ -1,12 +1,14 @@
 import * as Sequelize from "sequelize"
 import { ServicesInSCAttributes } from './servicesInServicechain'
 import { ServiceAttributes, ServiceInstance } from "./service";
+import { OrganizationInstance } from ".";
 
 export interface ServicechainAttributes {
     id?: string,
     createdAt?: Date,
     updatedAt?: Date,
     name: string,
+    OrganizationId?: string
 }
 
 export interface ServicechainInstance extends Sequelize.Instance<ServicechainAttributes>, ServicechainAttributes {
@@ -20,6 +22,10 @@ export interface ServicechainInstance extends Sequelize.Instance<ServicechainAtt
     removeService: Sequelize.BelongsToManyRemoveAssociationMixin<ServiceInstance, ServiceInstance['id']>,
     removeServices: Sequelize.BelongsToManyRemoveAssociationsMixin<ServiceInstance, ServiceInstance['id']>,
     setServices: Sequelize.BelongsToManySetAssociationsMixin<ServiceInstance, ServiceInstance['id'], ServicesInSCAttributes>
+
+    getOrganization: Sequelize.BelongsToGetAssociationMixin<OrganizationInstance>,
+    setOrganization: Sequelize.BelongsToSetAssociationMixin<OrganizationInstance, OrganizationInstance['id']>,
+    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrganizationInstance>,
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {

@@ -1,6 +1,7 @@
 import * as Sequelize from "sequelize"
 import { UserInstance, UserAttributes } from "./user";
 import { ContactAttributes, ContactInstance } from "./contact"
+import { ServicechainInstance, ServicechainAttributes } from "./servicechain";
 
 export interface OrgAttributes {
     id?: string,
@@ -32,6 +33,17 @@ export interface OrgInstance extends Sequelize.Instance<OrgAttributes>, OrgAttri
     hasContacts: Sequelize.HasManyHasAssociationsMixin<ContactInstance, ContactInstance['id']>,
     removeContact: Sequelize.HasManyRemoveAssociationMixin<ContactAttributes, ContactInstance['id']>,
     removeContacts: Sequelize.HasManyRemoveAssociationsMixin<ContactInstance, ContactInstance['id']>
+
+    getServicechains: Sequelize.HasManyGetAssociationsMixin<ServicechainInstance>
+    setServicechains: Sequelize.HasManySetAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
+    addServicechain: Sequelize.HasManyAddAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
+    addServicechains: Sequelize.HasManyAddAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
+    createServicechain: Sequelize.HasManyCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,
+    countServicechains: Sequelize.HasManyCountAssociationsMixin
+    hasServicechain: Sequelize.HasManyHasAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
+    hasServicechains: Sequelize.HasManyHasAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
+    removeServicechain: Sequelize.HasManyRemoveAssociationMixin<ServicechainAttributes, ServicechainInstance['id']>,
+    removeServicechains: Sequelize.HasManyRemoveAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>
 
 }
 

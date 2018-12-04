@@ -78,6 +78,9 @@ models.User.belongsTo(models.Contact)
 models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
 models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC })
 
+models.Organization.hasMany(models.Servicechain)
+models.Servicechain.belongsTo(models.Organization)
+
 models.Servicechain.hasOne(models.Contact)
 models.Contact.belongsTo(models.Servicechain)
 
@@ -86,6 +89,7 @@ models.Message.belongsTo(models.Servicechain)
 
 models.Blast.hasMany(models.Message)
 models.Sequelize = Sequelize;
+
 
 /**
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
