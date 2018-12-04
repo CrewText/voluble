@@ -31,21 +31,9 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.UserAdd]), function 
   }
 
   //FIXME: Sort out user addition again
-  // UserManager.getUserEntryByAuth0ID(req.body.auth0_id)
-  //   .then(function (user_entry) {
-  //     if (!user_entry) {
-  //       UserManager.addNewUser(req.body.auth0_id, req.body.org_id || null)
-  //         .then(function (new_user_entry) {
-  //           res.status(201).json(new_user_entry)
-  //           //res.jsend...!
-  //         })
-  //     } else {
-  //       res.status(200).json(user_entry)
-  //     }
-  //   })
-  //   .catch(function (error: any) {
-  //     res.status(500).send(error.message)
-  //   })
+  // It's not actual user addition that needs doing, as Auth0 handles all of this for us
+  // It's more that we need to keep track of the users that Auth0 has,
+  // and make sure they join an organization
 })
 
 router.delete('/:voluble_user_id', checkJwt, checkJwtErr, checkScopes([scopes.UserDelete]), function (req, res, next) {
