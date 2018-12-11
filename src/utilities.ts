@@ -12,6 +12,7 @@ const errs = require('common-errors')
 
 export function verifyNumberIsInteger(id: string | number): Promise<number> {
 
+  if (id === 0 || id === "0") { return Promise.resolve(0) }
   if (typeof id == "number") {
     let int_num = toInt(id.toString(), 10)
     if (!int_num) { return Promise.reject(new errs.TypeError(`${id} is not an integer`)) }

@@ -14,18 +14,19 @@ const winston = require('winston')
 router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactView, scopes.VolubleAdmin]), function (req, res, next) {
 
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-  let offset = (req.query.offset == undefined ? 0 : req.query.offset)
-
+  let offset = req.query.offset ? req.query.offset : 0
+  console.log(offset)
   return utils.verifyNumberIsInteger(offset)
     .then(function (offset: number) {
+      console.log(offset)
       return ContactManager.getHundredContacts(offset)
     })
     .then(function (rows: any) {
-      res.jsend.success(rows)
+      res.status(200).jsend.success(rows)
       //res.status(200).json(rows)
     })
     .catch(function (err: any) {
-      res.jsend.error(err.message)
+      res.status(500).jsend.error(err.message)
       //res.status(500).json(err.message)
     })
 })
@@ -45,7 +46,7 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
       }
     })
     .catch(errs.NotFoundError, function (error) {
-      res.jsend.fail({ "id": "No user exists with this ID." })
+      res.status(404).jsend.fail({ "id": "No user exists with this ID." })
     })
     .catch(function (error: any) {
       res.jsend.error(error.message)
