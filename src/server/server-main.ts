@@ -44,25 +44,6 @@ winston.info("Starting Express server")
 const app = express();
 app.use(jsend.middleware)
 
-/**
- * Get port from environment and store in Express.
- */
-function normalizePort(val: string) {
-  var port = parseInt(val, 10);
-
-  if (isNaN(port)) {
-    // named pipe
-    return val;
-  }
-
-  if (port >= 0) {
-    // port number
-    return port;
-  }
-
-  return false;
-}
-
 function onError(error: any) {
   if (error.syscall !== 'listen') {
     throw error;
@@ -87,10 +68,8 @@ function onError(error: any) {
   }
 }
 
-var port = normalizePort(process.env.PORT || '3000');
+var port = parseInt(process.env.PORT, 10) || 5000
 app.set('port', port);
-
-winston.info("Listening on port " + port)
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -120,28 +99,30 @@ function forceSSL(req: express.Request, res: express.Response, next: express.Nex
 }
 
 // Force SSL
-if (process.env.NODE_ENV == "development") {
+if (process.env.NODE_ENV != "production") {
   winston.debug("Not forcing SSL")
 } else {
   winston.debug("Forcing SSL redirects")
   app.use(forceSSL)
 }
 
-db.initialize_database()
-  .then(function () {
-    // Set up plugin manager
-    winston.info("Initing all plugins")
-    PluginManager.initAllPlugins()
 
-    // catch 404 and forward to error handler
-    app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
-      let err: any = new Error('Not Found');
-      err.status = 404;
-      next(err);
-    });
+
+
+
+function onServerListening() {
+  winston.info("Server listening on " + port)
+}
+export function initServer() {
+  return Promise.try(function () {
+    // app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
+    //   let err: any = new Error('Not Found');
+    //   err.status = 404;
+    //   next(err);
+    // });
 
     // error handler
-    app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+    return app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
       // set locals, only providing error in development
       res.locals.message = err.message;
       res.locals.error = process.env.NODE_ENV = "development" ? err : {};
@@ -149,11 +130,16 @@ db.initialize_database()
       // render the error page
       res.status(err.status || 500);
     });
-
-    app.listen(port, function () {
-      winston.info("Server running on port " + port)
-    })
-
-    module.exports = app;
   })
-
+    .then(function () {
+      return db.initialize_database()
+    })
+    .then(function () {
+      // Set up plugin manager
+      winston.info("Initing all plugins")
+      return PluginManager.initAllPlugins()
+    })
+    .then(function () {
+      return process.env.NODE_ENV == "production" ? app.listen(port, onServerListening) : app.listen(port, "localhost", onServerListening)
+    })
+}
