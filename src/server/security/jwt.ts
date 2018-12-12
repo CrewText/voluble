@@ -30,11 +30,10 @@ export var checkJwt = jwt({
 export const checkJwtErr = function (err, req, res, next) {
     if (err) {
         winston.error(err.message)
-        res.jsend.error(err.message)
+        res.status(401).jsend.error(err.message)
     } else { next() }
 }
 
 export var checkScopes = function (scopes: string[]) {
-    winston.debug("JWT: Checking scope")
     return jwtAuthz(scopes)
 }
