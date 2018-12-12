@@ -28,7 +28,7 @@ describe('API', function () {
             .then(function () {
                 //@ts-ignore
                 faker.locale = "en_GB"
-                console.log(`https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`)
+
                 // Get an access_token from Auth0 on behalf of the Voluble Test Application
                 let auth0_req_body = {
                     audience: process.env.AUTH0_API_IDENT,
@@ -43,12 +43,64 @@ describe('API', function () {
                     if (err) { throw new Error(err) }
                     if (!body.access_token) { throw new Error('No access token in Auth0 response') }
                     auth_token = body.access_token
+                    console.log(`Scopes: ${body.scope}`)
                     done()
                 })
             })
     })
+    let created_contact_id: string;
 
-    describe('/GET contact', function () {
+    describe('POST /contact', function () {
+        it("should create a new contact", function (done) {
+            let contact_fname = faker.name.firstName()
+            let contact_sname = faker.name.lastName()
+            let contact_phone = faker.phone.phoneNumber("+447#########")
+            let contact_email = faker.internet.email(contact_fname, contact_sname)
+
+            supertest(server_app)
+                .post("/contacts")
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    first_name: contact_fname,
+                    surname: contact_sname,
+                    phone_number: contact_phone,
+                    email_address: contact_email
+                })
+                .expect(201)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "success")
+                    chai.expect(res.body.data).to.have.property('id')
+                    created_contact_id = res.body.data.id
+                    done()
+                })
+        })
+
+        it("Should fail to create a new contact when the phone number is invalid", function (done) {
+            let contact_fname = faker.name.firstName()
+            let contact_sname = faker.name.lastName()
+            let contact_phone = "12345123456"
+            let contact_email = faker.internet.email(contact_fname, contact_sname)
+
+            supertest(server_app)
+                .post("/contacts")
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    first_name: contact_fname,
+                    surname: contact_sname,
+                    phone_number: contact_phone,
+                    email_address: contact_email
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "error")
+                    done()
+                })
+        })
+    })
+
+    describe('GET /contact', function () {
         it('should GET all of the contacts that our User allows', function (done) {
             supertest(server_app).get("/contacts")
                 .auth(auth_token, { type: "bearer" })
@@ -59,6 +111,40 @@ describe('API', function () {
                     chai.expect(res.body).to.have.property('status', 'success')
                     done()
                 })
-        }).timeout(20000)
+        })
+
+        it("should fail if we aren't authorized", function (done) {
+            supertest(server_app)
+                .get("/contacts")
+                .expect(401)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    done()
+                })
+        })
+    })
+
+    describe('PUT /contact', function () {
+        it("should change the contact's name", function (done) {
+            if (!created_contact_id) { this.skip() }
+
+            let new_first_name = faker.name.firstName()
+            let new_surname = faker.name.lastName()
+            supertest(server_app)
+                .put(`/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    first_name: new_first_name,
+                    surname: new_surname
+                })
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body.data).to.have.property('first_name', new_first_name)
+                    chai.expect(res.body.data).to.have.property('surname', new_surname)
+                    done()
+                })
+        })
     })
 })
