@@ -1,8 +1,11 @@
+import * as Promise from 'bluebird';
 import * as express from "express";
+import * as libphonenumber from 'google-libphonenumber';
+import * as validator from 'validator';
 import { ContactManager } from '../../contact-manager';
 import * as utils from '../../utilities';
-import { checkJwt, checkScopes, checkJwtErr } from '../security/jwt';
-import { scopes } from '../security/scopes'
+import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
+import { scopes } from '../security/scopes';
 const router = express.Router();
 const errs = require('common-errors')
 const winston = require('winston')
@@ -15,10 +18,8 @@ router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactView, scopes.V
 
   // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
   let offset = req.query.offset ? req.query.offset : 0
-  console.log(offset)
   return utils.verifyNumberIsInteger(offset)
     .then(function (offset: number) {
-      console.log(offset)
       return ContactManager.getHundredContacts(offset)
     })
     .then(function (rows: any) {
@@ -59,16 +60,36 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
  * Inserts a new Contact into the database with the details specified in the request body.
  */
 router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), function (req, res, next) {
+  let contact_fname = req.body.first_name
+  let contact_sname = req.body.surname
+  let contact_email = req.body.email_address
+  let contact_phone = req.body.phone_number
+  let contact_sc = req.body.default_servicechain
   //TODO: Normalize contact phone number to e164 format
 
-  return ContactManager.createContact(req.body.first_name, req.body.surname, req.body.email_address, req.body.phone_number, req.body.default_servicechain)
+  return Promise.try(function () {
+    if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
+      throw new errs.ValidationError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
+    }
+    const phone_util = libphonenumber.PhoneNumberUtil.getInstance()
+    try {
+      phone_util.isValidNumber(phone_util.parse(contact_phone))
+    } catch {
+      throw new errs.ValidationError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
+    }
+  })
+
+    .then(function () {
+      return ContactManager.createContact(contact_fname, contact_sname, contact_email, contact_phone, contact_sc)
+    })
     .then(function (newContact) {
-      res.jsend.success(newContact)
-      //res.status(200).json(newContact)
+      res.status(201).jsend.success(newContact)
+    })
+    .catch(errs.ValidationError, function (err) {
+      res.status(400).jsend.error(err.message)
     })
     .catch(function (error: any) {
-      res.jsend.error(error.message)
-      //res.status(500).end()
+      res.status(500).jsend.error(error.message)
     })
 })
 
