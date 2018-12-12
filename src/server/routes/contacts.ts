@@ -77,21 +77,40 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.V
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
 router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdit, scopes.VolubleAdmin]), function (req, res, next) {
-  return ContactManager.checkContactWithIDExists(req.params.contact_id)
-    .then(function (id) {
-      return ContactManager.updateContactDetailsWithId(id, req.body)
+  return ContactManager.getContactWithId(req.params.contact_id)
+    .then(function (contact) {
+      if (!contact) { throw new errs.NotFoundError("No contact exists with this ID") }
+      ["first_name", "surname", "phone_number", "email_address"].forEach(trait => {
+        //TODO: Validate phone no and email
+        if (req.body[trait]) {
+          contact[trait] = req.body[trait]
+        }
+      });
+      return contact.save()
     })
-    .then(function (updateDetails) {
-      res.jsend.success(updateDetails[1][0])
-      //      res.status(200).end()
+    .then(function (contact) {
+      if (req.body.OrganizationId) {
+        //TODO: Validate this!
+        return contact.setOrganization(req.body.OrganizationId)
+          .then(function () { return contact })
+      } else { return contact }
+    })
+    .then(function (contact) {
+      if (req.body.default_servicechain) {
+        //TODO: Validate this!
+        return contact.setServicechain(req.body.default_servicechain)
+          .then(function () { return contact })
+      } else { return contact }
+    })
+    .then(function (contact) {
+      res.status(200).jsend.success(contact)
     })
     .catch(errs.NotFoundError, function (err) {
-      res.jsend.fail({ "id": "No user exists with this ID." })
+      res.status(404).jsend.fail({ "id": "No user exists with this ID." })
     })
     .catch(function (error: any) {
-      //console.log(err)
-      res.jsend.error(error.message)
-      //res.status(500).send(err)
+      winston.error(error)
+      res.status(500).jsend.error(error.message)
     })
 })
 
