@@ -50,7 +50,7 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
       res.status(404).jsend.fail({ "id": "No user exists with this ID." })
     })
     .catch(function (error: any) {
-      res.jsend.error(error.message)
+      res.status(500).jsend.error(error.message)
     })
 
 })
@@ -86,7 +86,7 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.V
       res.status(201).jsend.success(newContact)
     })
     .catch(errs.ValidationError, function (err) {
-      res.status(400).jsend.error(err.message)
+      res.status(400).jsend.fail(err.message)
     })
     .catch(function (error: any) {
       res.status(500).jsend.error(error.message)
@@ -142,19 +142,26 @@ router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdi
  */
 router.delete('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
 
-  utils.verifyNumberIsInteger(req.params.contact_id)
-  return ContactManager.deleteContactFromDB(req.params.contact_id)
-    .then(function (resp) {
-      res.jsend.success(resp)
-      //res.status(200).json(resp)
+  let contact_id = req.params.contact_id
+  if (!validator.isUUID(contact_id)) {
+    throw new errs.ValidationError("Supplied parameter contact_id is not a UUID: " + contact_id)
+  }
+  return ContactManager.getContactWithId(contact_id)
+    .then(function (contact) {
+      if (!contact) {
+        return false // Because idempotence
+      }
+      return contact.destroy()
+        .then(function () { return true })
     })
-    .catch(errs.TypeError, function (error) {
-      res.jsend.fail({ 'id': "ID supplied is not an integer." })
+    .then(function (resp) {
+      res.status(resp ? 200 : 410).jsend.success(true) // Send a 410 if the contact no longer exists
+    })
+    .catch(errs.ValidationError, function (error) {
+      res.status(400).jsend.fail({ 'id': "ID supplied is not an UUID." })
     })
     .catch(function (error: any) {
-      res.jsend.error(error.message)
-      //console.log(error.message)
-      //res.status(500).end()
+      res.status(500).jsend.error(error.message)
     })
 })
 

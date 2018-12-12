@@ -9,6 +9,7 @@ import * as request from 'request';
 import * as server from '../server/server-main';
 import * as supertest from 'supertest'
 import * as Promise from 'bluebird'
+import winston = require('winston');
 
 chai.use(chaiAsPromised)
 let should = chai.should
@@ -94,7 +95,7 @@ describe('API', function () {
                 .expect(400)
                 .end(function (err, res) {
                     if (err) { return done(err) }
-                    chai.expect(res.body).to.have.property('status', "error")
+                    chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
         })
@@ -143,6 +144,36 @@ describe('API', function () {
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('first_name', new_first_name)
                     chai.expect(res.body.data).to.have.property('surname', new_surname)
+                    done()
+                })
+        })
+    })
+
+    describe('DELETE /contact', function () {
+        it('should remove the contact we created', function (done) {
+            if (!created_contact_id) { this.skip() }
+
+            supertest(server_app)
+                .delete(`/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
+                    done()
+                })
+        })
+
+        it('should attempt to remove the same contact again, to ensure idempotence', function (done) {
+            if (!created_contact_id) { this.skip() }
+
+            supertest(server_app)
+                .delete(`/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .expect(410)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
                     done()
                 })
         })
