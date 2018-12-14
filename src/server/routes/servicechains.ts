@@ -5,6 +5,7 @@ import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { scopes } from '../security/scopes';
+import service from "../../models/service";
 const router = express.Router();
 const winston = require('winston')
 
@@ -25,29 +26,35 @@ router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainView]), f
 
 router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainAdd, scopes.VolubleAdmin]), function (req, res, next) {
   let services_list: ServicechainManager.ServicechainPriority[] = <ServicechainManager.ServicechainPriority[]>req.body.services
-  winston.debug("Request for new SC: " + req.body.name + ", with services:")
-  winston.debug(services_list)
-
-  ServicechainManager.createNewServicechain(req.body.name)
+  let sc_name = req.body.name
+  return ServicechainManager.createNewServicechain(sc_name)
     .then(function (sc) {
-      return Promise.try(function () {
-        if (services_list) {
-          return Promise.map(services_list,
-            function (svc_prio_pair) {
-              return ServicechainManager.addServiceToServicechain(sc.id,
-                svc_prio_pair.service_id,
-                svc_prio_pair.priority)
+      return Promise.each(services_list, function (service_prio_pair) {
+        return PluginManager.getServiceById(service_prio_pair.service_id)
+          .then(function (svc) {
+            if (!svc) { return Promise.reject(new errs.NotFoundError(`Service with ID ${service_prio_pair.service_id} not found`)) }
+            return sc.addService(svc, {
+              through: {
+                priority: service_prio_pair.priority,
+                servicechain_id: sc.id,
+                service_id: svc.id
+              }
             })
-        } else { return Promise.resolve([]) }
+          })
       })
-        .then(function () {
-          res.jsend.success(sc)
+        .then((l) => {
+          return sc
         })
     })
-
-    .catch(function (error: any) {
-      res.jsend.error(error.message)
-      //res.status(500).send(error.message)
+    .then(function (sc) {
+      res.status(201).jsend.success(sc)
+    })
+    .catch(errs.NotFoundError, function (err) {
+      res.status(400).jsend.fail(err)
+    })
+    .catch(function (err) {
+      console.log(err)
+      res.status(500).jsend.error(err)
     })
 
 })

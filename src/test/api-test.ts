@@ -9,10 +9,10 @@ import * as request from 'request';
 import * as server from '../server/server-main';
 import * as supertest from 'supertest'
 import * as Promise from 'bluebird'
+import * as db from '../models'
 import winston = require('winston');
 
 chai.use(chaiAsPromised)
-let should = chai.should
 let auth_token: string
 let server_app;
 
@@ -44,11 +44,77 @@ describe('API', function () {
                     if (err) { throw new Error(err) }
                     if (!body.access_token) { throw new Error('No access token in Auth0 response') }
                     auth_token = body.access_token
-                    console.log(`Scopes: ${body.scope}`)
                     done()
                 })
             })
     })
+    let available_services: db.ServiceInstance[];
+
+    describe('GET /services', function () {
+        it('should return a list of available services', function (done) {
+            supertest(server_app)
+                .get("/services")
+                .auth(auth_token, { type: "bearer" })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body.data).to.be.instanceof(Array)
+                    chai.expect(res.body.data[0]).to.have.property('id')
+                    available_services = res.body.data
+                    done()
+                })
+        })
+    })
+
+    let created_servicechain_id: string;
+    describe("POST /servicechains", function () {
+        it('should create a new servicechain with a service', function (done) {
+            if (!available_services) { this.skip() }
+            supertest(server_app)
+                .post("/servicechains")
+                .send({
+                    name: "eric the sc",
+                    services: [{
+                        "service_id": available_services[0].id,
+                        "priority": 1
+                    }]
+                })
+                .auth(auth_token, { type: "bearer" })
+                .expect(201)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body.data).to.have.property('id')
+                    created_servicechain_id = res.body.data.id
+                    done()
+                })
+        })
+
+        it("should fail when provided with a non-existent service ID", function (done) {
+            supertest(server_app)
+                .post("/servicechains")
+                .send({
+                    name: "my servicechain",
+                    services: [{
+                        "service_id": faker.random.uuid(),
+                        "priority": 1
+                    }]
+                })
+                .auth(auth_token, { type: "bearer" })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
+                    done()
+                })
+        })
+    })
+
+    // describe("GET /servicechains", function () {
+
+    // })
+
     let created_contact_id: string;
 
     describe('POST /contact', function () {
