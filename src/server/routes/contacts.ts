@@ -86,10 +86,10 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.V
       res.status(201).jsend.success(newContact)
     })
     .catch(errs.ValidationError, function (err) {
-      res.status(400).jsend.fail(err.message)
+      res.status(400).jsend.fail(err)
     })
     .catch(function (error: any) {
-      res.status(500).jsend.error(error.message)
+      res.status(500).jsend.error(error)
     })
 })
 
