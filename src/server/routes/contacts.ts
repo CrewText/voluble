@@ -62,13 +62,14 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
 router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), function (req, res, next) {
   let contact_fname = req.body.first_name
   let contact_sname = req.body.surname
-  let contact_email = req.body.email_address
+  let contact_email = req.body.email_address.toLowerCase()
   let contact_phone = req.body.phone_number
   let contact_sc = req.body.default_servicechain
   //TODO: Normalize contact phone number to e164 format
 
   return Promise.try(function () {
     if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
+      //console.log(validator.isEmail(contact_email, { require_tld: true }))
       throw new errs.ValidationError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
     }
     const phone_util = libphonenumber.PhoneNumberUtil.getInstance()
@@ -86,10 +87,10 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.V
       res.status(201).jsend.success(newContact)
     })
     .catch(errs.ValidationError, function (err) {
-      res.status(400).jsend.fail(err.message)
+      res.status(400).jsend.fail(err)
     })
     .catch(function (error: any) {
-      res.status(500).jsend.error(error.message)
+      res.status(500).jsend.error(error)
     })
 })
 
