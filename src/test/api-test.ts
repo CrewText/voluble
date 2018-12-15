@@ -2,14 +2,14 @@ process.env.NODE_ENV = "test"
 console.log("Node Env: " + process.env.NODE_ENV)
 
 require('dotenv').config() // THIS HAS TO STAY AT THE TOP
+import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as faker from 'faker';
 import * as request from 'request';
+import * as supertest from 'supertest';
+import * as db from '../models';
 import * as server from '../server/server-main';
-import * as supertest from 'supertest'
-import * as Promise from 'bluebird'
-import * as db from '../models'
 import winston = require('winston');
 
 chai.use(chaiAsPromised)
@@ -48,6 +48,84 @@ describe('API', function () {
                 })
             })
     })
+
+    let created_org: string
+
+    describe('POST /organizations', function () {
+        it('should fail to create a new Organization when a name is not provided', function (done) {
+            supertest(server_app)
+                .post("/orgs")
+                .auth(auth_token, { type: "bearer" })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "fail")
+                    done()
+                })
+        })
+
+        it('should create a new Organization', function (done) {
+            supertest(server_app)
+                .post("/orgs")
+                .auth(auth_token, { type: "bearer" })
+                .send({ name: faker.company.companyName() })
+                .expect(201)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "success")
+                    chai.expect(res.body.data).to.have.property('id')
+                    created_org = res.body.data.id
+                    done()
+                })
+        })
+    })
+
+    describe('GET /organizations', function () {
+        it('should retrieve the new Organization in the collection', function (done) {
+            supertest(server_app)
+                .get("/orgs")
+                .auth(auth_token, { type: "bearer" })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "success")
+                    chai.expect(res.body.data).to.be.instanceOf(Array)
+                    chai.expect(res.body.data[0]).to.have.property('id')
+                    done()
+                })
+        })
+
+        it('should retrieve the created Organization by ID', function (done) {
+            if (!created_org) { this.skip() }
+            supertest(server_app)
+                .get(`/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "success")
+                    chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data.id).to.equal(created_org)
+                    done()
+                })
+        })
+
+        it('should fail to retrieve the created Organization by ID without authorization', function (done) {
+            if (!created_org) { this.skip() }
+            supertest(server_app)
+                .get(`/orgs/${created_org}`)
+                .expect(401)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    done()
+                })
+        })
+    })
+
+    describe('PUT /organizations', function () {
+        it("should change the name of the organization")
+    })
+
     let available_services: db.ServiceInstance[];
 
     describe('GET /services', function () {

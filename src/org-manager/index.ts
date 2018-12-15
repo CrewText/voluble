@@ -1,6 +1,7 @@
 const winston = require('winston')
-import * as Promise from "bluebird"
-import * as db from '../models'
+import * as Promise from "bluebird";
+import * as db from '../models';
+const errs = require('common-errors')
 
 export namespace OrgManager {
 
@@ -10,6 +11,9 @@ export namespace OrgManager {
      * @returns the new Organization entry, if it is successfully created.
      */
     export function createNewOrganization(name: string): Promise<db.OrganizationInstance> {
+        if (!name) {
+            return Promise.reject(new errs.ArgumentNullError("An Organization name was not provided."))
+        }
         return db.models.Organization.create({
             name: name
         })
