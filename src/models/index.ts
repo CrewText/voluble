@@ -21,6 +21,7 @@ export type ServicechainInstance = Servicechain.ServicechainInstance
 export type ServicesInSCInstance = ServiceInSC.ServicesInSCInstance
 export type BlastInstance = Blast.BlastInstance
 export type OrganizationInstance = Organization.OrgInstance
+export type UserInstance = User.UserInstance
 
 export interface DbConnection {
     Contact: Sequelize.Model<Contact.ContactInstance, Contact.ContactAttributes>,
