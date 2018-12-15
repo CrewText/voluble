@@ -5,7 +5,7 @@ import * as Promise from "bluebird"
 import * as crypto from 'crypto'
 const errs = require('common-errors')
 import * as utils from '../utilities'
-import { Auth0Manager } from './auth0-manager'
+//import { Auth0Manager } from './auth0-manager'
 
 /**
  * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and
@@ -19,6 +19,16 @@ export namespace UserManager {
         user_metadata: Object
     }
 
+    export function getUserFromAuth0Id(auth0_id: string): Promise<db.UserInstance> {
+        return db.models.User.findOne({
+            where:
+            {
+                id: auth0_id
+            }
+        })
+    }
+
+    /*
     export type Auth0Profile = Auth0Manager.Auth0Profile
 
     // The distinction here is between user details (which might represent something approaching a full profile),
@@ -52,6 +62,7 @@ export namespace UserManager {
      * Create a new user in Voluble. Firstly adds the new user to Auth0, and then uses the Auth0 ID to create a corresponding entry in the 
      * Voluble database.
      */
+    /*
     export function createNewUser(email: string, password: string, first_name: string, surname: string, phone_number: string) {
         Auth0Manager.createNewAuth0User(email, password)
             .then(function (created_user) {
@@ -65,5 +76,6 @@ export namespace UserManager {
                 })
             })
     }
+    */
 
 }
