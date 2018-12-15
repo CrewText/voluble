@@ -1,18 +1,14 @@
-import * as chai from 'chai'
-import * as chaiAsPromised from 'chai-as-promised'
 process.env.NODE_ENV = "test"
 console.log("Node Env: " + process.env.NODE_ENV)
-import * as faker from 'faker'
-import * as db from '../models'
-chai.use(chaiAsPromised)
-
-import { MessageManager } from '../message-manager'
-import { ServicechainManager } from '../servicechain-manager';
+import * as chai from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+import * as faker from 'faker';
 import { ContactManager } from '../contact-manager';
+import { MessageManager } from '../message-manager';
+import * as db from '../models';
 import { OrgManager } from '../org-manager';
-import { PluginManager } from '../plugin-manager';
-
-
+import { ServicechainManager } from '../servicechain-manager';
+chai.use(chaiAsPromised)
 
 describe('Database', function () {
 
@@ -30,6 +26,7 @@ describe('Database', function () {
     let contact_fname = faker.name.firstName()
     let contact_sname = faker.name.lastName()
     let contact_email = faker.internet.email(contact_fname, contact_sname)
+    //console.log(`Email:  ${contact_email}`)
     let contact_phone = faker.phone.phoneNumber("+447#########")
     let sc_id: string
     let sc_name = faker.random.word()
