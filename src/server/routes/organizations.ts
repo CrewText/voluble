@@ -78,4 +78,77 @@ router.post('/', checkUserOrganization, function (req, res, next) {
         })
 })
 
+/**
+ * Get a list of Users in the Organization.
+ */
+router.get('/:org_id/users', checkScopes([scopes.UserView,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
+})
+
+/**
+ * Creates an new user and adds them to an Organization.
+ */
+router.post('/:org_id/users', checkScopes([scopes.UserAdd,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
+})
+
+/**
+ * Adds an existing user to an Organization.
+ */
+router.put('/:org_id/users', checkScopes([scopes.UserAdd,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
+})
+
+/** Removes an Organization */
+router.delete('/:org_id', checkScopes([scopes.OrganizationOwner,
+scopes.OrganizationDelete,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+    let org_id = req.params.org_id
+    OrgManager.getOrganizationById(org_id)
+        .then((org) => {
+            if (!org) {
+                return res.status(404).jsend.success(true)
+            }
+
+            // TODO: Delete SCs, Messages, Contacts, too?
+            org.destroy()
+                .then(() => {
+                    return res.status(200).jsend.success(true)
+                })
+                .catch((err) => {
+                    return res.status(500).jsend.error(err)
+                })
+        })
+})
+
+
+/**
+ * Get info about a User in the Organization
+ */
+router.get('/:org_id/users/:user_id', checkScopes([scopes.UserView,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
+})
+
+/**
+ * Removes an existing user from an Organization.
+ */
+router.delete('/:org_id/users/:user_id', checkScopes([scopes.UserDelete,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
+})
+
 module.exports = router
