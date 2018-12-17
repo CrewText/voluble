@@ -1,7 +1,7 @@
+if (process.env.NODE_ENV != "production") { require('dotenv').config() } // THIS HAS TO STAY AT THE TOP
 process.env.NODE_ENV = "test"
 console.log("Node Env: " + process.env.NODE_ENV)
 
-require('dotenv').config() // THIS HAS TO STAY AT THE TOP
 import * as Promise from 'bluebird';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
@@ -169,7 +169,23 @@ describe('API', function () {
             let created_user_id: string;
 
             describe('POST /orgs/<org-id>/users', function () {
-                it("should create a new user and add it to the Org")
+                it("should create a new user and add it to the Org", function (done) {
+                    let new_user_auth0_id = faker.random.uuid()
+                    supertest(server_app)
+                        .post(`/orgs/${created_org}/users`)
+                        .auth(auth_token, { type: "bearer" })
+                        .send({ auth0_id: new_user_auth0_id })
+                        .expect(201)
+                        .end((err, res) => {
+                            if (err) { return done(err) }
+                            chai.expect(res.body).to.have.property('status', 'success')
+                            chai.expect(res.body.data).to.have.property('id')
+                            console.log(res.body.data)
+                            chai.expect(res.body.data).to.have.property('auth0_id', new_user_auth0_id)
+                            chai.expect(res.body.data).to.have.property('OrganizationId', created_org)
+                            done()
+                        })
+                })
             })
 
             describe('GET /orgs/<org-id>/users', function () {

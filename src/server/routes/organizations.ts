@@ -2,6 +2,7 @@ import * as express from "express";
 import { OrgManager } from "../../org-manager";
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { checkUserOrganization, scopes } from '../security/scopes';
+import winston = require("winston");
 const router = express.Router();
 const errs = require('common-errors')
 router.use(checkJwt, checkJwtErr)
@@ -78,35 +79,6 @@ router.post('/', checkUserOrganization, function (req, res, next) {
         })
 })
 
-/**
- * Get a list of Users in the Organization.
- */
-router.get('/:org_id/users', checkScopes([scopes.UserView,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
-
-})
-
-/**
- * Creates an new user and adds them to an Organization.
- */
-router.post('/:org_id/users', checkScopes([scopes.UserAdd,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
-
-})
-
-/**
- * Adds an existing user to an Organization.
- */
-router.put('/:org_id/users', checkScopes([scopes.UserAdd,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
-
-})
 
 /** Removes an Organization */
 router.delete('/:org_id', checkScopes([scopes.OrganizationOwner,
@@ -128,6 +100,76 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
                     return res.status(500).jsend.error(err)
                 })
         })
+})
+
+/**
+ * @api {get} /orgs/:org_id/users Get a list of Users in the Org
+ * @apiName GetOrgsUsers
+ * @apiGroup OrgsUsers
+ * 
+ * @apiParam {UUID} org_id The ID of the Organization to get the Users from
+ * 
+ * @apiSuccess {User[]} data Array of Users
+ */
+router.get('/:org_id/users', checkScopes([scopes.UserView,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
+})
+
+/**
+ * @api {post} /orgs/:org_id/users Create a new User for the Org
+ * @apiName PostOrgsUsers
+ * @apiGroup OrgsUsers
+ * 
+ * @apiParam {UUID} org_id The ID of the Organization to add the new User to
+ * @apiSuccess (201 Created) {User} data The newly-created User
+ */
+router.post('/:org_id/users', checkScopes([scopes.UserAdd,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+    let org_id = req.params.org_id
+    let new_user_auth0_id = req.body.auth0_id
+
+    if (!org_id) {
+        return res.status(404).jsend.fail(`Organization with ID ${org_id} does not exist`)
+    } else if (!new_user_auth0_id) {
+        return res.status(400).jsend.fail(`Parameter 'auth0_id' not specified`)
+    }
+
+    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) < 0 && req.user.organization != org_id) {
+        return res.status(403).jsend.fail('User is not permitted to access this resource.')
+    }
+
+    OrgManager.getOrganizationById(org_id)
+        .then(function (org) {
+            if (!org) {
+                return Promise.reject(new errs.NotFoundError(`No Organization found with ID ${org_id}`))
+            }
+            return org.createUser({ auth0_id: new_user_auth0_id })
+        })
+        .then(function (user) {
+            res.status(201).jsend.success(user)
+        })
+        .catch(errs.NotFoundError, (err) => {
+            res.status(404).jsend.fail(err)
+        })
+        .catch((err) => {
+            winston.error(err.message)
+            res.status(500).jsend.error(err)
+        })
+})
+
+/**
+ * Adds an existing user to an Organization.
+ */
+router.put('/:org_id/users', checkScopes([scopes.UserAdd,
+scopes.OrganizationEdit,
+scopes.OrganizationOwner,
+scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+
 })
 
 

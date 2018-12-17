@@ -27,7 +27,10 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
             primaryKey: true,
             defaultValue: DataTypes.UUIDV4
         },
-        auth0_id: DataTypes.STRING,
+        auth0_id: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
     })
 
     return User
