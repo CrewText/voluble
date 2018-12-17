@@ -1,9 +1,9 @@
 import * as express from "express";
 import { OrgManager } from "../../org-manager";
+import { UserManager } from "../../user-manager";
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { checkUserOrganization, scopes } from '../security/scopes';
 import winston = require("winston");
-import { UserManager } from "../../user-manager";
 const router = express.Router();
 const errs = require('common-errors')
 router.use(checkJwt, checkJwtErr)
@@ -41,27 +41,6 @@ router.get('/', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), ch
     }
 })
 
-
-router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
-    let org_id = req.params.org_id
-
-    //if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
-    // The req'er is authorised to know about this org
-    OrgManager.getOrganizationById(org_id)
-        .then(function (org) {
-            if (!org) {
-                res.status(400).jsend.fail(`Organization with ID ${org_id} does not exist`)
-            } else {
-                res.status(200).jsend.success(org)
-            }
-        })
-        .catch(function (err) {
-            res.status(500).jsend.error(err)
-        })
-
-})
-
-
 /**
  * Create a new organization. This needs parameters:
  * @param name
@@ -85,6 +64,90 @@ router.post('/', checkUserOrganization, function (req, res, next) {
             res.status(500).jsend.error(err)
         })
 })
+
+
+router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    let org_id = req.params.org_id
+
+    //if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
+    // The req'er is authorised to know about this org
+    OrgManager.getOrganizationById(org_id)
+        .then(function (org) {
+            if (!org) {
+                res.status(400).jsend.fail(`Organization with ID ${org_id} does not exist`)
+            } else {
+                res.status(200).jsend.success(org)
+            }
+        })
+        .catch(function (err) {
+            res.status(500).jsend.error(err)
+        })
+
+})
+
+/**
+ * 
+ * @api {put} /orgs/:org_id Update an Organization's data
+ * @apiName PutOrgsOrg
+ * @apiGroup Orgs
+ * 
+ * @apiParam  {String} org_id The ID of the Organization to update
+ * @apiParam  {Object} Organization An object representing the data to update
+ * @apiParam  {String} Organization.name The new name for the Organizaion
+ * 
+ * @apiSuccess (200) {json} Organization The updated Organization
+ * 
+ * @apiParamExample  {json} Request-Example:
+ * {
+ *     Organization:
+ *         {
+ *             name: "MyCorp Ltd."
+ *         }
+ * }
+ * 
+ * 
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     data:
+ *         {
+ *                 id: "3c39574c-a4d3-464c-918a-d85713685f3b",
+ *                 name: "MyCorp Ltd."
+ *         }
+ * }
+ * 
+ * 
+ */
+
+router.put('/:org_id',
+    checkScopes([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
+    checkJwt,
+    checkJwtErr,
+    checkUserOrganization,
+    checkHasOrgAccess,
+    function (req, res, next) {
+        let org_id = req.params.org_id
+        let new_org_data = req.body.Organization
+
+        if (!new_org_data || !new_org_data.name) {
+            throw new errs.ArgumentNullError(`Parameter Organization.name not supplied`)
+        }
+
+        OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`) }
+                org.name = new_org_data.name
+                return org.save()
+            })
+            .then(function (org) {
+                res.status(200).jsend.success(org)
+            })
+            .catch(errs.ArgumentNullError, function (err) {
+                res.status(400).jsend.fail(err)
+            })
+            .catch(errs.NotFoundError, function (err) {
+                res.status(404).jsend.fail(err)
+            })
+    })
 
 
 /** Removes an Organization */

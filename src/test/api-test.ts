@@ -125,7 +125,25 @@ describe('API', function () {
         })
 
         describe('PUT /orgs', function () {
-            it("should change the name of the organization")
+            it("should change the name of the organization", function (done) {
+                if (!created_org) { this.skip() }
+                let new_org_name = faker.company.companyName()
+                supertest(server_app)
+                    .put(`/orgs/${created_org}`)
+                    .auth(auth_token, { type: "bearer" })
+                    .send({
+                        Organization: { name: new_org_name }
+                    })
+                    .expect(200)
+                    .end((err, res) => {
+                        if (err) { return done(err) }
+                        chai.expect(res.body).to.have.property('status', 'success')
+                        let new_org = res.body.data
+                        chai.expect(new_org).to.have.property('id', created_org)
+                        chai.expect(new_org).to.have.property('name', new_org_name)
+                        done()
+                    })
+            })
         })
 
         describe('DELETE /orgs', function () {
