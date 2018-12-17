@@ -222,13 +222,82 @@ describe('API', function () {
             })
 
             describe('PUT /orgs/<org-id>/users', function () {
-                it('should add an existing user to the an Org')
+                let created_org_id_new: string;
+                this.beforeAll(function (done) {
+                    supertest(server_app)
+                        .post('/orgs')
+                        .auth(auth_token, { type: "bearer" })
+                        .send({ name: faker.company.companyName() })
+                        .expect(201)
+                        .end(function (err, res) {
+                            if (err) { done(err) }
+                            created_org_id_new = res.body.data.id
+                            done()
+                        })
+                })
+                it('should add an existing user to a new Org', function (done) {
+                    if (!created_user_id || !created_org_id_new) { this.skip() }
+                    supertest(server_app)
+                        .put(`/orgs/${created_org_id_new}/users`)
+                        .auth(auth_token, { type: "bearer" })
+                        .send({ user_id: created_user_id })
+                        .expect(200)
+                        .end((err, res) => {
+                            if (err) { done(err) }
+                            chai.expect(res.body).to.have.property('status', 'success')
+                            let user = res.body.data
+                            chai.expect(user).to.have.property('id', created_user_id)
+                            chai.expect(user).to.have.property('OrganizationId', created_org_id_new)
+                            done()
+                        })
+                })
+
+                it('should add the same user to the same Org to ensure idempotence', function (done) {
+                    if (!created_user_id || !created_org_id_new) { this.skip() }
+                    supertest(server_app)
+                        .put(`/orgs/${created_org_id_new}/users`)
+                        .auth(auth_token, { type: "bearer" })
+                        .send({ user_id: created_user_id })
+                        .expect(200)
+                        .end((err, res) => {
+                            if (err) { done(err) }
+                            chai.expect(res.body).to.have.property('status', 'success')
+                            let user = res.body.data
+                            chai.expect(user).to.have.property('id', created_user_id)
+                            chai.expect(user).to.have.property('OrganizationId', created_org_id_new)
+                            done()
+                        })
+                })
             })
 
             describe('DELETE /orgs/<org-id>/users/<user-id>', function () {
-                it('should remove the new user from the Org')
+                it('should remove the new user from the Org', function (done) {
+                    supertest(server_app)
+                        .delete(`/orgs/${created_org}/users/${created_user_id}`)
+                        .auth(auth_token, { type: "bearer" })
+                        .expect(200)
+                        .end((err, res) => {
+                            if (err) { return done(err) }
 
-                it('should remove the same user again to ensure idempotence')
+                            chai.expect(res.body).to.have.property('status', 'success')
+                            chai.expect(res.body).to.have.property('data', true)
+                            done()
+                        })
+                })
+
+                it('should remove the same user again to ensure idempotence', function (done) {
+                    supertest(server_app)
+                        .delete(`/orgs/${created_org}/users/${created_user_id}`)
+                        .auth(auth_token, { type: "bearer" })
+                        .expect(404)
+                        .end((err, res) => {
+                            if (err) { return done(err) }
+
+                            chai.expect(res.body).to.have.property('status', 'success')
+                            chai.expect(res.body).to.have.property('data', true)
+                            done()
+                        })
+                })
             })
 
         })

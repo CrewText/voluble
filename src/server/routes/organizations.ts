@@ -232,6 +232,12 @@ scopes.OrganizationOwner, scopes.VolubleAdmin]),
             })
             .then(function (user) {
                 return user.setOrganization(org_id)
+                    .then(function () {
+                        return UserManager.getUserById(user_id)
+                    })
+            })
+            .then(function (user) {
+                res.status(200).jsend.success(user)
             })
             .catch(errs.AlreadyInUseError, function (err) {
                 // Get the user and send it back as success, to ensure idempotence
@@ -259,6 +265,7 @@ router.get('/:org_id/users/:user_id',
     function (req, res, next) {
         let org_id = req.params.org_id
         let user_id = req.params.user_id
+
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
                 if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} not found`) }
@@ -293,7 +300,25 @@ router.delete('/:org_id/users/:user_id', checkScopes([scopes.UserDelete,
 scopes.OrganizationEdit,
 scopes.OrganizationOwner,
 scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    let org_id = req.params.org_id
+    let user_id = req.params.user_id
 
+    UserManager.getUserById(user_id)
+        .then(function (user) {
+            if (!user) { throw new errs.NotFoundError(`The user ${user_id} does not exist`) }
+
+            return user.destroy()
+        })
+        .then(function () {
+            res.status(200).jsend.success(true)
+        })
+        .catch(errs.NotFoundError, function (err) {
+            // Return success to ensure idempotence
+            res.status(404).jsend.success(true)
+        })
+        .catch(function (err) {
+            res.status(500).jsend.error(err)
+        })
 })
 
 module.exports = router
