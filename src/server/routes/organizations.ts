@@ -13,6 +13,8 @@ function checkHasOrgAccess(req, res, next) {
     } else { next() }
 }
 
+let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extends: errs.NotFoundError })
+
 /**
  * Get a list of all of the organizations that the person is authorized to see.
  */
@@ -192,12 +194,39 @@ scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, 
 /**
  * Get info about a User in the Organization
  */
-router.get('/:org_id/users/:user_id', checkScopes([scopes.UserView,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+router.get('/:org_id/users/:user_id',
+    checkScopes([scopes.UserView, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+    checkUserOrganization,
+    checkHasOrgAccess,
+    function (req, res, next) {
+        let org_id = req.params.org_id
+        let user_id = req.params.user_id
+        OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} not found`) }
 
-})
+                return org.hasUser(user_id)
+                    .then(function (has_user) {
+                        if (!has_user) {
+                            throw new UserNotInOrgError(`User ${user_id} does not exist in Organization ${org_id}`)
+                        }
+                        return org.getUsers({
+                            where: {
+                                id: user_id
+                            }
+                        })
+                    })
+            })
+            .then(function (users) {
+                res.status(200).jsend.success(users[0])
+            })
+            .catch(UserNotInOrgError, errs.NotFoundError, function (err) {
+                res.status(404).jsend.fail(err)
+            })
+            .catch(function (err) {
+                res.status(500).jsend.error(err)
+            })
+    })
 
 /**
  * Removes an existing user from an Organization.
