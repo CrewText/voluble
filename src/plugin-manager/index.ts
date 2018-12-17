@@ -197,7 +197,7 @@ export namespace PluginManager {
 
     /**
      * Gets the list of services from the DB with their status.
-     * @returns {array <Sequelize.Plugin>} An array of Sequelize rows representing loaded services.
+     * @returns {Promise<db.ServiceInstance[]>} An array of Sequelize rows representing loaded services.
      */
 
     export function getAllServices(): Promise<db.ServiceInstance[]> {
