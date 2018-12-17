@@ -3,6 +3,7 @@ import { OrgManager } from "../../org-manager";
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { checkUserOrganization, scopes } from '../security/scopes';
 import winston = require("winston");
+import { UserManager } from "../../user-manager";
 const router = express.Router();
 const errs = require('common-errors')
 router.use(checkJwt, checkJwtErr)
@@ -181,14 +182,71 @@ scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, 
 })
 
 /**
- * Adds an existing user to an Organization.
+ * 
+ * @api {put} /orgs/:org_id/users Add user to Organization
+ * @apiName PutOrgsUsers
+ * @apiGroup OrgsUsers
+ * 
+ * 
+ * @apiParam  {string} org_id The ID of the Organization to add a user to
+ * @apiParam  {string} user_id The ID of the User to add to the Organization
+ * 
+ * @apiSuccess (200) {User} data The User, after being added to the Organization
+ * 
+ * @apiParamExample  {json} Request-Example:
+ * {
+ *     user_id : "a0e77f72-2415-462b-9526-af87dbed2ee4"
+ * }
+ * 
+ * 
+ * @apiSuccessExample {json} Success-Response:
+ * {
+ *     id : "a0e77f72-2415-462b-9526-af87dbed2ee4",
+ *     OrganizationId: "c26399b7-d6ad-481f-bb7c-16add635323d",
+ *     auth0_id: "6d66f919-f7e2-4485-a913-0f2c0d52e5bc"
+ * }
+ * 
+ * 
  */
-router.put('/:org_id/users', checkScopes([scopes.UserAdd,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+router.put('/:org_id/users', checkScopes([scopes.UserAdd, scopes.OrganizationEdit,
+scopes.OrganizationOwner, scopes.VolubleAdmin]),
+    checkUserOrganization,
+    checkHasOrgAccess,
+    function (req, res, next) {
+        let org_id = req.params.org_id
+        let user_id = req.body.user_id
 
-})
+        OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} not found`) }
+                return UserManager.getUserById(user_id)
+                    .then(function (user) {
+                        return org.hasUser(user)
+                            .then(function (has_user) {
+                                if (has_user) {
+                                    throw new errs.AlreadyInUseError(`User is already in Organization`)
+                                }
+                                return user
+                            })
+                    })
+            })
+            .then(function (user) {
+                return user.setOrganization(org_id)
+            })
+            .catch(errs.AlreadyInUseError, function (err) {
+                // Get the user and send it back as success, to ensure idempotence
+                UserManager.getUserById(user_id)
+                    .then(function (user) {
+                        res.status(200).jsend.success(user)
+                    })
+            })
+            .catch(errs.NotFoundError, function (err) {
+                res.status(404).jsend.fail(err)
+            })
+            .catch(function (err) {
+                res.status(500).jsend.error(err)
+            })
+    })
 
 
 /**
