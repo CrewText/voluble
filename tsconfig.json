@@ -5,8 +5,14 @@
     "allowJs": true,
     "checkJs": true,
     "outDir": "./dist",
-    "rootDir": "src",
-    "removeComments": true,
-    "strict": false
-  }
+    "removeComments": false,
+    "strict": false,
+    "rootDir": "src"
+  },
+  "exclude": [
+    "node_modules",
+    "docma.js",
+    "docs",
+    "dist"
+  ]
 }
