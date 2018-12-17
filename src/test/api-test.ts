@@ -180,7 +180,6 @@ describe('API', function () {
                             if (err) { return done(err) }
                             chai.expect(res.body).to.have.property('status', 'success')
                             chai.expect(res.body.data).to.have.property('id')
-                            console.log(res.body.data)
                             chai.expect(res.body.data).to.have.property('auth0_id', new_user_auth0_id)
                             chai.expect(res.body.data).to.have.property('OrganizationId', created_org)
                             done()
@@ -189,7 +188,21 @@ describe('API', function () {
             })
 
             describe('GET /orgs/<org-id>/users', function () {
-                it('should retrieve a list of the users in the Org')
+                it('should retrieve a list of the users in the Org', function (done) {
+                    if (!created_org || !created_user_id) { this.skip() }
+                    supertest(server_app)
+                        .get(`/orgs/${created_org}/users`)
+                        .auth(auth_token, { type: "bearer" })
+                        .expect(200)
+                        .end((err, res) => {
+                            if (err) { done(err) }
+                            chai.expect(res.body).to.have.property('status', 'success')
+                            chai.expect(res.body.data).to.be.instanceOf(Array)
+                            chai.expect(res.body.data[0]).to.have.property('id', created_user_id)
+                            done()
+                        })
+                })
+
 
                 it('should retrieve the individual details of the new user')
             })

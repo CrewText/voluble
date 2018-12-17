@@ -7,6 +7,12 @@ const router = express.Router();
 const errs = require('common-errors')
 router.use(checkJwt, checkJwtErr)
 
+function checkHasOrgAccess(req, res, next) {
+    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) < 0 && req.user.organization != req.params.org_id) {
+        res.status(403).jsend.fail("User does not have access to this resource")
+    } else { next() }
+}
+
 /**
  * Get a list of all of the organizations that the person is authorized to see.
  */
@@ -33,25 +39,23 @@ router.get('/', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), ch
 })
 
 
-router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
     let org_id = req.params.org_id
-    // Check the req'er is either an admin, or part of the org
-    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
-        // The req'er is authorised to know about this org
-        OrgManager.getOrganizationById(org_id)
-            .then(function (org) {
-                if (!org) {
-                    res.status(400).jsend.fail(`Organization with ID ${org_id} does not exist`)
-                } else {
-                    res.status(200).jsend.success(org)
-                }
-            })
-            .catch(function (err) {
-                res.status(500).jsend.error(err)
-            })
-    } else {
-        res.status(403).jsend.fail(`User is not allowed access to this resource.`)
-    }
+
+    //if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
+    // The req'er is authorised to know about this org
+    OrgManager.getOrganizationById(org_id)
+        .then(function (org) {
+            if (!org) {
+                res.status(400).jsend.fail(`Organization with ID ${org_id} does not exist`)
+            } else {
+                res.status(200).jsend.success(org)
+            }
+        })
+        .catch(function (err) {
+            res.status(500).jsend.error(err)
+        })
+
 })
 
 
@@ -83,7 +87,7 @@ router.post('/', checkUserOrganization, function (req, res, next) {
 /** Removes an Organization */
 router.delete('/:org_id', checkScopes([scopes.OrganizationOwner,
 scopes.OrganizationDelete,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
     let org_id = req.params.org_id
     OrgManager.getOrganizationById(org_id)
         .then((org) => {
@@ -114,8 +118,24 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 router.get('/:org_id/users', checkScopes([scopes.UserView,
 scopes.OrganizationEdit,
 scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
-
+scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    let org_id = req.params.org_id
+    OrgManager.getOrganizationById(org_id)
+        .then(function (org) {
+            if (!org) {
+                throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`)
+            }
+            return org.getUsers()
+        })
+        .then(function (users) {
+            res.status(200).jsend.success(users)
+        })
+        .catch(errs.NotFoundError, function (err) {
+            res.status(404).jsend.fail(err)
+        })
+        .catch(function (err) {
+            res.status(500).jsend.error(err)
+        })
 })
 
 /**
@@ -129,7 +149,7 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 router.post('/:org_id/users', checkScopes([scopes.UserAdd,
 scopes.OrganizationEdit,
 scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
     let org_id = req.params.org_id
     let new_user_auth0_id = req.body.auth0_id
 
@@ -137,10 +157,6 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
         return res.status(404).jsend.fail(`Organization with ID ${org_id} does not exist`)
     } else if (!new_user_auth0_id) {
         return res.status(400).jsend.fail(`Parameter 'auth0_id' not specified`)
-    }
-
-    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) < 0 && req.user.organization != org_id) {
-        return res.status(403).jsend.fail('User is not permitted to access this resource.')
     }
 
     OrgManager.getOrganizationById(org_id)
@@ -168,7 +184,7 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 router.put('/:org_id/users', checkScopes([scopes.UserAdd,
 scopes.OrganizationEdit,
 scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
 
 })
 
@@ -179,7 +195,7 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 router.get('/:org_id/users/:user_id', checkScopes([scopes.UserView,
 scopes.OrganizationEdit,
 scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
 
 })
 
@@ -189,7 +205,7 @@ scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 router.delete('/:org_id/users/:user_id', checkScopes([scopes.UserDelete,
 scopes.OrganizationEdit,
 scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
 
 })
 
