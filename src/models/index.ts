@@ -97,6 +97,7 @@ models.Sequelize = Sequelize;
  */
 export function initialize_database(): Promise<any> {
     if (process.env.NODE_ENV == "test") {
+        console.log("Dropping DB")
         return sequelize.sync({ force: true })
     }
     return sequelize.sync()
