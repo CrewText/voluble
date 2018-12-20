@@ -8,7 +8,6 @@ if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
 }
 
 import * as Promise from 'bluebird';
-import * as libphonenumber from 'google-libphonenumber';
 import * as redis from 'redis';
 import * as rsmq from 'rsmq';
 import * as rsmqWorker from 'rsmq-worker';
@@ -17,7 +16,7 @@ import { MessageManager } from '../message-manager';
 import * as db from '../models';
 import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
-import { ServicechainManager } from '../servicechain-manager';
+import { getE164PhoneNumber } from '../utilities';
 const errs = require('common-errors')
 
 
@@ -79,10 +78,8 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                     }
                     else if (message_info.phone_number) {
                         // The contact ID has not been supplied, we need to try and determine it from the phone number
-                        let phone_number_format = libphonenumber.PhoneNumberFormat
-                        let phone_number_util = libphonenumber.PhoneNumberUtil.getInstance()
-                        let phone_number_parsed = phone_number_util.parse("+" + message_info.phone_number) // Esendex misses the leading +
-                        let phone_number_e164 = phone_number_util.format(phone_number_parsed, phone_number_format.E164)
+                        let phone_number_e164 = getE164PhoneNumber("+" + message_info.phone_number) // Esendex misses the leading +
+
                         // TODO: What if we can't determine the phone number or it won't parse?
 
                         return ContactManager.getContactFromPhone(phone_number_e164)

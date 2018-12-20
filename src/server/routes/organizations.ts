@@ -18,7 +18,25 @@ function checkHasOrgAccess(req, res, next) {
 let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extends: errs.NotFoundError })
 
 /**
- * Get a list of all of the organizations that the person is authorized to see.
+ * 
+ * @api {get} /orgs Get list of Organizations
+ * @apiName GetOrgs
+ * @apiGroup Orgs
+ * 
+ * @apiSuccess (200) {json} data[] A list of Organizations that this User/Client has access to
+ * 
+ * @apiSuccessExample {json} Success-Response:
+ * {
+ *     data : [
+ *         {
+ *             id: d8ec4c40-c8f1-4807-af9a-3cc03ecdf3ce
+ *             name: Organization_Name
+ *         }
+ *         ...
+ *     ]
+ * }
+ * 
+ * 
  */
 router.get('/', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
     if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1) {

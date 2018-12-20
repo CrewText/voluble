@@ -26,7 +26,6 @@ export namespace OrgManager {
 
     export function getAllOrganizations(): Promise<db.OrganizationInstance[]> {
         return db.models.Organization.findAll()
-        // TODO: Add user validation
     }
 
     export function getOrganizationById(id: string): Promise<db.OrganizationInstance> {
