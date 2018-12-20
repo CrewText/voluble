@@ -30,6 +30,63 @@
     "groupTitle": "Orgs"
   },
   {
+    "type": "post",
+    "url": "/orgs",
+    "title": "CreateOrg",
+    "name": "PostOrgs",
+    "group": "Orgs",
+    "parameter": {
+      "fields": {
+        "Parameter": [
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "name",
+            "description": "<p>The name of the new Organization</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": false,
+            "field": "phone_number",
+            "description": "<p>A phone number that the Organization will use to send SMSes on your behalf in international format</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Request-Example:",
+          "content": "{\n    name : \"My Organization Ltd\"\n    phone_number: \"+447123456789\"\n}",
+          "type": "json"
+        }
+      ]
+    },
+    "success": {
+      "fields": {
+        "201": [
+          {
+            "group": "201",
+            "type": "json",
+            "optional": false,
+            "field": "data",
+            "description": "<p>The Organization that has been created.</p>"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Success-Response:",
+          "content": "{\n    data : {\n        id: \"418505ce-5837-4052-bb46-7337feb922b9\"\n        name : \"My Organization Ltd\"\n        phone_number: \"+447123456789\" \n    }\n}",
+          "type": "type"
+        }
+      ]
+    },
+    "version": "0.0.0",
+    "filename": "src/server/routes/organizations.ts",
+    "groupTitle": "Orgs"
+  },
+  {
     "type": "put",
     "url": "/orgs/:org_id",
     "title": "Update an Organization's data",
@@ -55,16 +112,23 @@
           {
             "group": "Parameter",
             "type": "String",
-            "optional": false,
+            "optional": true,
             "field": "Organization.name",
             "description": "<p>The new name for the Organizaion</p>"
+          },
+          {
+            "group": "Parameter",
+            "type": "String",
+            "optional": true,
+            "field": "Organization.phone_number",
+            "description": "<p>The new phone number for the Organization</p>"
           }
         ]
       },
       "examples": [
         {
           "title": "Request-Example:",
-          "content": "{\n    Organization:\n        {\n            name: \"MyCorp Ltd.\"\n        }\n}",
+          "content": "{\n    Organization:\n        {\n            name: \"MyCorp Ltd.\"\n            phone_number: \"+447123456789\"\n        }\n}",
           "type": "json"
         }
       ]
@@ -84,7 +148,7 @@
       "examples": [
         {
           "title": "Success-Response:",
-          "content": "{\n    data:\n        {\n                id: \"3c39574c-a4d3-464c-918a-d85713685f3b\",\n                name: \"MyCorp Ltd.\"\n        }\n}",
+          "content": "{\n    data:\n        {\n                id: \"3c39574c-a4d3-464c-918a-d85713685f3b\",\n                name: \"MyCorp Ltd.\"\n                phone_number: \"+447123456789\"\n        }\n}",
           "type": "type"
         }
       ]
