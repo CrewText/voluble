@@ -1,7 +1,7 @@
-import * as Promise from "bluebird"
-import { isNumber } from "util";
-import * as isInt from "validator/lib/isInt"
-import * as toInt from "validator/lib/toInt"
+import * as Promise from "bluebird";
+import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
+import * as isInt from "validator/lib/isInt";
+import * as toInt from "validator/lib/toInt";
 const errs = require('common-errors')
 
 /**
@@ -23,6 +23,17 @@ export function verifyNumberIsInteger(id: string | number): Promise<number> {
       return Promise.resolve(toInt(id))
     }
     return Promise.reject(new errs.TypeError(`${id} is not an integer`))
+  }
+
+}
+
+export function getE164PhoneNumber(phone_number: string): string {
+  let phone_utils = PhoneNumberUtil.getInstance()
+  let parsed_number = phone_utils.parseAndKeepRawInput(phone_number)
+  if (!phone_utils.isValidNumber(parsed_number)) {
+    throw new errs.ValidationError("The supplied phone number is invalid.")
+  } else {
+    return phone_utils.format(parsed_number, PhoneNumberFormat.E164)
   }
 
 }

@@ -1,3 +1,4 @@
+import * as Promise from 'bluebird';
 import * as express from "express";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
@@ -42,8 +43,33 @@ router.get('/', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), ch
 })
 
 /**
- * Create a new organization. This needs parameters:
- * @param name
+ * 
+ * @api {post} /orgs CreateOrg
+ * @apiName PostOrgs
+ * @apiGroup Orgs
+ * 
+ * @apiParam  {String} name The name of the new Organization
+ * @apiParam  {String} phone_number A phone number that the Organization will use to send SMSes on your behalf in international format
+ * 
+ * @apiSuccess (201) {json} data The Organization that has been created.
+ * 
+ * @apiParamExample  {json} Request-Example:
+ * {
+ *     name : "My Organization Ltd"
+ *     phone_number: "+447123456789"
+ * }
+ * 
+ * 
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     data : {
+ *         id: "418505ce-5837-4052-bb46-7337feb922b9"
+ *         name : "My Organization Ltd"
+ *         phone_number: "+447123456789" 
+ *     }
+ * }
+ * 
+ * 
  */
 router.post('/', checkUserOrganization, function (req, res, next) {
     if (req.user.organization) {
@@ -52,7 +78,8 @@ router.post('/', checkUserOrganization, function (req, res, next) {
     }
 
     let org_name = req.body.name
-    OrgManager.createNewOrganization(org_name)
+    let org_phone_number = req.body.phone_number
+    OrgManager.createNewOrganization(org_name, org_phone_number)
         .then(function (new_org) {
             res.status(201).jsend.success(new_org)
         })
@@ -93,7 +120,8 @@ router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmi
  * 
  * @apiParam  {String} org_id The ID of the Organization to update
  * @apiParam  {Object} Organization An object representing the data to update
- * @apiParam  {String} Organization.name The new name for the Organizaion
+ * @apiParam  {String} [Organization.name] The new name for the Organizaion
+ * @apiParam  {String} [Organization.phone_number] The new phone number for the Organization
  * 
  * @apiSuccess (200) {json} Organization The updated Organization
  * 
@@ -102,6 +130,7 @@ router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmi
  *     Organization:
  *         {
  *             name: "MyCorp Ltd."
+ *             phone_number: "+447123456789"
  *         }
  * }
  * 
@@ -112,6 +141,7 @@ router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmi
  *         {
  *                 id: "3c39574c-a4d3-464c-918a-d85713685f3b",
  *                 name: "MyCorp Ltd."
+ *                 phone_number: "+447123456789"
  *         }
  * }
  * 
@@ -128,24 +158,32 @@ router.put('/:org_id',
         let org_id = req.params.org_id
         let new_org_data = req.body.Organization
 
-        if (!new_org_data || !new_org_data.name) {
-            throw new errs.ArgumentNullError(`Parameter Organization.name not supplied`)
+        if (!new_org_data) {
+            throw new errs.ArgumentNullError(`Parameter Organization not supplied`)
         }
 
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
                 if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`) }
-                org.name = new_org_data.name
-                return org.save()
+                return Promise.map(Object.keys(new_org_data), function (key, index, length) {
+                    return org[key] = new_org_data[key]
+                })
+                    .then(function () {
+                        org.name = new_org_data.name
+                        return org.save()
+                    })
             })
             .then(function (org) {
                 res.status(200).jsend.success(org)
             })
-            .catch(errs.ArgumentNullError, function (err) {
+            .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
                 res.status(400).jsend.fail(err)
             })
             .catch(errs.NotFoundError, function (err) {
                 res.status(404).jsend.fail(err)
+            })
+            .catch(function (err) {
+                res.status(500).jsend.error(err)
             })
     })
 
