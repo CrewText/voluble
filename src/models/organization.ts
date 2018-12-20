@@ -2,6 +2,7 @@ import * as Sequelize from "sequelize"
 import { UserInstance, UserAttributes } from "./user";
 import { ContactAttributes, ContactInstance } from "./contact"
 import { ServicechainInstance, ServicechainAttributes } from "./servicechain";
+import { getE164PhoneNumber } from '../utilities'
 
 export interface OrgAttributes {
     id?: string,
@@ -9,6 +10,7 @@ export interface OrgAttributes {
     updatedAt?: Date,
 
     name: string,
+    phone_number: string
 }
 
 export interface OrgInstance extends Sequelize.Instance<OrgAttributes>, OrgAttributes {
@@ -54,7 +56,12 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
             primaryKey: true,
             defaultValue: DataTypes.UUIDV4
         },
-        name: DataTypes.STRING
+        name: DataTypes.STRING,
+        phone_number: {
+            type: DataTypes.STRING, allowNull: false, validate: {
+                isPhoneNumber(value) { return getE164PhoneNumber(value) }
+            }
+        }
     })
 
     return Organization
