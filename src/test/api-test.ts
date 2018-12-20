@@ -70,7 +70,7 @@ describe('API', function () {
                 supertest(server_app)
                     .post("/orgs")
                     .auth(auth_token, { type: "bearer" })
-                    .send({ name: faker.company.companyName() })
+                    .send({ name: faker.company.companyName(), phone_number: faker.phone.phoneNumber("+447123456789") })
                     .expect(201)
                     .end((err, res) => {
                         if (err) { return done(err) }
@@ -173,14 +173,14 @@ describe('API', function () {
                 supertest(server_app)
                     .post("/orgs")
                     .auth(auth_token, { type: "bearer" })
-                    .send({ name: faker.company.companyName() })
+                    .send({ name: faker.company.companyName(), phone_number: faker.phone.phoneNumber("+447426######") })
                     .expect(201)
                     .end((err, res) => {
                         if (err) { return done(err) }
                         chai.expect(res.body).to.have.property('status', "success")
                         chai.expect(res.body.data).to.have.property('id')
                         created_org = res.body.data.id
-                        done()
+                        return done()
                     })
             })
 
@@ -245,10 +245,10 @@ describe('API', function () {
                     supertest(server_app)
                         .post('/orgs')
                         .auth(auth_token, { type: "bearer" })
-                        .send({ name: faker.company.companyName() })
+                        .send({ name: faker.company.companyName(), phone_number: faker.phone.phoneNumber("+447426######") })
                         .expect(201)
                         .end(function (err, res) {
-                            if (err) { done(err) }
+                            if (err) { return done(err) }
                             created_org_id_new = res.body.data.id
                             done()
                         })
@@ -404,7 +404,7 @@ describe('API', function () {
             it("should create a new contact", function (done) {
                 let contact_fname = faker.name.firstName()
                 let contact_sname = faker.name.lastName()
-                let contact_phone = faker.phone.phoneNumber("+447#########")
+                let contact_phone = faker.phone.phoneNumber("+447426######")
                 let contact_email = faker.internet.email(contact_fname, contact_sname)
 
                 supertest(server_app)
@@ -418,7 +418,7 @@ describe('API', function () {
                     })
                     .expect(201)
                     .end(function (err, res) {
-                        if (err) { return done(err) }
+                        if (err) { console.log(err); console.log(res); return done(err) }
                         chai.expect(res.body).to.have.property('status', "success")
                         chai.expect(res.body.data).to.have.property('id')
                         created_contact_id = res.body.data.id

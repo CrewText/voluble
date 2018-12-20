@@ -27,11 +27,12 @@ describe('Database', function () {
     let contact_sname = faker.name.lastName()
     let contact_email = faker.internet.email(contact_fname, contact_sname)
     //console.log(`Email:  ${contact_email}`)
-    let contact_phone = faker.phone.phoneNumber("+447#########")
+    let contact_phone = faker.phone.phoneNumber("+447426######")
     let sc_id: string
     let sc_name = faker.random.word()
     let org_id: string
     let org_name = faker.company.companyName()
+    let org_phone = faker.phone.phoneNumber("+447426######")
 
     it('should create a new servicechain and save without error', function () {
         let new_sc = ServicechainManager.createNewServicechain(sc_name).then(function (sc) {
@@ -88,7 +89,7 @@ describe('Database', function () {
     it('should create a new blast')
 
     it('should create a new organization', function () {
-        let new_org = OrgManager.createNewOrganization(org_name)
+        let new_org = OrgManager.createNewOrganization(org_name, org_phone)
             .then(function (org) {
                 org_id = org.id
                 return org
