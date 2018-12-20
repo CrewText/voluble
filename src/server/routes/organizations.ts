@@ -83,8 +83,8 @@ router.post('/', checkUserOrganization, function (req, res, next) {
         .then(function (new_org) {
             res.status(201).jsend.success(new_org)
         })
-        .catch(errs.ArgumentNullError, function (err) {
-            // An Org name hasn't been provided
+        .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
+            // An Org parameter hasn't been provided or is wrong
             res.status(400).jsend.fail(err)
         })
         .catch(function (err) {

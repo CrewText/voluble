@@ -27,6 +27,13 @@ export function verifyNumberIsInteger(id: string | number): Promise<number> {
 
 }
 
+
+/**
+ * 
+ * @param {string} phone_number The phone number to conform to the E164 standard
+ * @returns {string} The conformed phone numner
+ * @throws {ValidationError} An error when the provided number cannot be conformed.
+ */
 export function getE164PhoneNumber(phone_number: string): string {
   let phone_utils = PhoneNumberUtil.getInstance()
   let parsed_number = phone_utils.parseAndKeepRawInput(phone_number)
