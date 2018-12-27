@@ -6,6 +6,7 @@ import { ContactManager } from '../../contact-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { scopes } from '../security/scopes';
+
 const router = express.Router();
 const errs = require('common-errors')
 const winston = require('winston')

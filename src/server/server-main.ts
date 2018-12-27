@@ -1,7 +1,11 @@
+import * as Promise from 'bluebird';
+import * as cors from 'cors';
 import * as express from "express";
-import * as fs from 'fs'
-import * as jsend from 'jsend'
-import * as Promise from 'bluebird'
+import * as jsend from 'jsend';
+import * as db from '../models';
+import { PluginManager } from '../plugin-manager';
+import { QueueManager } from '../queue-manager';
+
 const path = require('path');
 const bodyParser = require('body-parser');
 var xmlParser = require('express-xml-bodyparser');
@@ -18,16 +22,11 @@ if (process.env.NODE_ENV == "production") {
 const http = require('https');
 
 winston.info("Loading plugin manager")
-import { PluginManager } from '../plugin-manager'
 
 winston.info("Loading queue manager")
-import { QueueManager } from '../queue-manager'
 QueueManager.init_queues()
 
 winston.info("Connecting to database")
-import * as db from '../models'
-
-
 
 winston.info("Loading routes")
 const routes_index = require('./routes')
@@ -79,6 +78,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(xmlParser({ explicitArray: false }))
 app.use(express.static(path.join(__dirname, 'public')));
 
+//let corsWhitelist = [/localhost/, /lvh\.me/, /127\.0\.0\.1/, /voluble-poc\.herokuapp\.com$/]
+console.log("Using cors")
+app.use(cors())
+
+app.options('*', cors()) // include before other routes
+
 app.use('/', routes_index);
 //app.use('/users', routes_users);
 app.use('/orgs', routes_orgs)
@@ -106,10 +111,6 @@ if (process.env.NODE_ENV != "production") {
   app.use(forceSSL)
 }
 
-
-
-
-
 function onServerListening() {
   winston.info("Server listening on " + port)
 }
@@ -122,7 +123,7 @@ export function initServer() {
     // });
 
     // error handler
-    return app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
+    app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
       // set locals, only providing error in development
       res.locals.message = err.message;
       res.locals.error = process.env.NODE_ENV = "development" ? err : {};
@@ -130,6 +131,8 @@ export function initServer() {
       // render the error page
       res.status(err.status || 500);
     });
+
+    return
   })
     .then(function () {
       return db.initialize_database()
