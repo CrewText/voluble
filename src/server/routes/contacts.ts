@@ -5,7 +5,7 @@ import * as validator from 'validator';
 import { ContactManager } from '../../contact-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { scopes } from '../security/scopes';
+import { scopes, checkUserOrganization, checkHasOrgAccess } from '../security/scopes';
 
 const router = express.Router();
 const errs = require('common-errors')
@@ -15,23 +15,27 @@ const winston = require('winston')
  * Handles the route `GET /contacts`.
  * Lists the first 100 of the contacts available to the user, with a given offset
  */
-router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactView, scopes.VolubleAdmin]), function (req, res, next) {
+router.get('/', checkJwt,
+  checkJwtErr,
+  checkScopes([scopes.ContactView, scopes.VolubleAdmin]),
+  checkUserOrganization,
+  function (req, res, next) {
 
-  // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-  let offset = req.query.offset ? req.query.offset : 0
-  return utils.verifyNumberIsInteger(offset)
-    .then(function (offset: number) {
-      return ContactManager.getHundredContacts(offset)
-    })
-    .then(function (rows: any) {
-      res.status(200).jsend.success(rows)
-      //res.status(200).json(rows)
-    })
-    .catch(function (err: any) {
-      res.status(500).jsend.error(err.message)
-      //res.status(500).json(err.message)
-    })
-})
+    // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
+    let offset = req.query.offset ? req.query.offset : 0
+    return utils.verifyNumberIsInteger(offset)
+      .then(function (offset: number) {
+        return ContactManager.getHundredContacts(offset, req.user.organization)
+      })
+      .then(function (rows: any) {
+        res.status(200).jsend.success(rows)
+        //res.status(200).json(rows)
+      })
+      .catch(function (err: any) {
+        res.status(500).jsend.error(err.message)
+        //res.status(500).json(err.message)
+      })
+  })
 
 /**
  * Handles the route `GET /contacts/{id}`.

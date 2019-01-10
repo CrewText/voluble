@@ -3,17 +3,12 @@ import * as express from "express";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkUserOrganization, scopes } from '../security/scopes';
+import { checkUserOrganization, scopes, checkHasOrgAccess } from '../security/scopes';
 import winston = require("winston");
 const router = express.Router();
 const errs = require('common-errors')
 router.use(checkJwt, checkJwtErr)
 
-function checkHasOrgAccess(req, res, next) {
-    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) < 0 && req.user.organization != req.params.org_id) {
-        res.status(403).jsend.fail("User does not have access to this resource")
-    } else { next() }
-}
 
 let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extends: errs.NotFoundError })
 

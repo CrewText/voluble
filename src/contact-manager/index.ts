@@ -68,10 +68,32 @@ export namespace ContactManager {
      * @param {Number} offset The amount of values to skip over, before returning the next hundred.
      * @returns {promise} Promise resolving to the most recent hundred  Sequelize rows representing messages.
      */
-    export function getHundredContacts(offset: number): Promise<ContactInstance[]> {
+    export function getHundredContacts(offset: number, organization?: string): Promise<ContactInstance[]> {
+
+        if (organization) {
+            return db.models.Contact.findAll({
+                offset: offset,
+                limit: 100,
+                order: [
+                    ['surname', 'ASC'],
+                    ['first_name', 'ASC']
+                ],
+                where: {
+                    OrganizationId: organization
+                }
+            })
+        } else {
+
+        }
         return db.models.Contact.findAll({
-            offset: offset, limit: 100
+            offset: offset,
+            limit: 100,
+            order: [
+                ['surname', 'ASC'],
+                ['first_name', 'ASC']
+            ],
         })
+
     }
 
     /**
