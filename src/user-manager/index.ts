@@ -23,7 +23,7 @@ export namespace UserManager {
         return db.models.User.findOne({
             where:
             {
-                id: auth0_id
+                auth0_id: auth0_id
             }
         })
     }
