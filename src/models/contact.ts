@@ -1,6 +1,6 @@
 import * as Sequelize from "sequelize"
-import { ServicechainInstance } from './servicechain'
-import { OrgInstance } from './organization'
+import { ServicechainInstance, ServicechainAttributes } from './servicechain'
+import { OrgInstance, OrgAttributes } from './organization'
 import { MessageInstance, MessageAttributes } from "./message";
 
 export interface ContactAttributes {
@@ -26,11 +26,11 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes>, 
     //phone_number: string,
     getServicechain: Sequelize.BelongsToGetAssociationMixin<ServicechainInstance>,
     setServicechain: Sequelize.BelongsToSetAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
-    createServicechain: Sequelize.BelongsToCreateAssociationMixin<ServicechainInstance>,
+    createServicechain: Sequelize.BelongsToCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,
 
     getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
     setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,
-    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgInstance>
+    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>
 
     getMessages: Sequelize.HasManyGetAssociationsMixin<MessageInstance>
     setMessages: Sequelize.HasManySetAssociationsMixin<MessageInstance, MessageInstance['id']>,

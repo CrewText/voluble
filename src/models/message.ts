@@ -1,5 +1,5 @@
 import * as Sequelize from "sequelize"
-import { ContactInstance } from "./contact";
+import { ContactInstance, ContactAttributes } from "./contact";
 
 export interface MessageAttributes {
     body: string
@@ -26,7 +26,7 @@ export interface MessageInstance extends Sequelize.Instance<MessageAttributes> {
 
     getContact: Sequelize.BelongsToGetAssociationMixin<ContactInstance>,
     setContact: Sequelize.BelongsToSetAssociationMixin<ContactInstance, ContactInstance['id']>,
-    createContact: Sequelize.BelongsToCreateAssociationMixin<ContactInstance>,
+    createContact: Sequelize.BelongsToCreateAssociationMixin<ContactAttributes, ContactInstance>,
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {

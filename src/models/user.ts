@@ -1,6 +1,6 @@
 import * as Sequelize from "sequelize"
-import { OrgInstance } from "./organization";
-import { ContactInstance } from "./contact";
+import { OrgInstance, OrgAttributes } from "./organization";
+import { ContactInstance, ContactAttributes } from "./contact";
 
 export interface UserAttributes {
     id?: string,
@@ -13,11 +13,11 @@ export interface UserAttributes {
 export interface UserInstance extends Sequelize.Instance<UserAttributes>, UserAttributes {
     getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
     setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,
-    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgInstance>,
+    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>,
 
     getContact: Sequelize.BelongsToGetAssociationMixin<ContactInstance>,
     setContact: Sequelize.BelongsToSetAssociationMixin<ContactInstance, ContactInstance['id']>,
-    createContact: Sequelize.BelongsToCreateAssociationMixin<ContactInstance>,
+    createContact: Sequelize.BelongsToCreateAssociationMixin<ContactAttributes, ContactInstance>,
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
