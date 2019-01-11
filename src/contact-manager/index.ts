@@ -1,6 +1,7 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 import { ContactInstance } from "../models/contact";
+import { MessageManager } from '../message-manager'
 import * as db from '../models'
 const errs = require('common-errors')
 

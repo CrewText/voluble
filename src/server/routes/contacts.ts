@@ -6,6 +6,7 @@ import { ContactManager } from '../../contact-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { scopes, checkUserOrganization, checkHasOrgAccess } from '../security/scopes';
+import { MessageManager } from '../../message-manager';
 
 const router = express.Router();
 const errs = require('common-errors')
@@ -133,7 +134,7 @@ router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdi
       res.status(200).jsend.success(contact)
     })
     .catch(errs.NotFoundError, function (err) {
-      res.status(404).jsend.fail({ "id": "No user exists with this ID." })
+      res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
     })
     .catch(function (error: any) {
       winston.error(error)
@@ -171,8 +172,26 @@ router.delete('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.Contact
     })
 })
 
-router.get('/:contact_id/messages', checkJwt, checkJwtErr, checkScopes([scopes.MessageRead, scopes.VolubleAdmin]), function (req, res, next) {
-  //TODO: #11 - Make this work!
-})
+router.get('/:contact_id/messages', checkJwt,
+  checkJwtErr,
+  checkScopes([scopes.MessageRead, scopes.VolubleAdmin]),
+  checkUserOrganization,
+  function (req, res, next) {
+    let contact_id = req.params.contact_id
+    if (!validator.isUUID(contact_id)) {
+      throw new errs.ValidationError("Supplied parameter contact_id is not a UUID: " + contact_id)
+    }
+
+    MessageManager.getMessagesForContact(contact_id)
+      .then(function (messages) {
+        res.status(200).jsend.success({ messages })
+      })
+      .catch(errs.NotFoundError, function (err) {
+        res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
+      })
+      .catch(function (err) {
+        res.status(500).jsend.error(err)
+      })
+  })
 
 module.exports = router;

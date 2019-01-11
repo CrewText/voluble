@@ -209,4 +209,18 @@ export namespace MessageManager {
     export function getMessageFromId(id: string): Promise<db.MessageInstance | null> {
         return db.models.Message.findById(id)
     }
+
+    export function getMessagesForContact(contact_id: string, offset: number = 0): Promise<db.MessageInstance[] | null> {
+        return ContactManager.checkContactWithIDExists(contact_id)
+            .then(function (verified_contact_id) {
+                return db.models.Message.findAll({
+                    where: {
+                        'contact_id': verified_contact_id
+                    },
+                    order: [['createdAt', 'DESC']],
+                    limit: 100,
+                    offset: offset
+                })
+            })
+    }
 }
