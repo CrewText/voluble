@@ -25,12 +25,6 @@ export namespace QueueManager {
 
     let rsmq = new RedisSMQ({ client: client })
 
-    if (rsmq.redis.server_info.redis_version) {
-        winston.info("QM: Connected to redis server")
-    } else {
-        winston.error("QM: Failed to connect to redis server")
-    }
-
     export function init_queues(): void {
         createQueues()
 

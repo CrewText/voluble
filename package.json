@@ -53,7 +53,6 @@
     "@types/node-telegram-bot-api": "^0.28.4",
     "@types/request-promise": "^4.1.42",
     "@types/rsmq": "^0.3.27",
-    "@types/rsmq-worker": "^0.3.28",
     "@types/sequelize": "^4.27.33",
     "@types/supertest": "^2.0.7",
     "@types/winston": "^2.4.4",
