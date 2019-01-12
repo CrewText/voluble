@@ -5,7 +5,7 @@ import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { scopes } from '../security/scopes';
+import { scopes, checkUserOrganization } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
 const errs = require('common-errors')
@@ -14,27 +14,32 @@ const errs = require('common-errors')
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
  */
-router.get('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageRead, scopes.VolubleAdmin]), function (req, res, next) {
-  // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-  let offset = (req.query.offset == undefined ? 0 : req.query.offset)
+router.get('/', checkJwt,
+  checkJwtErr,
+  checkScopes([scopes.MessageRead, scopes.VolubleAdmin]),
+  checkUserOrganization,
+  function (req, res, next) {
 
-  utils.verifyNumberIsInteger(offset)
-    .then(function (off) {
-      return MessageManager.getHundredMessageIds(off)
-    })
-    .then(function (rows) {
-      res.jsend.success(rows)
-      //res.status(200).json(rows)
-    })
-    .catch(errs.TypeError, function (error) {
-      res.jsend.fail({ 'id': "Supplied ID is not an integer" })
-    })
-    .catch(function (error: any) {
-      res.jsend.error(error.message)
-      //res.status(500).send(error.message)
-    })
+    // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
+    let offset = (req.query.offset == undefined ? 0 : req.query.offset)
 
-})
+    utils.verifyNumberIsInteger(offset)
+      .then(function (off) {
+        return MessageManager.getHundredMessageIds(off, req.user.organization)
+      })
+      .then(function (rows) {
+        res.jsend.success(rows)
+        //res.status(200).json(rows)
+      })
+      .catch(errs.TypeError, function (error) {
+        res.jsend.fail({ 'id': "Supplied ID is not an integer" })
+      })
+      .catch(function (error: any) {
+        res.jsend.error(error.message)
+        //res.status(500).send(error.message)
+      })
+
+  })
 
 /**
  * Handles the route GET /messages/{id}

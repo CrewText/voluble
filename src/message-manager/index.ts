@@ -193,11 +193,22 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export function getHundredMessageIds(offset: number = 0): Promise<Array<db.MessageInstance>> {
+    export function getHundredMessageIds(offset: number = 0, organization?: string): Promise<Array<db.MessageInstance>> {
+        // Get all messages where the Contact is in the given Org.
+        // If there isn't an Org, all messages where the contact's Org != null (which should be all of them)
+        console.log("Getting messages for Org " + organization)
         return db.models.Message.findAll({
             offset: offset,
             limit: 100,
-            order: [['id', 'DESC']]
+            order: [['id', 'DESC']],
+            include: [
+                {
+                    model: db.models.Contact,
+                    where: {
+                        'OrganizationId': organization ? organization : { [db.sequelize.Op.ne]: null }
+                    }
+                }
+            ]
         })
     }
 
@@ -215,7 +226,7 @@ export namespace MessageManager {
             .then(function (verified_contact_id) {
                 return db.models.Message.findAll({
                     where: {
-                        'contact_id': verified_contact_id
+                        'contact': verified_contact_id
                     },
                     order: [['createdAt', 'DESC']],
                     limit: 100,
