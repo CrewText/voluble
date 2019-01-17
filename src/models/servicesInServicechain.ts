@@ -4,8 +4,8 @@ export interface ServicesInSCAttributes {
     id?: string,
     createdAt?: Date,
     updatedAt?: Date,
-    servicechain_id: string,
-    service_id: string,
+    servicechainId: string,
+    serviceId: string,
     priority: number
 }
 

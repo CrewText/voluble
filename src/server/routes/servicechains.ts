@@ -36,8 +36,8 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainAdd, sco
             return sc.addService(svc, {
               through: {
                 priority: service_prio_pair.priority,
-                servicechain_id: sc.id,
-                service_id: svc.id
+                servicechainId: sc.id,
+                serviceId: svc.id
               }
             })
           })
@@ -71,7 +71,7 @@ router.get('/:sc_id', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainVie
         .then(function (svcs_in_sc) {
           // We only have the IDs of the services - get their names too!
           return Promise.map(svcs_in_sc, function (svc_in_sc: ServicesInSCInstance) {
-            return PluginManager.getServiceById(svc_in_sc.service_id)
+            return PluginManager.getServiceById(svc_in_sc.serviceId)
           })
             .then(function (full_svcs) {
               // And now we have all of the info for the services, add them into
@@ -83,7 +83,7 @@ router.get('/:sc_id', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainVie
         })
     })
     .then(function (sc_with_svcs) {
-      res.status(200).json(sc_with_svcs)
+      res.status(200).jsend.success(sc_with_svcs)
     })
     .catch(errs.TypeError, function () {
       res.jsend.fail({ 'id': 'Supplied ID is not an integer' })

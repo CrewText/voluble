@@ -25,7 +25,7 @@ export namespace ServicechainManager {
     export function getServicesInServicechain(servicechain_id: string): Promise<db.ServicesInSCInstance[]> {
         return db.models.ServicesInSC.findAll({
             where: {
-                servicechain_id: servicechain_id
+                servicechainId: servicechain_id
             },
             order: [['priority', 'ASC']],
         })
@@ -120,8 +120,8 @@ export namespace ServicechainManager {
 
     export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): Promise<db.ServicesInSCInstance> {
         return db.models.ServicesInSC.create({
-            servicechain_id: sc_id,
-            service_id: service_id,
+            servicechainId: sc_id,
+            serviceId: service_id,
             priority: priority
         })
     }
