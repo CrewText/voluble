@@ -7,7 +7,7 @@ import { checkUserOrganization, scopes, checkHasOrgAccess } from '../security/sc
 import winston = require("winston");
 const router = express.Router();
 const errs = require('common-errors')
-router.use(checkJwt, checkJwtErr)
+//router.use(checkJwt, checkJwtErr)
 
 
 let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extends: errs.NotFoundError })
@@ -33,27 +33,30 @@ let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extend
  * 
  * 
  */
-router.get('/', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
-    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1) {
-        OrgManager.getAllOrganizations()
-            .then(function (organizations) {
-                res.status(200).jsend.success(organizations)
-            })
-            .catch((err) => {
-                res.status(500).jsend.error(err)
-            })
-    } else {
-        OrgManager.getOrganizationById(req.user.organization)
-            .then(function (org) {
-                // Wrap the returned Org in an array, so regardless of the admin status, the return type
-                // will be an Array
-                res.status(200).jsend.success([org])
-            })
-            .catch((err) => {
-                res.status(500).jsend.error(err)
-            })
-    }
-})
+router.get('/',
+    checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+        if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1) {
+            OrgManager.getAllOrganizations()
+                .then(function (organizations) {
+                    res.status(200).jsend.success(organizations)
+                })
+                .catch((err) => {
+                    res.status(500).jsend.error(err)
+                })
+        } else {
+            OrgManager.getOrganizationById(req.user.organization)
+                .then(function (org) {
+                    // Wrap the returned Org in an array, so regardless of the admin status, the return type
+                    // will be an Array
+                    res.status(200).jsend.success([org])
+                })
+                .catch((err) => {
+                    res.status(500).jsend.error(err)
+                })
+        }
+    })
 
 /**
  * 
@@ -84,17 +87,27 @@ router.get('/', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), ch
  * 
  * 
  */
-router.post('/', checkUserOrganization, function (req, res, next) {
-    if (req.user.organization) {
+router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
+    if (req.user && req.user.organization) {
         res.status(400).jsend.fail(`User is already a member of Organization ${req.user.organization}`)
         return
     }
+    console.log(req.user)
 
     let org_name = req.body.name
     let org_phone_number = req.body.phone_number
     OrgManager.createNewOrganization(org_name, org_phone_number)
         .then(function (new_org) {
-            res.status(201).jsend.success(new_org)
+            return new_org.createUser({
+                //OrganizationId: new_org.id,
+                auth0_id: req.user.sub
+            })
+        })
+        .then(function (user) {
+            return user.getOrganization()
+        })
+        .then((org) => {
+            res.status(201).jsend.success(org)
         })
         .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
             // An Org parameter hasn't been provided or is wrong
@@ -106,24 +119,27 @@ router.post('/', checkUserOrganization, function (req, res, next) {
 })
 
 
-router.get('/:org_id', checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
-    let org_id = req.params.org_id
+router.get('/:org_id',
+    checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+        let org_id = req.params.org_id
 
-    //if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
-    // The req'er is authorised to know about this org
-    OrgManager.getOrganizationById(org_id)
-        .then(function (org) {
-            if (!org) {
-                res.status(400).jsend.fail(`Organization with ID ${org_id} does not exist`)
-            } else {
-                res.status(200).jsend.success(org)
-            }
-        })
-        .catch(function (err) {
-            res.status(500).jsend.error(err)
-        })
+        //if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
+        // The req'er is authorised to know about this org
+        OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                if (!org) {
+                    res.status(400).jsend.fail(`Organization with ID ${org_id} does not exist`)
+                } else {
+                    res.status(200).jsend.success(org)
+                }
+            })
+            .catch(function (err) {
+                res.status(500).jsend.error(err)
+            })
 
-})
+    })
 
 /**
  * 
@@ -202,26 +218,28 @@ router.put('/:org_id',
 
 
 /** Removes an Organization */
-router.delete('/:org_id', checkScopes([scopes.OrganizationOwner,
-scopes.OrganizationDelete,
-scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
-    let org_id = req.params.org_id
-    OrgManager.getOrganizationById(org_id)
-        .then((org) => {
-            if (!org) {
-                return res.status(404).jsend.success(true)
-            }
+router.delete('/:org_id', checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.OrganizationOwner,
+    scopes.OrganizationDelete,
+    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+        let org_id = req.params.org_id
+        OrgManager.getOrganizationById(org_id)
+            .then((org) => {
+                if (!org) {
+                    return res.status(404).jsend.success(true)
+                }
 
-            // TODO: Delete SCs, Messages, Contacts, too?
-            org.destroy()
-                .then(() => {
-                    return res.status(200).jsend.success(true)
-                })
-                .catch((err) => {
-                    return res.status(500).jsend.error(err)
-                })
-        })
-})
+                // TODO: Delete SCs, Messages, Contacts, too?
+                org.destroy()
+                    .then(() => {
+                        return res.status(200).jsend.success(true)
+                    })
+                    .catch((err) => {
+                        return res.status(500).jsend.error(err)
+                    })
+            })
+    })
 
 /**
  * @api {get} /orgs/:org_id/users Get a list of Users in the Org
@@ -232,28 +250,30 @@ scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, 
  * 
  * @apiSuccess {User[]} data Array of Users
  */
-router.get('/:org_id/users', checkScopes([scopes.UserView,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
-    let org_id = req.params.org_id
-    OrgManager.getOrganizationById(org_id)
-        .then(function (org) {
-            if (!org) {
-                throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`)
-            }
-            return org.getUsers()
-        })
-        .then(function (users) {
-            res.status(200).jsend.success(users)
-        })
-        .catch(errs.NotFoundError, function (err) {
-            res.status(404).jsend.fail(err)
-        })
-        .catch(function (err) {
-            res.status(500).jsend.error(err)
-        })
-})
+router.get('/:org_id/users', checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.UserView,
+    scopes.OrganizationEdit,
+    scopes.OrganizationOwner,
+    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+        let org_id = req.params.org_id
+        OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                if (!org) {
+                    throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`)
+                }
+                return org.getUsers()
+            })
+            .then(function (users) {
+                res.status(200).jsend.success(users)
+            })
+            .catch(errs.NotFoundError, function (err) {
+                res.status(404).jsend.fail(err)
+            })
+            .catch(function (err) {
+                res.status(500).jsend.error(err)
+            })
+    })
 
 /**
  * @api {post} /orgs/:org_id/users Create a new User for the Org
@@ -263,37 +283,40 @@ scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, 
  * @apiParam {UUID} org_id The ID of the Organization to add the new User to
  * @apiSuccess (201 Created) {User} data The newly-created User
  */
-router.post('/:org_id/users', checkScopes([scopes.UserAdd,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
-    let org_id = req.params.org_id
-    let new_user_auth0_id = req.body.auth0_id
+router.post('/:org_id/users',
+    checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.UserAdd,
+    scopes.OrganizationEdit,
+    scopes.OrganizationOwner,
+    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+        let org_id = req.params.org_id
+        let new_user_auth0_id = req.body.auth0_id
 
-    if (!org_id) {
-        return res.status(404).jsend.fail(`Organization with ID ${org_id} does not exist`)
-    } else if (!new_user_auth0_id) {
-        return res.status(400).jsend.fail(`Parameter 'auth0_id' not specified`)
-    }
+        if (!org_id) {
+            return res.status(404).jsend.fail(`Organization with ID ${org_id} does not exist`)
+        } else if (!new_user_auth0_id) {
+            return res.status(400).jsend.fail(`Parameter 'auth0_id' not specified`)
+        }
 
-    OrgManager.getOrganizationById(org_id)
-        .then(function (org) {
-            if (!org) {
-                return Promise.reject(new errs.NotFoundError(`No Organization found with ID ${org_id}`))
-            }
-            return org.createUser({ auth0_id: new_user_auth0_id })
-        })
-        .then(function (user) {
-            res.status(201).jsend.success(user)
-        })
-        .catch(errs.NotFoundError, (err) => {
-            res.status(404).jsend.fail(err)
-        })
-        .catch((err) => {
-            winston.error(err.message)
-            res.status(500).jsend.error(err)
-        })
-})
+        OrgManager.getOrganizationById(org_id)
+            .then(function (org) {
+                if (!org) {
+                    return Promise.reject(new errs.NotFoundError(`No Organization found with ID ${org_id}`))
+                }
+                return org.createUser({ auth0_id: new_user_auth0_id })
+            })
+            .then(function (user) {
+                res.status(201).jsend.success(user)
+            })
+            .catch(errs.NotFoundError, (err) => {
+                res.status(404).jsend.fail(err)
+            })
+            .catch((err) => {
+                winston.error(err.message)
+                res.status(500).jsend.error(err)
+            })
+    })
 
 /**
  * 
@@ -322,8 +345,10 @@ scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, 
  * 
  * 
  */
-router.put('/:org_id/users', checkScopes([scopes.UserAdd, scopes.OrganizationEdit,
-scopes.OrganizationOwner, scopes.VolubleAdmin]),
+router.put('/:org_id/users', checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.UserAdd, scopes.OrganizationEdit,
+    scopes.OrganizationOwner, scopes.VolubleAdmin]),
     checkUserOrganization,
     checkHasOrgAccess,
     function (req, res, next) {
@@ -373,6 +398,8 @@ scopes.OrganizationOwner, scopes.VolubleAdmin]),
  * Get info about a User in the Organization
  */
 router.get('/:org_id/users/:user_id',
+    checkJwt,
+    checkJwtErr,
     checkScopes([scopes.UserView, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
     checkUserOrganization,
     checkHasOrgAccess,
@@ -410,29 +437,32 @@ router.get('/:org_id/users/:user_id',
 /**
  * Removes an existing user from an Organization.
  */
-router.delete('/:org_id/users/:user_id', checkScopes([scopes.UserDelete,
-scopes.OrganizationEdit,
-scopes.OrganizationOwner,
-scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
-    let org_id = req.params.org_id
-    let user_id = req.params.user_id
+router.delete('/:org_id/users/:user_id',
+    checkJwt,
+    checkJwtErr,
+    checkScopes([scopes.UserDelete,
+    scopes.OrganizationEdit,
+    scopes.OrganizationOwner,
+    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+        let org_id = req.params.org_id
+        let user_id = req.params.user_id
 
-    UserManager.getUserById(user_id)
-        .then(function (user) {
-            if (!user) { throw new errs.NotFoundError(`The user ${user_id} does not exist`) }
+        UserManager.getUserById(user_id)
+            .then(function (user) {
+                if (!user) { throw new errs.NotFoundError(`The user ${user_id} does not exist`) }
 
-            return user.destroy()
-        })
-        .then(function () {
-            res.status(200).jsend.success(true)
-        })
-        .catch(errs.NotFoundError, function (err) {
-            // Return success to ensure idempotence
-            res.status(404).jsend.success(true)
-        })
-        .catch(function (err) {
-            res.status(500).jsend.error(err)
-        })
-})
+                return user.destroy()
+            })
+            .then(function () {
+                res.status(200).jsend.success(true)
+            })
+            .catch(errs.NotFoundError, function (err) {
+                // Return success to ensure idempotence
+                res.status(404).jsend.success(true)
+            })
+            .catch(function (err) {
+                res.status(500).jsend.error(err)
+            })
+    })
 
 module.exports = router
