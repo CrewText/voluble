@@ -92,7 +92,6 @@ A `message` once it has been created has one of the following states:
 |-----------------------|--------
 | MSG_PENDING           | Voluble has queued the message for sending.
 | MSG_SENDING           | Voluble is in the process of sending the message via the relevant plugin.
-| MSG_SENT              | Message has been sent by Voluble, but we cannot confirm that it has been delivered or read.
 | MSG_DELIVERED_SERVICE | In the case of messages that use an intermediate delivery serice (e.g. Facebook Messenger, Telegram, etc.), the message has been confirmed as delivered to the intermediary, but the user has not necessarily recieved it. Does not apply in the case of SMS messages.
 | MSG_DELIVERED_USER    | The message has been delivered to the user through a given service. Cannot confirm that the message has been read. Final state for SMS messages, unless they are replied to.
 | MSG_READ              | The message has been confirmed as read by the user. Does not apply to SMS messages.
@@ -127,7 +126,7 @@ The process of sending a message is as follows:
 | If there is a next plugin in the servicechain, send `send-message` message to the queue using the new plugin | |
 | If this the last plugin in the servicechain, update the message database entry to the `MSG_FAILED` state | |
 | **ON `message-sent` MESSAGE** | |
-| Update the message database entry to the `MSG_SENT` state and set the message entry's `sent_time` to the current time. |
+| Update the message database entry to the `MSG_DELIVERED_USER` state and set the message entry's `sent_time` to the current time. |
 
 
 #### Data Storage

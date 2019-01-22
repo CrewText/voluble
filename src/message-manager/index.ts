@@ -17,7 +17,6 @@ export namespace MessageManager {
     export enum MessageStates {
         MSG_PENDING = "MSG_PENDING",
         MSG_SENDING = "MSG_SENDING",
-        MSG_SENT = "MSG_SENT",
         MSG_DELIVERED_SERVICE = "MSG_DELIVERED_SERVICE",
         MSG_DELIVERED_USER = "MSG_DELIVERED_USER",
         MSG_READ = "MSG_READ",
@@ -137,11 +136,11 @@ export namespace MessageManager {
             }, false)
             .then(function (message_sent_success) {
                 if (message_sent_success) {
-                    QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_SENT")
+                    QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
                     return Promise.resolve(msg)
                 } else {
                     winston.info(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
-                    QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
+                    QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
                     return Promise.reject(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
                 }
             })

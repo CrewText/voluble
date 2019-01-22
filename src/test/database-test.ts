@@ -76,12 +76,12 @@ describe('Database', function () {
         return chai.expect(messages).to.eventually.be.fulfilled
     })
 
-    it('should update the status of the created message to MSG_SENT', function () {
-        let message_updated = MessageManager.updateMessageState(message_id, MessageManager.MessageStates.MSG_SENT)
+    it('should update the status of the created message to MSG_DELIVERED_USER', function () {
+        let message_updated = MessageManager.updateMessageState(message_id, MessageManager.MessageStates.MSG_DELIVERED_USER)
             .then(function (message) {
                 return message.message_state
             })
-        chai.expect(message_updated).to.eventually.be.equal(MessageManager.MessageStates.MSG_SENT)
+        chai.expect(message_updated).to.eventually.be.equal(MessageManager.MessageStates.MSG_DELIVERED_USER)
     })
 
     it('should add the created service to the created servicechain, priority 1')

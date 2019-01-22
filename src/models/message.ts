@@ -44,7 +44,6 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         sent_time: DataTypes.DATE,
         message_state: DataTypes.ENUM('MSG_PENDING',
             'MSG_SENDING',
-            'MSG_SENT',
             'MSG_DELIVERED_SERVICE',
             'MSG_DELIVERED_USER',
             'MSG_READ',
