@@ -69,7 +69,7 @@ router.get('/:message_id', checkJwt, checkJwtErr, checkScopes([scopes.MessageRea
  */
 router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.VolubleAdmin]), function (req, res, next) {
   winston.info("Creating new message")
-
+  console.log(req.body)
   ContactManager.checkContactWithIDExists(req.body.contact_id)
     .then(function (id) {
 
@@ -87,7 +87,7 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.
         .then(function (sc) {
           return MessageManager.createMessage(
             req.body.msg_body,
-            req.body.id,
+            req.body.contact_id,
             req.body.direction || "OUTBOUND",
             sc.id || null,
             MessageManager.MessageStates.MSG_PENDING
