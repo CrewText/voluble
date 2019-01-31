@@ -1,15 +1,6 @@
 import * as Sequelize from "sequelize"
-import { ContactInstance, ContactAttributes } from "./contact";
-
-export interface MessageAttributes {
-    body: string
-    ServicechainId: string,
-    contact: string
-    is_reply_to: string | null | undefined
-    direction: string,
-    sent_time?: Date,
-    message_state: string
-}
+import { ContactInstance } from "./contact";
+import { Message as MessageAttributes, Contact as ContactAttributes } from 'voluble-common'
 
 export interface MessageInstance extends Sequelize.Instance<MessageAttributes> {
     id: string,

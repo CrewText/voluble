@@ -1,15 +1,6 @@
-import * as Sequelize from "sequelize"
-import { ServicechainInstance, ServicechainAttributes } from "./servicechain";
-import { ServicesInSCAttributes } from "./servicesInServicechain";
-
-export interface ServiceAttributes {
-    id?: string,
-    createdAt?: Date,
-    updatedAt?: Date,
-
-    name: string,
-    directory_name: string,
-}
+import * as Sequelize from "sequelize";
+import { Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes } from 'voluble-common';
+import { ServicechainInstance } from "./servicechain";
 
 export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes>, ServiceAttributes {
     createServicechain: Sequelize.BelongsToManyCreateAssociationMixin<ServicechainAttributes, ServicechainInstance, ServicesInSCAttributes>

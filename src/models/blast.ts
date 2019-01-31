@@ -1,20 +1,8 @@
 import * as Sequelize from "sequelize"
-import { MessageInstance, MessageAttributes } from './message'
-
-export interface BlastAttributes {
-    id?: string,
-    createdAt?: Date,
-    updatedAt?: Date,
-    name: string
-}
+import { MessageInstance } from './message'
+import { Message as MessageAttributes, Blast as BlastAttributes } from 'voluble-common'
 
 export interface BlastInstance extends Sequelize.Instance<BlastAttributes>, BlastAttributes {
-    // id: string,
-    // createdAt: Date,
-    // updatedAt: Date,
-
-    // name: string
-
     getMessages: Sequelize.HasManyGetAssociationsMixin<MessageInstance>
     setMessages: Sequelize.HasManySetAssociationsMixin<MessageInstance, MessageInstance['id']>,
     addMessage: Sequelize.HasManyAddAssociationMixin<MessageInstance, MessageInstance['id']>,

@@ -1,18 +1,18 @@
-import * as Sequelize from "sequelize"
-import * as path from "path"
+import * as Promise from 'bluebird';
+import * as fs from "fs";
+import * as path from "path";
+import * as Sequelize from "sequelize";
+import { Blast as BlastAttributes, Contact as ContactAttributes, Message as MessageAttributes, Org as OrgAttributes, Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes, User as UserAttributes } from 'voluble-common';
+import * as Blast from './blast';
+import * as Contact from './contact';
+import * as Message from './message';
+import * as Organization from './organization';
+import * as Service from './service';
+import * as Servicechain from './servicechain';
+import * as ServiceInSC from './servicesInServicechain';
+import * as User from './user';
 const basename = path.basename(__filename);
-import * as fs from "fs"
-import * as Promise from 'bluebird'
 const winston = require('winston')
-
-import * as Contact from './contact'
-import * as Message from './message'
-import * as Service from './service'
-import * as Servicechain from './servicechain'
-import * as ServiceInSC from './servicesInServicechain'
-import * as Blast from './blast'
-import * as User from './user'
-import * as Organization from './organization'
 
 export type ContactInstance = Contact.ContactInstance
 export type MessageInstance = Message.MessageInstance
@@ -24,14 +24,14 @@ export type OrganizationInstance = Organization.OrgInstance
 export type UserInstance = User.UserInstance
 
 export interface DbConnection {
-    Contact: Sequelize.Model<Contact.ContactInstance, Contact.ContactAttributes>,
-    Message: Sequelize.Model<Message.MessageInstance, Message.MessageAttributes>,
-    Service: Sequelize.Model<Service.ServiceInstance, Service.ServiceAttributes>,
-    Servicechain: Sequelize.Model<Servicechain.ServicechainInstance, Servicechain.ServicechainAttributes>,
-    ServicesInSC: Sequelize.Model<ServiceInSC.ServicesInSCInstance, ServiceInSC.ServicesInSCAttributes>,
-    Blast: Sequelize.Model<Blast.BlastInstance, Blast.BlastAttributes>,
-    User: Sequelize.Model<User.UserInstance, User.UserAttributes>
-    Organization: Sequelize.Model<Organization.OrgInstance, Organization.OrgAttributes>
+    Contact: Sequelize.Model<Contact.ContactInstance, ContactAttributes>,
+    Message: Sequelize.Model<Message.MessageInstance, MessageAttributes>,
+    Service: Sequelize.Model<Service.ServiceInstance, ServiceAttributes>,
+    Servicechain: Sequelize.Model<Servicechain.ServicechainInstance, ServicechainAttributes>,
+    ServicesInSC: Sequelize.Model<ServiceInSC.ServicesInSCInstance, ServicesInSCAttributes>,
+    Blast: Sequelize.Model<Blast.BlastInstance, BlastAttributes>,
+    User: Sequelize.Model<User.UserInstance, UserAttributes>
+    Organization: Sequelize.Model<Organization.OrgInstance, OrgAttributes>
     [key: string]: any
 }
 

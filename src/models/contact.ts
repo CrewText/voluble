@@ -1,29 +1,11 @@
-import * as Sequelize from "sequelize"
-import { ServicechainInstance, ServicechainAttributes } from './servicechain'
-import { OrgInstance, OrgAttributes } from './organization'
-import { MessageInstance, MessageAttributes } from "./message";
-
-export interface ContactAttributes {
-    first_name: string,
-    surname: string,
-    email_address: string,
-    phone_number: string,
-    ServicechainId?: string,
-    OrganizationId?: string
-    id?: string,
-    createdAt?: Date,
-    updatedAt?: Date
-}
+import * as Sequelize from "sequelize";
+import { Contact as ContactAttributes, Message as MessageAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes } from 'voluble-common';
+import { MessageInstance } from "./message";
+import { OrgInstance } from './organization';
+import { ServicechainInstance } from './servicechain';
 
 export interface ContactInstance extends Sequelize.Instance<ContactAttributes>, ContactAttributes {
-    //id: string,
-    //createdAt: Date,
-    //updatedAt: Date,
 
-    //first_name: string,
-    //surname: string,
-    //email_address: string,
-    //phone_number: string,
     getServicechain: Sequelize.BelongsToGetAssociationMixin<ServicechainInstance>,
     setServicechain: Sequelize.BelongsToSetAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
     createServicechain: Sequelize.BelongsToCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,

@@ -1,13 +1,5 @@
-import * as Sequelize from "sequelize"
-
-export interface ServicesInSCAttributes {
-    id?: string,
-    createdAt?: Date,
-    updatedAt?: Date,
-    servicechainId: string,
-    serviceId: string,
-    priority: number
-}
+import * as Sequelize from "sequelize";
+import { ServicesInSC as ServicesInSCAttributes } from 'voluble-common';
 
 export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAttributes>, ServicesInSCAttributes {
 }

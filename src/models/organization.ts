@@ -1,17 +1,9 @@
-import * as Sequelize from "sequelize"
-import { UserInstance, UserAttributes } from "./user";
-import { ContactAttributes, ContactInstance } from "./contact"
-import { ServicechainInstance, ServicechainAttributes } from "./servicechain";
-import { getE164PhoneNumber } from '../utilities'
-
-export interface OrgAttributes {
-    id?: string,
-    createdAt?: Date,
-    updatedAt?: Date,
-
-    name: string,
-    phone_number: string
-}
+import * as Sequelize from "sequelize";
+import { Contact as ContactAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes, User as UserAttributes } from 'voluble-common';
+import { getE164PhoneNumber } from '../utilities';
+import { ContactInstance } from "./contact";
+import { ServicechainInstance } from "./servicechain";
+import { UserInstance } from "./user";
 
 export interface OrgInstance extends Sequelize.Instance<OrgAttributes>, OrgAttributes {
     getUsers: Sequelize.HasManyGetAssociationsMixin<UserInstance>

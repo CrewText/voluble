@@ -1,14 +1,7 @@
-import * as Sequelize from "sequelize"
-import { OrgInstance, OrgAttributes } from "./organization";
-import { ContactInstance, ContactAttributes } from "./contact";
-
-export interface UserAttributes {
-    id?: string,
-    createdAt?: Date,
-    updatedAt?: Date,
-    OrganizationId?: string,
-    auth0_id: string,
-}
+import * as Sequelize from "sequelize";
+import { Contact as ContactAttributes, Org as OrgAttributes, User as UserAttributes } from 'voluble-common';
+import { ContactInstance } from "./contact";
+import { OrgInstance } from "./organization";
 
 export interface UserInstance extends Sequelize.Instance<UserAttributes>, UserAttributes {
     getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
