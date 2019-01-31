@@ -1,7 +1,7 @@
 import * as express from 'express';
+import { scopes } from "voluble-common";
 import { PluginManager } from '../../plugin-manager';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { scopes } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
 

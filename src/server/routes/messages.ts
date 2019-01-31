@@ -1,11 +1,12 @@
 import * as Promise from "bluebird";
 import * as express from "express";
+import { scopes } from "voluble-common";
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { scopes, checkUserOrganization } from '../security/scopes';
+import { checkUserOrganization } from '../security/scopes';
 const router = express.Router();
 const winston = require('winston')
 const errs = require('common-errors')

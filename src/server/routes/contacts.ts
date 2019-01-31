@@ -2,11 +2,12 @@ import * as Promise from 'bluebird';
 import * as express from "express";
 import * as libphonenumber from 'google-libphonenumber';
 import * as validator from 'validator';
+import { scopes } from "voluble-common";
 import { ContactManager } from '../../contact-manager';
+import { MessageManager } from '../../message-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { scopes, checkUserOrganization, checkHasOrgAccess } from '../security/scopes';
-import { MessageManager } from '../../message-manager';
+import { checkUserOrganization } from '../security/scopes';
 
 const router = express.Router();
 const errs = require('common-errors')

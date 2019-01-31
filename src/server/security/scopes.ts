@@ -1,28 +1,7 @@
 import { UserManager } from "../../user-manager";
 const errs = require('common-errors')
+import { scopes } from "voluble-common"
 
-export enum scopes {
-    ContactAdd = "contact:add",
-    ContactView = "contact:view",
-    ContactEdit = "contact:edit",
-    ContactDelete = "contact:delete",
-    MessageRead = "message:read",
-    MessageSend = "message:send",
-    BlastSend = "blast:send",
-    UserAdd = "user:add",
-    UserEdit = "user:edit",
-    UserDelete = "user:delete",
-    UserView = "user:view",
-    OrganizationEdit = "organization:edit",
-    OrganizationDelete = "organization:delete",
-    OrganizationOwner = "organization:owner",
-    ServiceView = "service:view",
-    ServicechainView = "servicechain:view",
-    ServicechainAdd = "servicechain:add",
-    ServicechainDelete = "servicechain:delete",
-    ServicechainEdit = "servicechain:edit",
-    VolubleAdmin = "voluble:admin"
-}
 
 export function checkUserOrganization(req, res, next) {
     let sub_id = req.user.sub

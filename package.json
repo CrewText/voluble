@@ -34,11 +34,13 @@
     "rsmq-worker": "^0.5.2",
     "sequelize": "^4.42.0",
     "telegram-mtproto": "^2.2.8",
+    "voluble-common": "git+https://git@github.com/calmcl1/voluble-common.git",
     "winston": "^2.4.4"
   },
   "description": "A plugin-oriented mass text communication system",
   "devDependencies": {
     "@types/auth0": "^2.9.7",
+    "@types/auth0-js": "^8.11.8",
     "@types/bluebird": "^3.5.20",
     "@types/chai": "^4.1.7",
     "@types/chai-as-promised": "^7.1.0",

@@ -1,9 +1,10 @@
 import * as Promise from 'bluebird';
 import * as express from "express";
+import { scopes } from "voluble-common";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkUserOrganization, scopes, checkHasOrgAccess } from '../security/scopes';
+import { checkHasOrgAccess, checkUserOrganization } from '../security/scopes';
 import winston = require("winston");
 const router = express.Router();
 const errs = require('common-errors')
@@ -92,7 +93,6 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
         res.status(400).jsend.fail(`User is already a member of Organization ${req.user.organization}`)
         return
     }
-    console.log(req.user)
 
     let org_name = req.body.name
     let org_phone_number = req.body.phone_number
@@ -104,10 +104,16 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
             })
         })
         .then(function (user) {
-            return user.getOrganization()
+            return UserManager.setUserIdAuth0Claim(user.id)
+                .then(function () {
+                    return UserManager.setUserScopes(user.id, [scopes.OrganizationOwner])
+                })
+                .then(function () {
+                    return user.getOrganization()
+                })
         })
         .then((org) => {
-            res.status(201).jsend.success(org)
+            return res.status(201).jsend.success(org)
         })
         .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
             // An Org parameter hasn't been provided or is wrong

@@ -1,11 +1,10 @@
 import * as Promise from "bluebird";
 import * as express from "express";
+import { scopes } from "voluble-common";
 import { ServicesInSCInstance } from "../../models/servicesInServicechain";
 import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { scopes } from '../security/scopes';
-import service from "../../models/service";
 const router = express.Router();
 const winston = require('winston')
 
