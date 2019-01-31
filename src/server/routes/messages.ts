@@ -7,6 +7,7 @@ import { ServicechainManager } from '../../servicechain-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { checkUserOrganization } from '../security/scopes';
+import { MessageStates } from 'voluble-common'
 const router = express.Router();
 const winston = require('winston')
 const errs = require('common-errors')
@@ -91,7 +92,7 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.
             req.body.contact_id,
             req.body.direction || "OUTBOUND",
             sc.id || null,
-            MessageManager.MessageStates.MSG_PENDING
+            MessageStates.MSG_PENDING
           )
         })
     })

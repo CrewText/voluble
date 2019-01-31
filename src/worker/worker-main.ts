@@ -11,6 +11,7 @@ import * as Promise from 'bluebird';
 import * as redis from 'redis';
 import * as rsmq from 'rsmq';
 import * as rsmqWorker from 'rsmq-worker';
+import { MessageStates } from 'voluble-common';
 import { ContactManager } from '../contact-manager';
 import { MessageManager } from '../message-manager';
 import * as db from '../models';
@@ -114,7 +115,7 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                                         determined_contact_id,
                                         "INBOUND",
                                         sc.id,
-                                        MessageManager.MessageStates.MSG_ARRIVED)
+                                        MessageStates.MSG_ARRIVED)
                                 })
                         })
                 })

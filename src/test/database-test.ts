@@ -3,6 +3,7 @@ console.log("Node Env: " + process.env.NODE_ENV)
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import * as faker from 'faker';
+import { MessageStates } from 'voluble-common';
 import { ContactManager } from '../contact-manager';
 import { MessageManager } from '../message-manager';
 import * as db from '../models';
@@ -63,7 +64,7 @@ describe('Database', function () {
             contact_id,
             "OUTBOUND",
             sc_id,
-            MessageManager.MessageStates.MSG_PENDING
+            MessageStates.MSG_PENDING
         ).then(function (message) {
             message_id = message.id
             return message
@@ -77,11 +78,11 @@ describe('Database', function () {
     })
 
     it('should update the status of the created message to MSG_DELIVERED_USER', function () {
-        let message_updated = MessageManager.updateMessageState(message_id, MessageManager.MessageStates.MSG_DELIVERED_USER)
+        let message_updated = MessageManager.updateMessageState(message_id, MessageStates.MSG_DELIVERED_USER)
             .then(function (message) {
                 return message.message_state
             })
-        chai.expect(message_updated).to.eventually.be.equal(MessageManager.MessageStates.MSG_DELIVERED_USER)
+        chai.expect(message_updated).to.eventually.be.equal(MessageStates.MSG_DELIVERED_USER)
     })
 
     it('should add the created service to the created servicechain, priority 1')

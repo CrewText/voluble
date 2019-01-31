@@ -7,23 +7,13 @@ import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'
 const errs = require('common-errors')
+import { MessageStates } from 'voluble-common'
 
 /**
  * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,
  * sending Messages and finding out information about given Messages.
  */
 export namespace MessageManager {
-
-    export enum MessageStates {
-        MSG_PENDING = "MSG_PENDING",
-        MSG_SENDING = "MSG_SENDING",
-        MSG_DELIVERED_SERVICE = "MSG_DELIVERED_SERVICE",
-        MSG_DELIVERED_USER = "MSG_DELIVERED_USER",
-        MSG_READ = "MSG_READ",
-        MSG_REPLIED = "MSG_REPLIED",
-        MSG_FAILED = "MSG_FAILED",
-        MSG_ARRIVED = "MSG_ARRIVED"
-    }
 
     /**
      * Attempts to create a new Message in the database with the supplied details.
