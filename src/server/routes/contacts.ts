@@ -8,6 +8,7 @@ import { MessageManager } from '../../message-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { checkUserOrganization } from '../security/scopes';
+import user from '../../models/user';
 
 const router = express.Router();
 const errs = require('common-errors')
@@ -148,30 +149,45 @@ router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdi
  * Removes the contact with the specified ID from the database.
  * Returns 200 even if the contact does not exist, to ensure idempotence. This is why there is no validation that the contact exists first.
  */
-router.delete('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
+router.delete('/:contact_id',
+  checkJwt,
+  checkJwtErr,
+  checkUserOrganization,
+  checkScopes([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
 
-  let contact_id = req.params.contact_id
-  if (!validator.isUUID(contact_id)) {
-    throw new errs.ValidationError("Supplied parameter contact_id is not a UUID: " + contact_id)
-  }
-  return ContactManager.getContactWithId(contact_id)
-    .then(function (contact) {
-      if (!contact) {
-        return false // Because idempotence
-      }
-      return contact.destroy()
-        .then(function () { return true })
-    })
-    .then(function (resp) {
-      res.status(resp ? 200 : 410).jsend.success(true) // Send a 410 if the contact no longer exists
-    })
-    .catch(errs.ValidationError, function (error) {
-      res.status(400).jsend.fail({ 'id': "ID supplied is not an UUID." })
-    })
-    .catch(function (error: any) {
-      res.status(500).jsend.error(error.message)
-    })
-})
+    let contact_id = req.params.contact_id
+    if (!validator.isUUID(contact_id)) {
+      throw new errs.ValidationError("Supplied parameter contact_id is not a UUID: " + contact_id)
+    }
+    return ContactManager.getContactWithId(contact_id)
+      .then(function (contact) {
+        if (!contact) {
+          return false // Because idempotence
+        }
+
+        contact.getOrganization()
+          .then((org) => {
+            if (org.id != req.user.organization) {
+              throw new errs.NotPermittedError("User does not have access to this resource")
+            }
+          })
+
+        return contact.destroy()
+          .then(function () { return true })
+      })
+      .then(function (resp) {
+        res.status(resp ? 200 : 410).jsend.success(true) // Send a 410 if the contact no longer exists
+      })
+      .catch(errs.ValidationError, function (error) {
+        res.status(400).jsend.fail({ 'id': "ID supplied is not an UUID." })
+      })
+      .catch(errs.NotPermittedError, (err) => {
+        res.status(401).jsend.fail({ err })
+      })
+      .catch(function (error: any) {
+        res.status(500).jsend.error(error.message)
+      })
+  })
 
 router.get('/:contact_id/messages', checkJwt,
   checkJwtErr,
