@@ -16,6 +16,29 @@ const errs = require('common-errors')
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
  */
+/**
+ * 
+ * @api {get} /messages Get 100 messages after `offset`, sorted by `createdAt`
+ * @apiName GetMessages
+ * @apiGroup Messages
+ 
+ * @apiSuccess (200) {json} data[] An Array of Messages that this User/Client has access to
+ * 
+ * @apiSuccessExample {type} Success-Response:
+ * {
+ *     data: [
+ *             {
+ *                 [
+ *                     id: aaaaaaaa-bbbb-cccc-dddddddddddd
+ *                     message_idk
+ *                 ]
+ *             
+ *             }
+ *           ]
+ * }
+ * 
+ * 
+ */
 router.get('/', checkJwt,
   checkJwtErr,
   checkScopes([scopes.MessageRead, scopes.VolubleAdmin]),
