@@ -9,6 +9,7 @@ import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
 import { checkUserOrganization } from '../security/scopes';
 import user from '../../models/user';
+import { ContactInstance } from '../../models';
 
 const router = express.Router();
 const errs = require('common-errors')
@@ -67,15 +68,16 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
  * Handles the route `POST /contacts/`.
  * Inserts a new Contact into the database with the details specified in the request body.
  */
-router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), function (req, res, next) {
-  let contact_fname = req.body.first_name
-  let contact_sname = req.body.surname
-  let contact_email = req.body.email_address.toLowerCase()
-  let contact_phone = req.body.phone_number
-  let contact_sc = req.body.default_servicechain
-  //TODO: Normalize contact phone number to e164 format
+router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 
-  return Promise.try(function () {
+  Promise.map(req.body, (proposed_contact_details) => {
+    let contact_fname = req.body.first_name
+    let contact_sname = req.body.surname
+    let contact_email = req.body.email_address.toLowerCase()
+    let contact_phone = req.body.phone_number
+    let contact_sc = req.body.default_servicechain
+    let contact_org = req.user.organization
+
     if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
       //console.log(validator.isEmail(contact_email, { require_tld: true }))
       throw new errs.ValidationError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
@@ -86,13 +88,11 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.V
     } catch {
       throw new errs.ValidationError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
     }
+    return ContactManager.createContact(contact_fname, contact_sname, contact_email, contact_phone, contact_sc, contact_org)
   })
 
-    .then(function () {
-      return ContactManager.createContact(contact_fname, contact_sname, contact_email, contact_phone, contact_sc)
-    })
-    .then(function (newContact) {
-      res.status(201).jsend.success(newContact)
+    .then(function (newContacts) {
+      res.status(201).jsend.success(newContacts)
     })
     .catch(errs.ValidationError, function (err) {
       res.status(400).jsend.fail(err)
