@@ -67,15 +67,17 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
 /**
  * Handles the route `POST /contacts/`.
  * Inserts a new Contact into the database with the details specified in the request body.
+ * 
+ * 
  */
 router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
 
   Promise.map(req.body, (proposed_contact_details) => {
-    let contact_fname = req.body.first_name
-    let contact_sname = req.body.surname
-    let contact_email = req.body.email_address.toLowerCase()
-    let contact_phone = req.body.phone_number
-    let contact_sc = req.body.default_servicechain
+    let contact_fname = proposed_contact_details["first_name"]
+    let contact_sname = proposed_contact_details["surname"]
+    let contact_email = proposed_contact_details["email_address"].toLowerCase()
+    let contact_phone = proposed_contact_details["phone_number"]
+    let contact_sc = proposed_contact_details["default_servicechain"]
     let contact_org = req.user.organization
 
     if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
