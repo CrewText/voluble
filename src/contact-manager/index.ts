@@ -24,11 +24,18 @@ export namespace ContactManager {
             surname: surname,
             email_address: email,
             phone_number: phone_num,
-            ServicechainId: default_servicechain
         })
             .then((contact) => {
                 if (org_id) {
                     return contact.setOrganization(org_id)
+                        .then(() => {
+                            return contact
+                        })
+                } else { return contact }
+            })
+            .then((contact) => {
+                if (default_servicechain) {
+                    return contact.setServicechain(default_servicechain)
                         .then(() => {
                             return contact
                         })
