@@ -189,7 +189,7 @@ export namespace MessageManager {
         return db.models.Message.findAll({
             offset: offset,
             limit: 100,
-            order: [['id', 'DESC']],
+            order: [['createdAt', 'DESC']],
             include: [
                 {
                     model: db.models.Contact,
