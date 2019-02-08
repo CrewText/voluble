@@ -63,8 +63,7 @@ describe('Database', function () {
             faker.lorem.sentences(2),
             contact_id,
             "OUTBOUND",
-            sc_id,
-            MessageStates.MSG_PENDING
+            MessageStates.MSG_PENDING, sc_id,
         ).then(function (message) {
             message_id = message.id
             return message

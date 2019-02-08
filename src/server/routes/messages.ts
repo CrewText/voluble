@@ -114,8 +114,8 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.
             req.body.msg_body,
             req.body.contact_id,
             req.body.direction || "OUTBOUND",
+            MessageStates.MSG_PENDING,
             sc.id || null,
-            MessageStates.MSG_PENDING
           )
         })
     })

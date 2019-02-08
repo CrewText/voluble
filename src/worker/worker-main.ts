@@ -114,8 +114,8 @@ worker_msg_recv.on("message", function (message: string, next, message_id) {
                                     return MessageManager.createMessage(message_info.message_body,
                                         determined_contact_id,
                                         "INBOUND",
-                                        sc.id,
-                                        MessageStates.MSG_ARRIVED)
+                                        MessageStates.MSG_ARRIVED,
+                                        sc ? sc.id : null)
                                 })
                         })
                 })

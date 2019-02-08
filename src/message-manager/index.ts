@@ -1,7 +1,6 @@
 const winston = require('winston')
 import * as Promise from "bluebird"
 import * as db from '../models'
-import * as volubleErrors from '../voluble-errors'
 import { ServicechainManager } from '../servicechain-manager'
 import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
@@ -23,8 +22,8 @@ export namespace MessageManager {
      * @param {string} is_reply_to If this is a reply to another message, the id number of the message we're replying to.
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
-    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND",
-        servicechain_id: string, message_state: MessageStates, is_reply_to?: string): Promise<db.MessageInstance> {
+    export function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", message_state: MessageStates,
+        servicechain_id?: string, is_reply_to?: string): Promise<db.MessageInstance> {
         let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
 
         let msg = db.models.Message.build({
