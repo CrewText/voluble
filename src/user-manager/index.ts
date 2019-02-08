@@ -90,7 +90,9 @@ export namespace UserManager {
                             json: true
                         })
                             .then(function (resp) {
-                                return resp.body.app_metadata.scopes ? <string[]>resp.body.app_metadata.scopes : []
+                                let app_metadata = resp.body.app_metadata ? resp.body.app_metadata : {}
+                                let scopes: string[] = app_metadata.scopes ? app_metadata.scopes : []
+                                return scopes
                             })
                             .then(function (scopes_available) {
                                 scopes_available.push(...desired_scopes)
