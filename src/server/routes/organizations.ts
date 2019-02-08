@@ -104,6 +104,8 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
             })
         })
         .then(function (user) {
+            console.log("Created new User")
+            console.log(user)
             return UserManager.setUserIdAuth0Claim(user.id)
                 .then(function () {
                     return UserManager.setUserScopes(user.id, [scopes.OrganizationOwner])
