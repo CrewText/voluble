@@ -104,8 +104,6 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
             })
         })
         .then(function (user) {
-            console.log("Created new User")
-            console.log(user)
             return UserManager.setUserIdAuth0Claim(user.id)
                 .then(function () {
                     return UserManager.setUserScopes(user.id, [scopes.OrganizationOwner])
@@ -122,6 +120,7 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
             res.status(400).jsend.fail(err)
         })
         .catch(function (err) {
+            console.log(err)
             res.status(500).jsend.error(err)
         })
 })
