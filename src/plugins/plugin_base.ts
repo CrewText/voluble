@@ -70,7 +70,8 @@ export abstract class voluble_plugin implements IVolublePluginBase {
 
     abstract send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean
 
-    abstract handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage
+    // This could be null, as a Service might not necessarily be notifying the plugin of an inbound message
+    abstract handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage | null
 
     //abstract send_service_message
 }
