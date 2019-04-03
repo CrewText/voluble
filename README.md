@@ -1,57 +1,68 @@
-[![API Doc](https://doclets.io/calmcl1/voluble/master.svg)](https://doclets.io/calmcl1/voluble/master)
+# Initial page
 
-# Voluble
-A plugin-oriented mass text communication system
+{% api-method method="get" host="https://api.cakes.com" path="/v1/cakes/:id" %}
+{% api-method-summary %}
+Get Cakes
+{% endapi-method-summary %}
 
-## REST API Implementation thoughts
-| VERB      | URL                   | Usage
-|-----------|-----------------------|---------
-|           | **Groups**            |   
-| GET       | /groups               | List of groups
-| GET       | /groups/{id}          | List of contacts in group and default servicechain
-| POST      | /groups               | Create new group
-| PUT       | /groups/{id}          | Update group
-| DELETE    | /groups/{id}          | Delete group
-|           | **Contacts**          |   
-| GET       | /contacts             | List of contacts
-| GET       | /contacts/{id}        | Contact info
-| POST      | /contacts             | Create new contact
-| PUT       | /contacts/{id}        | Update contact
-| DELETE    | /contacts/{id}        | Delete contact
-|           | **Messages**          |   
-| GET       | /messages             | List of messages sent
-| GET       | /messages/{id}        | Message info
-| POST      | /messages             | Send new message
-|           | **Blasts**            |   
-| GET       | /blasts               | List of blasts sent
-| GET       | /blasts/{id}          | Blast info
-| POST      | /blasts               | Send new blast
-|           | **Services**          | 
-| GET       | /services             | List of services
-| GET       | /services/{id}        | Service info
-|           |                       | *Note: `POST`/`PUT` requests for services are not supported; service availability is defined by which plugins the server has installed*
-|           | **Servicechains**     | 
-| GET       | /servicechains        | List of servicechains
-| GET       | /servicechains/{id}   | Servicechain info
-| POST      | /servicechains        | Create new servicechain with a given list of services
-| PUT       | /servicechains/{id}   | Update a servicechain
-| DELETE    | /servicechains/{id}   | Delete a servicechain
+{% api-method-description %}
+This endpoint allows you to get free cakes.
+{% endapi-method-description %}
 
-### Terminology
-* `blast` is collection of `message`s, all sent as one go with the same message body
-* A `service` is a way of sending a message. Examples: `esendex`, `twilio`, `telegram`
-* A `servicechain` is a failure-chain of `services` that Voluble should use to try and send a message (eg. Telegram -> SMS -> Email). If the first sending-attempt fails, then Voluble will use the next `service` in the chain to attempt to send the message, and so on.
+{% api-method-spec %}
+{% api-method-request %}
+{% api-method-path-parameters %}
+{% api-method-parameter name="id" type="string" %}
+ID of the cake to get, for free of course.
+{% endapi-method-parameter %}
+{% endapi-method-path-parameters %}
 
-### Message States
-| State                 | Meaning
-|-----------------------|--------
-| MSG_PENDING           | Voluble has queued the message for sending.
-| MSG_SENDING           | Voluble is in the process of sending the message via the relevant plugin.
-| MSG_DELIVERED_SERVICE | In the case of messages that use an intermediate delivery serice (e.g. Facebook Messenger, Telegram, etc.), the message has been confirmed as delivered to the intermediary, but the user has not necessarily recieved it. Does not apply in the case of SMS messages.
-| MSG_DELIVERED_USER    | The message has been delivered to the user through a given service. Cannot confirm that the message has been read. Final state for SMS messages, unless they are replied to.
-| MSG_READ              | The message has been confirmed as read by the user. Does not apply to SMS messages.
-| MSG_REPLIED           | The user has sent a reply to the message through a given channel.
-| MSG_FAILED            | Voluble could not send the message to the delivery provider.
+{% api-method-headers %}
+{% api-method-parameter name="Authentication" type="string" required=true %}
+Authentication token to track down who is emptying our stocks.
+{% endapi-method-parameter %}
+{% endapi-method-headers %}
 
-## Data Storage Layout
-### SQL
+{% api-method-query-parameters %}
+{% api-method-parameter name="recipe" type="string" %}
+The API will do its best to find a cake matching the provided recipe.
+{% endapi-method-parameter %}
+
+{% api-method-parameter name="gluten" type="boolean" %}
+Whether the cake should be gluten-free or not.
+{% endapi-method-parameter %}
+{% endapi-method-query-parameters %}
+{% endapi-method-request %}
+
+{% api-method-response %}
+{% api-method-response-example httpCode=200 %}
+{% api-method-response-example-description %}
+Cake successfully retrieved.
+{% endapi-method-response-example-description %}
+
+```javascript
+{
+    "name": "Cake's name",
+    "recipe": "Cake's recipe name",
+    "cake": "Binary cake"
+}
+```
+{% endapi-method-response-example %}
+
+{% api-method-response-example httpCode=404 %}
+{% api-method-response-example-description %}
+Could not find a cake matching this query.
+{% endapi-method-response-example-description %}
+
+```javascript
+{
+    "message": "Ain't no cake like that."
+}
+```
+{% endapi-method-response-example %}
+{% endapi-method-response %}
+{% endapi-method-spec %}
+{% endapi-method %}
+
+
+

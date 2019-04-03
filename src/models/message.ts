@@ -1,6 +1,6 @@
 import * as Sequelize from "sequelize"
 import { ContactInstance } from "./contact";
-import { Message as MessageAttributes, Contact as ContactAttributes } from 'voluble-common'
+import { Message as MessageAttributes, Contact as ContactAttributes, MessageStates, MessageDirections } from 'voluble-common'
 
 export interface MessageInstance extends Sequelize.Instance<MessageAttributes> {
     id: string,
@@ -31,17 +31,9 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         body: DataTypes.STRING(1024),
         contact: DataTypes.UUID,
         is_reply_to: DataTypes.UUID,
-        direction: DataTypes.ENUM('INBOUND', 'OUTBOUND'),
+        direction: DataTypes.ENUM(Object.keys(MessageDirections)),
         sent_time: DataTypes.DATE,
-        message_state: DataTypes.ENUM('MSG_PENDING',
-            'MSG_SENDING',
-            'MSG_DELIVERED_SERVICE',
-            'MSG_DELIVERED_USER',
-            'MSG_READ',
-            'MSG_REPLIED',
-            'MSG_FAILED',
-            'MSG_ARRIVED')
+        message_state: DataTypes.ENUM(Object.keys(MessageStates))
     })
-
     return Message
 }
