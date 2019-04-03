@@ -1,6 +1,5 @@
 var errors = require('common-errors')
 import * as db from '../models'
-import * as events from 'events'
 import * as Promise from 'bluebird'
 import { EventEmitter } from 'events';
 export type contactInstance = db.ContactInstance
@@ -43,7 +42,7 @@ interface IVolublePluginBase {
     handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage
 }
 
-export class voluble_plugin implements IVolublePluginBase {
+export abstract class voluble_plugin implements IVolublePluginBase {
     name: string
     description: string
     // data_tables: Object | undefined
@@ -69,11 +68,9 @@ export class voluble_plugin implements IVolublePluginBase {
         }
     }
 
-    send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean {
-        throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined a message-sending method. Contact the plugin author for a fix.');
-    }
+    abstract send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean
 
-    handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage {
-        throw new errors.NotImplementedError('Plugin ' + this.name + ' has not defined the `handle_incoming_message` method. Contact the plugin author for a fix.');
-    }
+    abstract handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage
+
+    //abstract send_service_message
 }
