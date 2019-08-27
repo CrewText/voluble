@@ -5,18 +5,9 @@ import { EventEmitter } from 'events';
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
 
-// interface ObjectData {
-//     message?: string[],
-//     organization?: string[],
-//     user?: string[],
-//     contact?: string[]
-// }
-
 interface Manifest {
     plugin_name: string,
     plugin_description: string,
-    // data_tables?: Object,
-    // object_data?: ObjectData,
     npm_modules?: string[]
 }
 
@@ -45,8 +36,6 @@ interface IVolublePluginBase {
 export abstract class voluble_plugin implements IVolublePluginBase {
     name: string
     description: string
-    // data_tables: Object | undefined
-    // object_data: ObjectData | undefined
     _eventEmitter = new EventEmitter()
     _plugin_dir = __dirname
 
@@ -71,7 +60,7 @@ export abstract class voluble_plugin implements IVolublePluginBase {
     abstract async send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean>
 
     // This could be null, as a Service might not necessarily be notifying the plugin of an inbound message
-    abstract async handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage>
+    abstract async handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage | null>
 
     //abstract send_service_message
 }
