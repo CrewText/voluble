@@ -1,6 +1,6 @@
 var errors = require('common-errors')
 import * as db from '../models'
-import * as Promise from 'bluebird'
+// import * as Promise from 'bluebird'
 import { EventEmitter } from 'events';
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
@@ -68,10 +68,10 @@ export abstract class voluble_plugin implements IVolublePluginBase {
         }
     }
 
-    abstract send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean> | boolean
+    abstract async send_message(message: db.MessageInstance, contact: db.ContactInstance): Promise<boolean>
 
     // This could be null, as a Service might not necessarily be notifying the plugin of an inbound message
-    abstract handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage | null
+    abstract async handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage>
 
     //abstract send_service_message
 }

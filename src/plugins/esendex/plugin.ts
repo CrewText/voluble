@@ -1,6 +1,6 @@
 import * as plugin_base from '../plugin_base'
 import * as rp from 'request-promise'
-import * as Promise from 'bluebird'
+// import * as Promise from 'bluebird'
 import winston = require('winston');
 
 interface IncomingEsendexMessage {
@@ -28,7 +28,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     this.account_ref = process.env.ESENDEX_ACCOUNT_REF
   }
 
-  send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
+  async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
     //this.populate_object_data_tables(message, contact)
 
     let esendex_message = {
@@ -96,7 +96,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       })
   }
 
-  handle_incoming_message(message_data: any): plugin_base.InterpretedIncomingMessage {
+  async handle_incoming_message(message_data: any) {
     /* If all has gone well, we're expecting a message from Esendex of the form:
     <InboundMessage>
         <Id>{guid-of-push-notification}</Id>
@@ -129,7 +129,13 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       message_body: parsed_message.inboundmessage.messagetext
     }
 
-    return interpreted_message
+    let p = new Promise<plugin_base.InterpretedIncomingMessage>((resolve, reject) => {
+      resolve(interpreted_message)
+    })
+
+    return p
+
+
   }
 }
 
