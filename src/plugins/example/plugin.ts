@@ -14,12 +14,17 @@ class MyExamplePlugin extends plugin_base.voluble_plugin {
         return true
     }
 
-    send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
+    async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
         console.log(`EXAMPLE: Sending message ${message.id} to contact ${contact.id}`)
-        return false
+        return new Promise<boolean>((resolve, reject) => {
+            resolve(false)
+        })
     }
-    handle_incoming_message(message: any): plugin_base.InterpretedIncomingMessage {
-        return <plugin_base.InterpretedIncomingMessage>{ contact: "0", message_body: "" }
+
+    handle_incoming_message(message: any) {
+        return new Promise<plugin_base.InterpretedIncomingMessage>((resolve, reject) => {
+            resolve(<plugin_base.InterpretedIncomingMessage>{ contact: "0", message_body: "" })
+        })
     }
 }
 

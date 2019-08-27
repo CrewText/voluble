@@ -9,13 +9,19 @@ class TelegramPlugin extends plugin_base.voluble_plugin {
         this.TELEGRAM_SERVER_ADDR = process.env.TELEGRAM_SERVER_ADDR
     }
 
-    handle_incoming_message(message_data: any): plugin_base.InterpretedIncomingMessage {
+    async handle_incoming_message(message_data: any) {
         throw new Error(`In plugin ${this.name} - the method 'handle_incoming_message' has not been implemented!`)
+        return new Promise<plugin_base.InterpretedIncomingMessage>((resolve, reject) => {
+            resolve(<plugin_base.InterpretedIncomingMessage>{})
+        })
     }
 
-    send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance): boolean {
+    async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
         //rp.post(this.TELEGRAM_SERVER_ADDR)
         throw new Error(`In plugin ${this.name} - the method 'send_message' has not been implemented!`)
+        return new Promise<boolean>((resolve, reject) => {
+            resolve(true)
+        })
     }
 }
 
