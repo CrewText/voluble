@@ -78,8 +78,13 @@ router.get('/:message_id', checkJwt, checkJwtErr, checkScopes([scopes.MessageRea
         res.jsend.success(msg)
       }
     })
-    .catch(errs.TypeError, function (error) {
-      res.jsend.fail({ 'id': "Supplied ID is not an integer" })
+    .catch(function (error) {
+      if (error instanceof errs.TypeError) {
+        res.jsend.fail({ 'id': "Supplied ID is not an integer" })
+      }
+      else {
+        throw error
+      }
     })
     .catch(function (error: any) {
       res.jsend.error(error.message)

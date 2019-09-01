@@ -205,11 +205,12 @@ router.get('/:contact_id/messages', checkJwt,
       .then(function (messages) {
         res.status(200).jsend.success({ messages })
       })
-      .catch(errs.NotFoundError, function (err) {
-        res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
-      })
       .catch(function (err) {
-        res.status(500).jsend.error(err)
+        if (err instanceof errs.NotFoundError) {
+          res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
+        } else {
+          res.status(500).jsend.error(err)
+        }
       })
   })
 

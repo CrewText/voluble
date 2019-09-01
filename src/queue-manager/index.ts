@@ -33,8 +33,12 @@ export namespace QueueManager {
             let update = JSON.parse(message)
             winston.debug("QM: Got message update for message " + update.message_id + ": " + update.status)
             MessageManager.updateMessageState(update.message_id, update.status)
-                .catch(errs.NotFoundError, function (error) {
-                    winston.info("QM: Dropping message update request for message with ID " + update.message_id)
+                .catch(function (error) {
+                    if (error instanceof errs.NotFoundError) {
+                        winston.info("QM: Dropping message update request for message with ID " + update.message_id)
+                    } else {
+                        throw error
+                    }
                 })
                 .then(function () { next() })
         })
