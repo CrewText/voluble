@@ -25,6 +25,7 @@ router.get('/', checkJwt,
   checkUserOrganization,
   function (req, res, next) {
 
+    // TODO: Add a `limit` parameter to specify amount, rather than 100
     // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
     let offset = req.query.offset ? req.query.offset : 0
     return utils.verifyNumberIsInteger(offset)

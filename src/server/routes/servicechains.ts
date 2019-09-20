@@ -41,7 +41,7 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ServicechainAdd, sco
             })
           })
       })
-        .then((l) => {
+        .then(() => {
           return sc
         })
     })

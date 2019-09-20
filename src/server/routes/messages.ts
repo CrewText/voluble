@@ -118,7 +118,7 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.
           return MessageManager.createMessage(
             req.body.msg_body,
             req.body.contact_id,
-            req.body.direction || "OUTBOUND",
+            req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
             MessageStates.MSG_PENDING,
             sc.id || null,
           )
