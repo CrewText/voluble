@@ -37,7 +37,7 @@
                 "description": "Internal server error"
             },
             "400": {
-                "description": "ID supplied is not a valid UUID"
+                "description": "Data supplied is invalid"
             },
             "404": {
                 "description": "No object found with the specified ID"
@@ -356,6 +356,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -395,9 +398,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"
@@ -569,6 +569,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -608,9 +611,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"
@@ -686,9 +686,6 @@
                             }
                         }
                     },
-                    "400": {
-                        "$ref": "#/components/responses/400"
-                    },
                     "404": {
                         "$ref": "#/components/responses/404"
                     },
@@ -760,6 +757,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -798,9 +798,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"
@@ -944,6 +941,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -982,9 +982,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"
