@@ -2,7 +2,12 @@
     "openapi": "3.0.2",
     "info": {
         "title": "Voluble API",
-        "version": "1.0"
+        "version": "1.0",
+        "description": "This is the OpenAPI specification for the Voluble messaging service API.\nCurrent API status:![OpenAPI Validity Status](http://validator.swagger.io/validator?url=https://raw.githubusercontent.com/calmcl1/voluble/master/openapi.json)",
+        "contact": {
+            "email": "mail@callum-mclean.co.uk",
+            "name": "Cal McLean"
+        }
     },
     "servers": [
         {
