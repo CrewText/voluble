@@ -2,13 +2,22 @@
     "openapi": "3.0.2",
     "info": {
         "title": "Voluble API",
-        "version": "1.0"
+        "version": "1.0",
+        "description": "This is the OpenAPI specification for the Voluble messaging service API.\nCurrent API status:![OpenAPI Validity Status](http://validator.swagger.io/validator?url=https://raw.githubusercontent.com/calmcl1/voluble/master/openapi.json)\n",
+        "contact": {
+            "email": "mail@callum-mclean.co.uk",
+            "name": "Cal McLean"
+        }
     },
     "servers": [
         {
             "url": "https://voluble-poc.herokuapp.com/v1"
         }
     ],
+    "externalDocs": {
+        "description": "Find out more about the Voluble architecture",
+        "url": "https://voluble.gitbook.io/docs/"
+    },
     "tags": [
         {
             "name": "Contacts",
@@ -37,7 +46,7 @@
                 "description": "Internal server error"
             },
             "400": {
-                "description": "ID supplied is not a valid UUID"
+                "description": "Data supplied is invalid"
             },
             "404": {
                 "description": "No object found with the specified ID"
@@ -55,7 +64,9 @@
                         "description": "UUID for this Contact within Voluble",
                         "example": "c616d114-4f68-4dba-b976-cd5ae0aa359d",
                         "readOnly": true,
-                        "nullable": false
+                        "nullable": false,
+                        "format": "uuid",
+                        "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
                     },
                     "first_name": {
                         "type": "string",
@@ -124,8 +135,10 @@
                         "example": "c616d114-4f68-4dba-b976-cd5ae0aa359d"
                     },
                     "is_reply_to": {
-                        "$ref": "#/components/schemas/Message/properties/id",
-                        "nullable": true
+                        "type": "string",
+                        "nullable": true,
+                        "description": "The UUID of the Message that this Message is a reply to. NULL if this is message was not a reply to a previous message",
+                        "example": "c616d114-4f68-4dba-b976-cd5ae0aa359d"
                     },
                     "direction": {
                         "type": "string",
@@ -141,7 +154,7 @@
                         "type": "number",
                         "nullable": false,
                         "description": "The UNIX timestamp of when the message was sent.",
-                        "example": "1568548864",
+                        "example": 1568548864,
                         "readOnly": true
                     },
                     "message_state": {
@@ -247,7 +260,8 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/ServiceInServicechain"
-                        }
+                        },
+                        "maxItems": 10
                     },
                     "name": {
                         "type": "string",
@@ -307,7 +321,8 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Contact"
-                                    }
+                                    },
+                                    "maxItems": 100
                                 }
                             }
                         }
@@ -356,6 +371,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -395,9 +413,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"
@@ -507,7 +522,9 @@
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "default": 0
+                            "default": 0,
+                            "minimum": 0,
+                            "format": "int64"
                         }
                     }
                 ],
@@ -520,7 +537,8 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Message"
-                                    }
+                                    },
+                                    "maxItems": 100
                                 }
                             }
                         }
@@ -569,6 +587,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -609,9 +630,6 @@
                             }
                         }
                     },
-                    "400": {
-                        "$ref": "#/components/responses/400"
-                    },
                     "404": {
                         "$ref": "#/components/responses/404"
                     },
@@ -642,7 +660,8 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Service"
-                                    }
+                                    },
+                                    "maxItems": 100
                                 }
                             }
                         }
@@ -686,9 +705,6 @@
                             }
                         }
                     },
-                    "400": {
-                        "$ref": "#/components/responses/400"
-                    },
                     "404": {
                         "$ref": "#/components/responses/404"
                     },
@@ -719,7 +735,8 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Servicechain"
-                                    }
+                                    },
+                                    "maxItems": 100
                                 }
                             }
                         }
@@ -760,6 +777,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -798,9 +818,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"
@@ -903,7 +920,8 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Organization"
-                                    }
+                                    },
+                                    "maxItems": 100
                                 }
                             }
                         }
@@ -944,6 +962,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/400"
+                    },
                     "500": {
                         "$ref": "#/components/responses/500"
                     }
@@ -982,9 +1003,6 @@
                                 }
                             }
                         }
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/400"
                     },
                     "404": {
                         "$ref": "#/components/responses/404"

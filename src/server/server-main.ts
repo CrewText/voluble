@@ -84,15 +84,15 @@ app.use(cors())
 
 app.options('*', cors()) // include before other routes
 
-app.use('/', routes_index);
+app.use('/v1/', routes_index);
 //app.use('/users', routes_users);
-app.use('/orgs', routes_orgs)
-app.use('/contacts', routes_contacts)
-app.use('/messages', routes_messages)
-app.use('/services', routes_services)
-app.use('/services', routes_service_endpoint_generic)
-app.use('/blasts', routes_blasts)
-app.use('/servicechains', routes_servicechains)
+app.use('/v1/orgs', routes_orgs)
+app.use('/v1/contacts', routes_contacts)
+app.use('/v1/messages', routes_messages)
+app.use('/v1/services', routes_services)
+app.use('/v1/services', routes_service_endpoint_generic)
+app.use('/v1/blasts', routes_blasts)
+app.use('/v1/servicechains', routes_servicechains)
 
 function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.headers['x-forwarded-proto'] !== 'https') {
@@ -124,9 +124,9 @@ export function initServer() {
 
     // error handler
     app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
-      // set locals, only providing error in development
+      // set locals, only providing error in development/testing
       res.locals.message = err.message;
-      res.locals.error = process.env.NODE_ENV = "development" ? err : {};
+      res.locals.error = process.env.NODE_ENV = "production" ? {} : err;
 
       // render the error page
       res.status(err.status || 500);

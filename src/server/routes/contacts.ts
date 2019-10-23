@@ -1,15 +1,14 @@
-import * as Promise from 'bluebird';
 import * as express from "express";
 import * as libphonenumber from 'google-libphonenumber';
 import * as validator from 'validator';
 import { scopes } from "voluble-common";
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager';
+import { ServicechainManager } from '../../servicechain-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkUserOrganization } from '../security/scopes';
-import user from '../../models/user';
-import { ContactInstance } from '../../models';
+import { checkUserOrganization, checkHasOrgAccess } from '../security/scopes';
+import { OrgManager } from "../../org-manager";
 
 const router = express.Router();
 const errs = require('common-errors')
@@ -71,39 +70,71 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
  * 
  * 
  */
-router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+router.post('/', checkJwt, checkJwtErr,
+  checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]),
+  checkUserOrganization,
+  checkHasOrgAccess,
+  async function (req, res, next) {
 
-  Promise.map(req.body, (proposed_contact_details) => {
-    let contact_fname = proposed_contact_details["first_name"]
-    let contact_sname = proposed_contact_details["surname"]
-    let contact_email = proposed_contact_details["email_address"].toLowerCase()
-    let contact_phone = proposed_contact_details["phone_number"]
-    let contact_sc = proposed_contact_details["default_servicechain"]
-    let contact_org = req.user.organization
-
-    if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
-      //console.log(validator.isEmail(contact_email, { require_tld: true }))
-      throw new errs.ValidationError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
-    }
-    const phone_util = libphonenumber.PhoneNumberUtil.getInstance()
     try {
-      phone_util.isValidNumber(phone_util.parse(contact_phone))
-    } catch {
-      throw new errs.ValidationError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
-    }
-    return ContactManager.createContact(contact_fname, contact_sname, contact_email, contact_phone, contact_sc, contact_org)
-  })
+      let contact_fname = req.body["first_name"]
+      let contact_sname = req.body["surname"]
+      let contact_email = req.body["email_address"].toLowerCase()
+      let contact_phone = req.body["phone_number"]
+      let contact_sc = req.body["ServicechainId"]
+      let contact_org = req.body["OrganizationId"]//req.user.organization
 
-    .then(function (newContacts) {
-      res.status(201).jsend.success(newContacts)
-    })
-    .catch(errs.ValidationError, function (err) {
-      res.status(400).jsend.fail(err)
-    })
-    .catch(function (error: any) {
-      res.status(500).jsend.error(error)
-    })
-})
+      if (!contact_fname || !contact_sname || !contact_email || !contact_phone || !contact_sc || !contact_org) {
+        throw new errs.ValidationError("First name, surname, email address, phone number, Organization, or Servicechain not supplied.")
+      }
+
+      // if (!contact_org) { console.warn("No organization extracted from jwt!") }
+
+      // if (req.user.)
+
+      if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
+        //console.log(validator.isEmail(contact_email, { require_tld: true }))
+        throw new errs.ValidationError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
+      }
+      let e164_phone_num: string
+      const phone_util = libphonenumber.PhoneNumberUtil.getInstance()
+      try {
+        phone_util.isValidNumber(phone_util.parse(contact_phone))
+        e164_phone_num = phone_util.format(phone_util.parse(contact_phone), libphonenumber.PhoneNumberFormat.E164)
+      } catch {
+        throw new errs.ValidationError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
+      }
+
+      if (! await ServicechainManager.getServicechainById(contact_sc)) {
+        throw new errs.ValidationError(`Specified Servicechain ID ${contact_sc} does not exist`)
+      }
+      // let created_contact = await ContactManager.createContact(contact_fname, contact_sname, contact_email, contact_phone, contact_sc, contact_org)
+      let requested_org = await OrgManager.getOrganizationById(contact_org)
+      if (!requested_org) {
+        throw new errs.NotFoundError(`Organization with ID ${contact_org} not found`)
+      }
+
+      let created_contact = await requested_org.createContact({
+        OrganizationId: contact_org,
+        ServicechainId: contact_sc,
+        first_name: contact_fname,
+        surname: contact_sname,
+        email_address: contact_email,
+        phone_number: e164_phone_num
+      })
+
+      res.status(201).jsend.success(created_contact)
+    } catch (e) {
+      if (e instanceof errs.ValidationError || e instanceof errs.NotFoundError) {
+        res.status(400).jsend.fail(e)
+      }
+      else {
+        res.status(500).jsend.error(e)
+      }
+    }
+
+
+  })
 
 /**
  * Handles the route `PUT /contacts/{id}`.
@@ -129,9 +160,9 @@ router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdi
       } else { return contact }
     })
     .then(function (contact) {
-      if (req.body.default_servicechain) {
+      if (req.body.ServicechainId) {
         //TODO: Validate this!
-        return contact.setServicechain(req.body.default_servicechain)
+        return contact.setServicechain(req.body.ServicechainId)
           .then(function () { return contact })
       } else { return contact }
     })
@@ -156,6 +187,7 @@ router.delete('/:contact_id',
   checkJwt,
   checkJwtErr,
   checkUserOrganization,
+  checkHasOrgAccess,
   checkScopes([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
 
     let contact_id = req.params.contact_id
@@ -167,13 +199,6 @@ router.delete('/:contact_id',
         if (!contact) {
           return false // Because idempotence
         }
-
-        contact.getOrganization()
-          .then((org) => {
-            if (org.id != req.user.organization) {
-              throw new errs.NotPermittedError("User does not have access to this resource")
-            }
-          })
 
         return contact.destroy()
           .then(function () { return true })
