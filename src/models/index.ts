@@ -79,8 +79,8 @@ models.User.belongsTo(models.Contact)
 models.Message.belongsTo(models.Contact, { foreignKey: "contact" })
 models.Contact.hasMany(models.Message, { foreignKey: "contact" })
 
-models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC })
-models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC })
+models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC, foreignKey: 'service', as: 'other_svcs' })
+models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC, foreignKey: 'servicechain', as: 'services' })
 
 models.Organization.hasMany(models.Servicechain)
 models.Servicechain.belongsTo(models.Organization)

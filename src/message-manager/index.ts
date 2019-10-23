@@ -6,7 +6,7 @@ import { PluginManager } from '../plugin-manager'
 import { ContactManager } from '../contact-manager'
 import { QueueManager } from '../queue-manager'
 const errs = require('common-errors')
-import { MessageStates } from 'voluble-common'
+import { MessageStates, MessageDirections } from 'voluble-common'
 import { resolve } from 'bluebird';
 
 /**
@@ -32,7 +32,7 @@ export namespace MessageManager {
             ServicechainId: servicechain_id,
             contact: contact_id,
             is_reply_to: is_reply_to,
-            direction: direction,
+            direction: direction == "INBOUND" ? MessageDirections.INBOUND : MessageDirections.OUTBOUND,
             message_state: msg_state
         })
         return msg.save()

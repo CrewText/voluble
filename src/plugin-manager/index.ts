@@ -20,6 +20,7 @@ interface IPluginDirectoryMap {
  */
 export namespace PluginManager {
     export const PluginImportFailedError = errs.helpers.generateClass('PluginImportFailedError')
+    export class ServiceNotFoundError extends Error { }
 
     let __plugin_dir: string = path.resolve(path.join(__dirname, "../plugins"))
 
@@ -211,6 +212,5 @@ export namespace PluginManager {
      */
     export async function getServiceById(id: string): Promise<db.ServiceInstance | null> {
         return db.models.Service.findById(id)
-        // TODO: Validate plugin exists, fail otherwise
     }
 }

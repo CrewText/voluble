@@ -22,16 +22,18 @@ export var checkJwt = jwt({
     }),
 
     // Validate the audience and the issuer.
-    audience: process.env.AUTH0_API_IDENT,
+    audience: process.env.AUTH0_API_ID,
     issuer: `https://${process.env.AUTH0_DOMAIN}/`,
     algorithms: ['RS256']
 })
 
 export const checkJwtErr = function (err, req, res, next) {
     if (err) {
-        winston.error(err.message)
-        res.status(401).jsend.error(err.message)
-    } else { next() }
+        // winston.error(err)
+        res.status(401).jsend.error(err)
+    } else {
+        next()
+    }
 }
 
 export var checkScopes = function (scopes: string[]) {

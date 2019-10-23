@@ -96,25 +96,40 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
 
     let org_name = req.body.name
     let org_phone_number = req.body.phone_number
+    try {
+        if (!org_name) {
+            throw new errs.ValidationError("Organization name has not been provided")
+        } else if (!org_phone_number) {
+            throw new errs.ValidationError("Organization phone number has not been provided")
+        }
+    } catch (err) {
+        res.status(400).jsend.fail(err)
+        return
+    }
+
     OrgManager.createNewOrganization(org_name, org_phone_number)
         .then(function (new_org) {
+            winston.debug(`Created new Organization (ID: ${new_org.id})`)
             return new_org.createUser({
-                //OrganizationId: new_org.id,
+                // OrganizationId: new_org.id,
                 auth0_id: req.user.sub
             })
-        })
-        .then(function (user) {
-            return UserManager.setUserIdAuth0Claim(user.id)
-                .then(function () {
-                    return UserManager.setUserScopes(user.id, [scopes.OrganizationOwner])
+                .then(function (user) {
+                    winston.debug(`Created new User (ID:${new_org.id}) for Org (ID: ${new_org.id})`)
+                    return UserManager.setUserIdAuth0Claim(user.id)
+                        .then(function () {
+                            if (req.user.sub != `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
+                                return UserManager.setUserScopes(user.id, [scopes.OrganizationOwner])
+                            } else {
+                                return
+                            }
+                        })
+                        .then(function () {
+                            return res.status(201).jsend.success(new_org)
+                        })
                 })
-                .then(function () {
-                    return user.getOrganization()
-                })
         })
-        .then((org) => {
-            return res.status(201).jsend.success(org)
-        })
+
         .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
             // An Org parameter hasn't been provided or is wrong
             res.status(400).jsend.fail(err)
@@ -185,14 +200,14 @@ router.get('/:org_id',
  */
 
 router.put('/:org_id',
-    checkScopes([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
     checkJwt,
     checkJwtErr,
+    checkScopes([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
     checkUserOrganization,
     checkHasOrgAccess,
     function (req, res, next) {
         let org_id = req.params.org_id
-        let new_org_data = req.body.Organization
+        let new_org_data = req.body
 
         if (!new_org_data) {
             throw new errs.ArgumentNullError(`Parameter Organization not supplied`)
@@ -207,6 +222,10 @@ router.put('/:org_id',
                     .then(function () {
                         org.name = new_org_data.name
                         return org.save()
+                    })
+                    .then((org) => {
+                        // We do this as `org.save()` only returns the changed fields
+                        return org.reload()
                     })
             })
             .then(function (org) {
