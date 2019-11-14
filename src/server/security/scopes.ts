@@ -23,7 +23,11 @@ export function checkUserOrganization(req, res, next) {
 }
 
 export function checkHasOrgAccess(req, res, next) {
-    if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) < 0 && req.user.organization != req.params.org_id) {
+    if (!hasScope(req.user, scopes.VolubleAdmin) && req.user.organization != req.params.org_id) {
         res.status(403).jsend.fail("User does not have access to this resource")
     } else { next() }
+}
+
+export function hasScope(user: any, scope: string) {
+    return user.scope.split(' '.indexOf(scope) > -1)
 }

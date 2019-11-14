@@ -121,6 +121,7 @@ router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.
             req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
             MessageStates.MSG_PENDING,
             sc.id || null,
+            req.body.is_reply_to || null
           )
         })
     })

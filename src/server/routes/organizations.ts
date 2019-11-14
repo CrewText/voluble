@@ -94,6 +94,11 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
         return
     }
 
+    if (!req.user) {
+        res.status(401).jsend.fail(`No user found in JWT; an Organization cannot be created`)
+        return
+    }
+
     let org_name = req.body.name
     let org_phone_number = req.body.phone_number
     try {

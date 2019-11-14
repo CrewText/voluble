@@ -7,7 +7,7 @@ import { MessageManager } from '../../message-manager';
 import { ServicechainManager } from '../../servicechain-manager';
 import * as utils from '../../utilities';
 import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkUserOrganization, checkHasOrgAccess } from '../security/scopes';
+import { checkUserOrganization, checkHasOrgAccess, hasScope } from '../security/scopes';
 import { OrgManager } from "../../org-manager";
 
 const router = express.Router();
@@ -82,15 +82,11 @@ router.post('/', checkJwt, checkJwtErr,
       let contact_email = req.body["email_address"].toLowerCase()
       let contact_phone = req.body["phone_number"]
       let contact_sc = req.body["ServicechainId"]
-      let contact_org = req.body["OrganizationId"]//req.user.organization
+      let contact_org = hasScope(req.user, scopes.VolubleAdmin) ? req.body["OrganizationId"] : req.user.organization
 
       if (!contact_fname || !contact_sname || !contact_email || !contact_phone || !contact_sc || !contact_org) {
         throw new errs.ValidationError("First name, surname, email address, phone number, Organization, or Servicechain not supplied.")
       }
-
-      // if (!contact_org) { console.warn("No organization extracted from jwt!") }
-
-      // if (req.user.)
 
       if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
         //console.log(validator.isEmail(contact_email, { require_tld: true }))
