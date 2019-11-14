@@ -2,9 +2,10 @@ import * as Promise from 'bluebird';
 import * as fs from "fs";
 import * as path from "path";
 import * as Sequelize from "sequelize";
-import { Blast as BlastAttributes, Contact as ContactAttributes, Message as MessageAttributes, Org as OrgAttributes, Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes, User as UserAttributes } from 'voluble-common';
+import { Blast as BlastAttributes, Contact as ContactAttributes, Category as CategoryAttributes, Message as MessageAttributes, Org as OrgAttributes, Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes, User as UserAttributes } from 'voluble-common';
 import * as Blast from './blast';
 import * as Contact from './contact';
+import * as Category from './category'
 import * as Message from './message';
 import * as Organization from './organization';
 import * as Service from './service';
@@ -15,6 +16,7 @@ const basename = path.basename(__filename);
 const winston = require('winston')
 
 export type ContactInstance = Contact.ContactInstance
+export type CategoryInstance = Category.CategoryInstance
 export type MessageInstance = Message.MessageInstance
 export type ServiceInstance = Service.ServiceInstance
 export type ServicechainInstance = Servicechain.ServicechainInstance
@@ -25,6 +27,7 @@ export type UserInstance = User.UserInstance
 
 export interface DbConnection {
     Contact: Sequelize.Model<Contact.ContactInstance, ContactAttributes>,
+    Category: Sequelize.Model<Category.CategoryInstance, CategoryAttributes>,
     Message: Sequelize.Model<Message.MessageInstance, MessageAttributes>,
     Service: Sequelize.Model<Service.ServiceInstance, ServiceAttributes>,
     Servicechain: Sequelize.Model<Servicechain.ServicechainInstance, ServicechainAttributes>,
@@ -78,6 +81,8 @@ models.User.belongsTo(models.Contact)
 
 models.Message.belongsTo(models.Contact, { foreignKey: "contact" })
 models.Contact.hasMany(models.Message, { foreignKey: "contact" })
+
+models.Contact.hasOne(models.Category);
 
 models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC, foreignKey: 'service', as: 'other_svcs' })
 models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC, foreignKey: 'servicechain', as: 'services' })

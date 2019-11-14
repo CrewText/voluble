@@ -33,7 +33,7 @@
     "rsmq-worker": "^0.5.2",
     "sequelize": "^4.44.3",
     "telegram-mtproto": "^2.2.8",
-    "voluble-common": "git+https://git@github.com/calmcl1/voluble-common.git",
+    "voluble-common": "git+https://github.com/calmcl1/voluble-common.git#1.2.1",
     "winston": "^2.4.4"
   },
   "description": "A plugin-oriented mass text communication system",

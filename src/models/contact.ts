@@ -3,12 +3,16 @@ import { Contact as ContactAttributes, Message as MessageAttributes, Org as OrgA
 import { MessageInstance } from "./message";
 import { OrgInstance } from './organization';
 import { ServicechainInstance } from './servicechain';
+import { CategoryInstance } from "./category";
 
 export interface ContactInstance extends Sequelize.Instance<ContactAttributes>, ContactAttributes {
 
     getServicechain: Sequelize.BelongsToGetAssociationMixin<ServicechainInstance>,
     setServicechain: Sequelize.BelongsToSetAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
     createServicechain: Sequelize.BelongsToCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,
+
+    getCategory: Sequelize.HasOneCreateAssociationMixin<CategoryInstance>,
+    setCategory: Sequelize.HasOneSetAssociationMixin<CategoryInstance, CategoryInstance['id']>,
 
     getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
     setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,

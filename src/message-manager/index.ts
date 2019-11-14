@@ -201,7 +201,9 @@ export namespace MessageManager {
         return getMessageFromId(msg_id)
             .then(function (msg) {
                 if (msg) {
-                    msg.message_state = msg_state
+                    if (msg_state in MessageStates) {
+                        msg.message_state = MessageStates.MSG_ARRIVED
+                    }
                     return msg.save()
                 } else {
                     winston.info(`MM: Could not find message with ID ${msg_id}`)

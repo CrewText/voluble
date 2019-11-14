@@ -2,18 +2,18 @@ import * as Sequelize from "sequelize"
 import { ContactInstance } from "./contact";
 import { Message as MessageAttributes, Contact as ContactAttributes, MessageStates, MessageDirections } from 'voluble-common'
 
-export interface MessageInstance extends Sequelize.Instance<MessageAttributes> {
-    id: string,
-    createdAt: Date,
-    updatedAt: Date,
+export interface MessageInstance extends Sequelize.Instance<MessageAttributes>, MessageAttributes {
+    // id: string,
+    // createdAt: Date,
+    // updatedAt: Date,
 
-    body: string
-    ServicechainId: string,
-    contact: string
-    is_reply_to: string | null | undefined
-    direction: string,
-    sent_time: Date,
-    message_state: string
+    // body: string
+    // ServicechainId: string,
+    // contact: string
+    // is_reply_to: string | null | undefined
+    // direction: string,
+    // sent_time: Date,
+    // message_state: string
 
     getContact: Sequelize.BelongsToGetAssociationMixin<ContactInstance>,
     setContact: Sequelize.BelongsToSetAssociationMixin<ContactInstance, ContactInstance['id']>,
