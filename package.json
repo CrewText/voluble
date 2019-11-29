@@ -54,6 +54,7 @@
     "@types/jsend": "^1.0.28",
     "@types/jsonwebtoken": "^7.2.8",
     "@types/mocha": "^5.2.7",
+    "@types/node": "^12.12.14",
     "@types/node-telegram-bot-api": "^0.28.4",
     "@types/request-promise": "^4.1.45",
     "@types/request-promise-native": "^1.0.17",
