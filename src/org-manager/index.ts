@@ -29,7 +29,7 @@ export namespace OrgManager {
     }
 
     export function getOrganizationById(id: string): Promise<db.OrganizationInstance> {
-        return db.models.Organization.findById(id)
+        return db.models.Organization.findByPk(id)
     }
 
 }

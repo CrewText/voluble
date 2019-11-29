@@ -77,12 +77,14 @@ models.User.belongsTo(models.Organization)
 models.Organization.hasMany(models.Contact)
 models.Contact.belongsTo(models.Organization)
 
-models.User.belongsTo(models.Contact)
-
 models.Message.belongsTo(models.Contact, { foreignKey: "contact" })
 models.Contact.hasMany(models.Message, { foreignKey: "contact" })
 
-models.Contact.hasOne(models.Category);
+models.Contact.belongsTo(models.Category)
+models.Category.hasMany(models.Contact)
+
+models.Category.belongsTo(models.Organization)
+models.Organization.hasMany(models.Category)
 
 models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC, foreignKey: 'service', as: 'other_svcs' })
 models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC, foreignKey: 'servicechain', as: 'services' })
@@ -104,9 +106,6 @@ models.Sequelize = Sequelize;
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
  */
 export function initialize_database(): Promise<any> {
-    if (process.env.NODE_ENV == "test") {
-        console.log("Dropping DB")
-        return sequelize.sync({ force: true })
-    }
-    return sequelize.sync()
+    process.env.NODE_ENV == "test" ? console.warn("Dropping DB") : console.info("Using existing DB structure")
+    return sequelize.sync({ force: process.env.NODE_ENV == "test" ? true : false })
 }

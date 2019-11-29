@@ -1,6 +1,7 @@
 import * as Sequelize from "sequelize";
-import { Contact as ContactAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes, User as UserAttributes } from 'voluble-common';
+import { Category as CategoryAttributes, Contact as ContactAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes, User as UserAttributes } from 'voluble-common';
 import { getE164PhoneNumber } from '../utilities';
+import { CategoryInstance } from "./category";
 import { ContactInstance } from "./contact";
 import { ServicechainInstance } from "./servicechain";
 import { UserInstance } from "./user";
@@ -38,6 +39,17 @@ export interface OrgInstance extends Sequelize.Instance<OrgAttributes>, OrgAttri
     hasServicechains: Sequelize.HasManyHasAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
     removeServicechain: Sequelize.HasManyRemoveAssociationMixin<ServicechainAttributes, ServicechainInstance['id']>,
     removeServicechains: Sequelize.HasManyRemoveAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>
+
+    getCategories: Sequelize.HasManyGetAssociationsMixin<CategoryInstance>
+    setCategories: Sequelize.HasManySetAssociationsMixin<CategoryInstance, CategoryInstance['id']>,
+    addCategory: Sequelize.HasManyAddAssociationMixin<CategoryInstance, CategoryInstance['id']>,
+    addCategories: Sequelize.HasManyAddAssociationsMixin<CategoryInstance, CategoryInstance['id']>,
+    createCategory: Sequelize.HasManyCreateAssociationMixin<CategoryAttributes, CategoryInstance>,
+    countCategories: Sequelize.HasManyCountAssociationsMixin
+    hasCategory: Sequelize.HasManyHasAssociationMixin<CategoryInstance, CategoryInstance['id']>,
+    hasCategories: Sequelize.HasManyHasAssociationsMixin<CategoryInstance, CategoryInstance['id']>,
+    removeCategory: Sequelize.HasManyRemoveAssociationMixin<CategoryAttributes, CategoryInstance['id']>,
+    removeCategories: Sequelize.HasManyRemoveAssociationsMixin<CategoryInstance, CategoryInstance['id']>
 
 }
 

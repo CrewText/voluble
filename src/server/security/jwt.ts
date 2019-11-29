@@ -30,12 +30,12 @@ export var checkJwt = jwt({
 export const checkJwtErr = function (err, req, res, next) {
     if (err) {
         // winston.error(err)
-        res.status(401).jsend.error(err)
+        res.status(401).jsend.fail(err)
     } else {
         next()
     }
 }
 
-export var checkScopes = function (scopes: string[]) {
+export var checkScopesMiddleware = function (scopes: string[]) {
     return jwtAuthz(scopes)
 }

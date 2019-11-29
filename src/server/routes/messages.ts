@@ -1,16 +1,16 @@
-import * as Promise from "bluebird";
+import * as BBPromise from "bluebird";
 import * as express from "express";
 import { scopes } from "voluble-common";
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
-import * as utils from '../../utilities';
-import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkUserOrganization } from '../security/scopes';
+import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+import { setupUserOrganizationMiddleware, checkHasOrgAccess, ResourceOutOfUserScopeError } from '../security/scopes';
 import { MessageStates } from 'voluble-common'
+import { isInt } from 'validator'
+import { InvalidParameterValueError } from '../../voluble-errors'
 const router = express.Router();
 const winston = require('winston')
-const errs = require('common-errors')
 
 /**
  * Handles the route GET /messages
@@ -39,30 +39,33 @@ const errs = require('common-errors')
  * 
  * 
  */
-router.get('/', checkJwt,
+router.get('/:org_id/messages/', checkJwt,
   checkJwtErr,
-  checkScopes([scopes.MessageRead, scopes.VolubleAdmin]),
-  checkUserOrganization,
-  function (req, res, next) {
+  checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
+  async function (req, res, next) {
 
-    // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-    let offset = (req.query.offset == undefined ? 0 : req.query.offset)
+    try {
+      // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
+      let offset = (req.query.offset == undefined ? 0 : req.query.offset)
+      if (!isInt(offset)) { throw new InvalidParameterValueError(`Supplied parameter value for 'offset' is not an integer`) }
 
-    utils.verifyNumberIsInteger(offset)
-      .then(function (off) {
-        return MessageManager.getHundredMessageIds(off, req.user.organization)
-      })
-      .then(function (rows) {
-        res.jsend.success(rows)
-        //res.status(200).json(rows)
-      })
-      .catch(errs.TypeError, function (error) {
-        res.jsend.fail({ 'id': "Supplied ID is not an integer" })
-      })
-      .catch(function (error: any) {
-        res.jsend.error(error.message)
-        //res.status(500).send(error.message)
-      })
+      checkHasOrgAccess(req.user, req.params.org_id)
+
+      let msg_ids = await MessageManager.getHundredMessageIds(offset, req.params.org_id)
+
+      res.status(200).jsend.success(msg_ids)
+    }
+
+    catch (e) {
+      if (e instanceof InvalidParameterValueError) {
+        res.status(400).jsend.fail(e.message)
+      } else if (e instanceof ResourceOutOfUserScopeError) {
+        res.status(403).jsend.fail(e.message)
+      } else {
+        res.status(500).jsend.error(e.message)
+      }
+    }
 
   })
 
@@ -70,74 +73,69 @@ router.get('/', checkJwt,
  * Handles the route GET /messages/{id}
  * Lists all of the details about the contact with the specified ID.
  */
-router.get('/:message_id', checkJwt, checkJwtErr, checkScopes([scopes.MessageRead, scopes.VolubleAdmin]), function (req, res, next) {
+router.get('/:org_id/messages/:message_id', checkJwt,
+  checkJwtErr, checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware, async function (req: any, res: any, _next) {
 
-  return MessageManager.getMessageFromId(req.params.message_id)
-    .then(function (msg) {
+    try {
+      checkHasOrgAccess(req.user, req.params.org_id)
+
+      let msg = await MessageManager.getMessageFromId(req.params.message_id)
       if (msg) {
-        res.jsend.success(msg)
+        res.status(200).jsend.success(msg)
+      } else {
+        res.status(404).jsend.fail(`Resource with ID ${req.params.message_id} not found`)
       }
-    })
-    .catch(function (error) {
-      if (error instanceof errs.TypeError) {
-        res.jsend.fail({ 'id': "Supplied ID is not an integer" })
+    } catch (e) {
+      if (e instanceof ResourceOutOfUserScopeError) {
+        res.status(403).jsend.fail(e.message)
+      } else {
+        res.status(500).jsend.error(e.message)
       }
-      else {
-        throw error
-      }
-    })
-    .catch(function (error: any) {
-      res.jsend.error(error.message)
-      //res.status(500).send(error.message)
-    })
-})
+    }
+
+  })
 
 
 /**
  * Handles the route POST /messages
  * Creates a new message, adds it to the database and attempts to send it.
  */
-router.post('/', checkJwt, checkJwtErr, checkScopes([scopes.MessageSend, scopes.VolubleAdmin]), function (req, res, next) {
-  winston.info("Creating new message")
-  console.log(req.body)
-  ContactManager.checkContactWithIDExists(req.body.contact_id)
-    .then(function (id) {
+router.post('/:org_id/messages/', checkJwt, checkJwtErr,
+  checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
+  async function (req, res, next) {
+    try {
+      if (!req.body.contact_id) {
+        throw new InvalidParameterValueError(`Invalid value for parameter 'contact_id': ${req.body.contact_id}`)
+      }
+      if (!req.body.msg_body) {
+        throw new InvalidParameterValueError(`Invalid value for parameter 'msg_body': ${req.body.msg_body}`)
+      }
+      checkHasOrgAccess(req.user, req.params.org_id)
 
-      // Verify the info we've been provided and fill in the gaps
-      return Promise.try(function () {
-        if (req.body.servicechain_id) {
-          // Servicechain to use is explicitly supplied, using that
-          return ServicechainManager.getServicechainById(req.body.servicechain_id)
-        } else {
-          // Using default servicechain for contact
-          winston.debug(`MM: Finding default servicechain for contact ${id}`)
-          return ServicechainManager.getServicechainFromContactId(id)
-        }
-      })
-        .then(function (sc) {
-          return MessageManager.createMessage(
-            req.body.msg_body,
-            req.body.contact_id,
-            req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
-            MessageStates.MSG_PENDING,
-            sc.id || null,
-            req.body.is_reply_to || null
-          )
-        })
-    })
-    .then(function (msg) {
-      return MessageManager.sendMessage(msg)
-    })
-    .then(function (msg) {
-      res.jsend.success(msg)
-    })
-    .catch(errs.NotFoundError, function (error) {
-      res.jsend.fail(`Contact with ID ${req.body.contact_id} does not exist.`)
-    })
-    .catch(function (error: any) {
-      res.jsend.error(error.message)
-      //res.status(500).send(error.message)
-    })
-})
+      let contact = await ContactManager.getContactWithId(req.body.contact_id)
+      let sc = req.body.servicechain_id ? await ServicechainManager.getServicechainById(req.body.servicechain_id) : await contact.getServicechain()
+
+      let msg = await MessageManager.createMessage(req.body.msg_body,
+        req.body.contact_id,
+        req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
+        MessageStates.MSG_PENDING,
+        sc.id || null,
+        req.body.is_reply_to || null)
+
+      msg = MessageManager.sendMessage(msg)
+
+      res.status(200).jsend.success(msg)
+
+    } catch (e) {
+      if (e instanceof ResourceOutOfUserScopeError) {
+        res.status(403).jsend.fail(e.message)
+      } else if (e instanceof InvalidParameterValueError) {
+        res.status(400).jsend.fail(e.message)
+      } else {
+        res.status(500).jsend.error(e.message)
+      }
+    }
+  })
 
 module.exports = router;

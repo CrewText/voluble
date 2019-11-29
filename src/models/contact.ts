@@ -1,5 +1,5 @@
 import * as Sequelize from "sequelize";
-import { Contact as ContactAttributes, Message as MessageAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes } from 'voluble-common';
+import { Contact as ContactAttributes, Message as MessageAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes, Category as CategoryAttributes } from 'voluble-common';
 import { MessageInstance } from "./message";
 import { OrgInstance } from './organization';
 import { ServicechainInstance } from './servicechain';
@@ -11,12 +11,13 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes>, 
     setServicechain: Sequelize.BelongsToSetAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
     createServicechain: Sequelize.BelongsToCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,
 
-    getCategory: Sequelize.HasOneCreateAssociationMixin<CategoryInstance>,
-    setCategory: Sequelize.HasOneSetAssociationMixin<CategoryInstance, CategoryInstance['id']>,
-
     getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
     setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,
     createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>
+
+    getCategory: Sequelize.BelongsToGetAssociationMixin<CategoryInstance>,
+    setCategory: Sequelize.BelongsToSetAssociationMixin<CategoryInstance, CategoryInstance['id']>,
+    createCategory: Sequelize.BelongsToCreateAssociationMixin<CategoryAttributes, CategoryInstance>,
 
     getMessages: Sequelize.HasManyGetAssociationsMixin<MessageInstance>
     setMessages: Sequelize.HasManySetAssociationsMixin<MessageInstance, MessageInstance['id']>,

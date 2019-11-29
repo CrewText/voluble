@@ -2,61 +2,65 @@ import * as express from "express";
 import * as libphonenumber from 'google-libphonenumber';
 import * as validator from 'validator';
 import { scopes } from "voluble-common";
-import { ContactManager } from '../../contact-manager';
+import { ContactManager, CategoryManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager';
-import { ServicechainManager } from '../../servicechain-manager';
-import * as utils from '../../utilities';
-import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkUserOrganization, checkHasOrgAccess, hasScope } from '../security/scopes';
 import { OrgManager } from "../../org-manager";
+import { ServicechainManager } from '../../servicechain-manager';
+import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble-errors';
+import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, hasScope, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
 const router = express.Router();
-const errs = require('common-errors')
 const winston = require('winston')
 
 /**
  * Handles the route `GET /contacts`.
  * Lists the first 100 of the contacts available to the user, with a given offset
  */
-router.get('/', checkJwt,
+router.get('/:org_id/contacts', checkJwt,
   checkJwtErr,
-  checkScopes([scopes.ContactView, scopes.VolubleAdmin]),
-  checkUserOrganization,
-  function (req, res, next) {
+  checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
+  async function (req, res, next) {
+    try {
+      // TODO: Add a `limit` parameter to specify amount, rather than 100
+      // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
+      let offset: number = req.query.offset ? validator.toInt(req.query.offset) : 0
+      if (isNaN(offset) || offset < 0) {
+        throw new InvalidParameterValueError(`Value supplied for parameter 'offset' is invalid: ${offset}`)
+      }
 
-    // TODO: Add a `limit` parameter to specify amount, rather than 100
-    // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-    let offset = req.query.offset ? req.query.offset : 0
-    return utils.verifyNumberIsInteger(offset)
-      .then(function (offset: number) {
-        return ContactManager.getHundredContacts(offset, req.user.organization)
-      })
-      .then(function (rows: any) {
-        res.status(200).jsend.success(rows)
-        //res.status(200).json(rows)
-      })
-      .catch(function (err: any) {
-        res.status(500).jsend.error(err.message)
-        //res.status(500).json(err.message)
-      })
+      checkHasOrgAccess(req.user, req.params.org_id)
+      let contacts = await ContactManager.getHundredContacts(offset, req.params.org_id)
+      res.status(200).jsend.success(contacts)
+    } catch (e) {
+      if (e instanceof ResourceOutOfUserScopeError) {
+        res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
+      } else if (e instanceof InvalidParameterValueError) {
+        res.status(400).jsend.fail(`Parameter 'name' was not provided`)
+      } else {
+        winston.error(e)
+        res.status(500).jsend.error(e)
+      }
+    }
   })
 
 /**
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactView, scopes.VolubleAdmin]), checkJwt, function (req, res, next) {
+router.get('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]), checkJwt, function (req, res, next) {
   ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
     })
     .then(function (user) {
       if (user) {
-        res.jsend.success(user)
-      }
+        res.status(200).jsend.success(user)
+      } else { throw new ResourceNotFoundError(`User with ID ${req.params.contact_id} is not found!`) }
     })
-    .catch(errs.NotFoundError, function (error) {
-      res.status(404).jsend.fail({ "id": "No user exists with this ID." })
+    .catch(ResourceNotFoundError, function (error) {
+      res.status(404).jsend.fail(error.message)
     })
     .catch(function (error: any) {
       res.status(500).jsend.error(error.message)
@@ -70,62 +74,72 @@ router.get('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactVie
  * 
  * 
  */
-router.post('/', checkJwt, checkJwtErr,
-  checkScopes([scopes.ContactAdd, scopes.VolubleAdmin]),
-  checkUserOrganization,
-  checkHasOrgAccess,
+router.post('/:org_id/contacts', checkJwt, checkJwtErr,
+  checkScopesMiddleware([scopes.ContactAdd, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
   async function (req, res, next) {
 
     try {
       let contact_fname = req.body["first_name"]
       let contact_sname = req.body["surname"]
-      let contact_email = req.body["email_address"].toLowerCase()
+      let contact_email = req.body["email_address"]
       let contact_phone = req.body["phone_number"]
       let contact_sc = req.body["ServicechainId"]
-      let contact_org = hasScope(req.user, scopes.VolubleAdmin) ? req.body["OrganizationId"] : req.user.organization
+      let contact_cat = req.body["CategoryId"]
+      let contact_org = req.params.org_id
 
-      if (!contact_fname || !contact_sname || !contact_email || !contact_phone || !contact_sc || !contact_org) {
-        throw new errs.ValidationError("First name, surname, email address, phone number, Organization, or Servicechain not supplied.")
+      checkHasOrgAccess(req.user, contact_org)
+
+      if (!contact_fname || !contact_sname || !contact_phone || !contact_sc) {
+        throw new InvalidParameterValueError("First name, surname, phone number, Organization, or Servicechain not supplied.")
       }
 
-      if (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true })) {
+      if (contact_email && (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true }))) {
         //console.log(validator.isEmail(contact_email, { require_tld: true }))
-        throw new errs.ValidationError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
+        throw new InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
       }
+
       let e164_phone_num: string
       const phone_util = libphonenumber.PhoneNumberUtil.getInstance()
       try {
         phone_util.isValidNumber(phone_util.parse(contact_phone))
         e164_phone_num = phone_util.format(phone_util.parse(contact_phone), libphonenumber.PhoneNumberFormat.E164)
       } catch {
-        throw new errs.ValidationError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
+        throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
+      }
+
+      if (contact_cat && (!await CategoryManager.getCategoryById(contact_cat))) {
+        throw new InvalidParameterValueError(`Supplied Category not found: ${contact_cat}`)
       }
 
       if (! await ServicechainManager.getServicechainById(contact_sc)) {
-        throw new errs.ValidationError(`Specified Servicechain ID ${contact_sc} does not exist`)
+        throw new ResourceNotFoundError(`Specified Servicechain ID ${contact_sc} does not exist`)
       }
-      // let created_contact = await ContactManager.createContact(contact_fname, contact_sname, contact_email, contact_phone, contact_sc, contact_org)
+
       let requested_org = await OrgManager.getOrganizationById(contact_org)
       if (!requested_org) {
-        throw new errs.NotFoundError(`Organization with ID ${contact_org} not found`)
+        throw new ResourceNotFoundError(`Organization with ID ${contact_org} not found`)
       }
 
       let created_contact = await requested_org.createContact({
-        OrganizationId: contact_org,
         ServicechainId: contact_sc,
+        CategoryId: contact_cat,
         first_name: contact_fname,
         surname: contact_sname,
         email_address: contact_email,
         phone_number: e164_phone_num
       })
 
-      res.status(201).jsend.success(created_contact)
+      res.status(201).jsend.success(await created_contact.reload())
     } catch (e) {
-      if (e instanceof errs.ValidationError || e instanceof errs.NotFoundError) {
-        res.status(400).jsend.fail(e)
+      if (e instanceof ResourceNotFoundError || e instanceof InvalidParameterValueError) {
+        res.status(400).jsend.fail(e.message)
+      } else if (e instanceof ResourceOutOfUserScopeError) {
+        res.status(403).jsend.fail(e.message)
       }
       else {
-        res.status(500).jsend.error(e)
+        winston.error(e.name, e.message)
+        res.status(500).jsend.error(e.message)
       }
     }
 
@@ -136,60 +150,63 @@ router.post('/', checkJwt, checkJwtErr,
  * Handles the route `PUT /contacts/{id}`.
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
-router.put('/:contact_id', checkJwt, checkJwtErr, checkScopes([scopes.ContactEdit, scopes.VolubleAdmin]), function (req, res, next) {
-  return ContactManager.getContactWithId(req.params.contact_id)
-    .then(function (contact) {
-      if (!contact) { throw new errs.NotFoundError("No contact exists with this ID") }
+router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
+  checkScopesMiddleware([scopes.ContactEdit, scopes.VolubleAdmin]), async function (req, res, next) {
+    try {
+      checkHasOrgAccess(req.user, req.params.org_id)
+
+      let contact = await ContactManager.getContactWithId(req.params.contact_id)
+      if (!contact) { throw new ResourceNotFoundError(`Contact not found: ${req.params.contact_id}`) }
+
+      if ('CategoryId' in Object.keys(req.body)) {
+        let cat = await CategoryManager.getCategoryById(req.body.CategoryId)
+        if (!cat) { throw new InvalidParameterValueError(`Category does not exist: ${req.body.CategoryId}`) }
+        await contact.setCategory(req.body.CategoryId ? cat.id : null)
+      }
+
+      if ('ServicechainId' in Object.keys(req.body)) {
+        let sc = await ServicechainManager.getServicechainById(req.body.ServicechainId)
+        if (!sc) { throw new InvalidParameterValueError(`Servicechain does not exist: ${req.body.ServicechainId}`) }
+        await contact.setServicechain(sc)
+      }
+
       ["first_name", "surname", "phone_number", "email_address"].forEach(trait => {
         //TODO: Validate phone no and email
-        if (req.body[trait]) {
-          contact[trait] = req.body[trait]
+        if (Object.keys(req.body).indexOf(trait) > -1) {
+          contact.set(trait, req.body[trait])
         }
       });
-      return contact.save()
-    })
-    .then(function (contact) {
-      if (req.body.OrganizationId) {
-        //TODO: Validate this!
-        return contact.setOrganization(req.body.OrganizationId)
-          .then(function () { return contact })
-      } else { return contact }
-    })
-    .then(function (contact) {
-      if (req.body.ServicechainId) {
-        //TODO: Validate this!
-        return contact.setServicechain(req.body.ServicechainId)
-          .then(function () { return contact })
-      } else { return contact }
-    })
-    .then(function (contact) {
-      res.status(200).jsend.success(contact)
-    })
-    .catch(errs.NotFoundError, function (err) {
-      res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
-    })
-    .catch(function (error: any) {
-      winston.error(error)
-      res.status(500).jsend.error(error.message)
-    })
-})
+
+      await contact.save()
+
+      res.status(200).jsend.success(await contact.reload())
+    } catch (e) {
+      if (e instanceof ResourceOutOfUserScopeError) {
+        res.status(403).jsend.fail({ name: e.name, message: e.message })
+      }
+      else if (e instanceof InvalidParameterValueError) {
+        res.status(400).jsend.fail({ name: e.name, message: e.message })
+      } else {
+        winston.error(e)
+        res.status(500).jsend.error({ name: e.name, message: e.message })
+      }
+    }
+  })
 
 /**
  * Handles the route `DELETE /contacts/{id}`.
  * Removes the contact with the specified ID from the database.
  * Returns 200 even if the contact does not exist, to ensure idempotence. This is why there is no validation that the contact exists first.
  */
-router.delete('/:contact_id',
+router.delete('/:org_id/contacts/:contact_id',
   checkJwt,
   checkJwtErr,
-  checkUserOrganization,
-  checkHasOrgAccess,
-  checkScopes([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
+  setupUserOrganizationMiddleware,
+  checkHasOrgAccessMiddleware,
+  checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
 
     let contact_id = req.params.contact_id
-    if (!validator.isUUID(contact_id)) {
-      throw new errs.ValidationError("Supplied parameter contact_id is not a UUID: " + contact_id)
-    }
+
     return ContactManager.getContactWithId(contact_id)
       .then(function (contact) {
         if (!contact) {
@@ -200,35 +217,25 @@ router.delete('/:contact_id',
           .then(function () { return true })
       })
       .then(function (resp) {
-        res.status(resp ? 200 : 410).jsend.success(true) // Send a 410 if the contact no longer exists
-      })
-      .catch(errs.ValidationError, function (error) {
-        res.status(400).jsend.fail({ 'id': "ID supplied is not an UUID." })
-      })
-      .catch(errs.NotPermittedError, (err) => {
-        res.status(401).jsend.fail({ err })
+        res.status(resp ? 200 : 404).jsend.success(true)
       })
       .catch(function (error: any) {
         res.status(500).jsend.error(error.message)
       })
   })
 
-router.get('/:contact_id/messages', checkJwt,
+router.get('/:org_id/contacts/:contact_id/messages', checkJwt,
   checkJwtErr,
-  checkScopes([scopes.MessageRead, scopes.VolubleAdmin]),
-  checkUserOrganization,
+  checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
   function (req, res, next) {
     let contact_id = req.params.contact_id
-    if (!validator.isUUID(contact_id)) {
-      throw new errs.ValidationError("Supplied parameter contact_id is not a UUID: " + contact_id)
-    }
-
     MessageManager.getMessagesForContact(contact_id)
       .then(function (messages) {
         res.status(200).jsend.success({ messages })
       })
       .catch(function (err) {
-        if (err instanceof errs.NotFoundError) {
+        if (err instanceof ResourceNotFoundError) {
           res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
         } else {
           res.status(500).jsend.error(err)

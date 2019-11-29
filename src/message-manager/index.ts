@@ -1,19 +1,20 @@
 const winston = require('winston')
 // import * as Promise from "bluebird"
-import * as db from '../models'
-import { ServicechainManager } from '../servicechain-manager'
-import { PluginManager } from '../plugin-manager'
+import { MessageDirections, MessageStates } from 'voluble-common'
 import { ContactManager } from '../contact-manager'
+import * as db from '../models'
+import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
+import { ServicechainManager } from '../servicechain-manager'
 const errs = require('common-errors')
-import { MessageStates, MessageDirections } from 'voluble-common'
-import { resolve } from 'bluebird';
 
 /**
  * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,
  * sending Messages and finding out information about given Messages.
  */
 export namespace MessageManager {
+
+    export class MessageStateInvalidError extends Error { }
 
     /**
      * Attempts to create a new Message in the database with the supplied details.
@@ -202,7 +203,9 @@ export namespace MessageManager {
             .then(function (msg) {
                 if (msg) {
                     if (msg_state in MessageStates) {
-                        msg.message_state = MessageStates.MSG_ARRIVED
+                        msg.message_state = MessageStates[msg_state]
+                    } else {
+                        return Promise.reject(new MessageStateInvalidError(`Message with ID ${msg_id} supplied invalid MessageState: ${msg_state}`))
                     }
                     return msg.save()
                 } else {

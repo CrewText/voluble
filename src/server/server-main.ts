@@ -1,10 +1,11 @@
-import * as Promise from 'bluebird';
+import * as BBPromise from 'bluebird';
 import * as cors from 'cors';
 import * as express from "express";
 import * as jsend from 'jsend';
 import * as db from '../models';
 import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
+import { Server } from 'http';
 
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -33,6 +34,7 @@ const routes_index = require('./routes')
 //const routes_users = require('./routes/users')
 const routes_orgs = require('./routes/organizations')
 const routes_contacts = require('./routes/contacts')
+const routes_categories = require('./routes/categories')
 const routes_messages = require('./routes/messages')
 const routes_services = require('./routes/services')
 const routes_blasts = require('./routes/blasts')
@@ -42,6 +44,8 @@ const routes_service_endpoint_generic = require('./routes/service_endpoint')
 winston.info("Starting Express server")
 const app = express();
 app.use(jsend.middleware)
+
+let svr: Server;
 
 function onError(error: any) {
   if (error.syscall !== 'listen') {
@@ -86,13 +90,14 @@ app.options('*', cors()) // include before other routes
 
 app.use('/v1/', routes_index);
 //app.use('/users', routes_users);
-app.use('/v1/orgs', routes_orgs)
-app.use('/v1/contacts', routes_contacts)
-app.use('/v1/messages', routes_messages)
 app.use('/v1/services', routes_services)
 app.use('/v1/services', routes_service_endpoint_generic)
-app.use('/v1/blasts', routes_blasts)
-app.use('/v1/servicechains', routes_servicechains)
+app.use('/v1/orgs', routes_orgs)
+app.use('/v1/orgs', routes_contacts)
+app.use('/v1/orgs', routes_categories)
+app.use('/v1/orgs', routes_messages)
+app.use('/v1/orgs', routes_blasts)
+app.use('/v1/orgs', routes_servicechains)
 
 function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.headers['x-forwarded-proto'] !== 'https') {
@@ -115,7 +120,7 @@ function onServerListening() {
   winston.info("Server listening on " + port)
 }
 export function initServer() {
-  return Promise.try(function () {
+  return BBPromise.try(function () {
     // app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
     //   let err: any = new Error('Not Found');
     //   err.status = 404;
@@ -143,6 +148,20 @@ export function initServer() {
       return PluginManager.initAllPlugins()
     })
     .then(function () {
-      return process.env.NODE_ENV == "production" ? app.listen(port, onServerListening) : app.listen(port, "localhost", onServerListening)
+      svr = process.env.NODE_ENV == "production" ? app.listen(port, onServerListening) : app.listen(port, "localhost", onServerListening)
+      return svr
     })
+}
+
+export async function shutdownServer() {
+  await QueueManager.shutdownQueues()
+  let p = new BBPromise((resolve, reject) => {
+    if (svr) {
+      svr.close(() => {
+        resolve()
+      })
+    }
+  })
+
+  await p;
 }

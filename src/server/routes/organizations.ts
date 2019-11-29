@@ -3,8 +3,8 @@ import * as express from "express";
 import { scopes } from "voluble-common";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
-import { checkJwt, checkJwtErr, checkScopes } from '../security/jwt';
-import { checkHasOrgAccess, checkUserOrganization } from '../security/scopes';
+import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 import winston = require("winston");
 const router = express.Router();
 const errs = require('common-errors')
@@ -37,7 +37,7 @@ let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extend
 router.get('/',
     checkJwt,
     checkJwtErr,
-    checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, function (req, res, next) {
+    checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]), setupUserOrganizationMiddleware, function (req, res, next) {
         if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1) {
             OrgManager.getAllOrganizations()
                 .then(function (organizations) {
@@ -149,7 +149,7 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
 router.get('/:org_id',
     checkJwt,
     checkJwtErr,
-    checkScopes([scopes.OrganizationOwner, scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
         let org_id = req.params.org_id
 
         //if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1 || req.user.organization == org_id) {
@@ -207,9 +207,9 @@ router.get('/:org_id',
 router.put('/:org_id',
     checkJwt,
     checkJwtErr,
-    checkScopes([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
-    checkUserOrganization,
-    checkHasOrgAccess,
+    checkScopesMiddleware([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessMiddleware,
     function (req, res, next) {
         let org_id = req.params.org_id
         let new_org_data = req.body
@@ -251,9 +251,9 @@ router.put('/:org_id',
 /** Removes an Organization */
 router.delete('/:org_id', checkJwt,
     checkJwtErr,
-    checkScopes([scopes.OrganizationOwner,
+    checkScopesMiddleware([scopes.OrganizationOwner,
     scopes.OrganizationDelete,
-    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
         let org_id = req.params.org_id
         OrgManager.getOrganizationById(org_id)
             .then((org) => {
@@ -283,10 +283,10 @@ router.delete('/:org_id', checkJwt,
  */
 router.get('/:org_id/users', checkJwt,
     checkJwtErr,
-    checkScopes([scopes.UserView,
+    checkScopesMiddleware([scopes.UserView,
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
         let org_id = req.params.org_id
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
@@ -317,10 +317,10 @@ router.get('/:org_id/users', checkJwt,
 router.post('/:org_id/users',
     checkJwt,
     checkJwtErr,
-    checkScopes([scopes.UserAdd,
+    checkScopesMiddleware([scopes.UserAdd,
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
         let org_id = req.params.org_id
         let new_user_auth0_id = req.body.auth0_id
 
@@ -378,10 +378,10 @@ router.post('/:org_id/users',
  */
 router.put('/:org_id/users', checkJwt,
     checkJwtErr,
-    checkScopes([scopes.UserAdd, scopes.OrganizationEdit,
+    checkScopesMiddleware([scopes.UserAdd, scopes.OrganizationEdit,
     scopes.OrganizationOwner, scopes.VolubleAdmin]),
-    checkUserOrganization,
-    checkHasOrgAccess,
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessMiddleware,
     function (req, res, next) {
         let org_id = req.params.org_id
         let user_id = req.body.user_id
@@ -431,9 +431,9 @@ router.put('/:org_id/users', checkJwt,
 router.get('/:org_id/users/:user_id',
     checkJwt,
     checkJwtErr,
-    checkScopes([scopes.UserView, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
-    checkUserOrganization,
-    checkHasOrgAccess,
+    checkScopesMiddleware([scopes.UserView, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessMiddleware,
     function (req, res, next) {
         let org_id = req.params.org_id
         let user_id = req.params.user_id
@@ -471,10 +471,10 @@ router.get('/:org_id/users/:user_id',
 router.delete('/:org_id/users/:user_id',
     checkJwt,
     checkJwtErr,
-    checkScopes([scopes.UserDelete,
+    checkScopesMiddleware([scopes.UserDelete,
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), checkUserOrganization, checkHasOrgAccess, function (req, res, next) {
+    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
         let org_id = req.params.org_id
         let user_id = req.params.user_id
 

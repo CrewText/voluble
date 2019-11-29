@@ -46,6 +46,18 @@ export namespace QueueManager {
 
     }
 
+    export async function shutdownQueues() {
+        return new Promise((resolve, reject) => {
+            client.quit((err, reply) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve()
+                }
+            })
+        })
+    }
+
     export function addMessageToSendRequest(message: MessageInstance) {
         winston.debug("QM: Sending message with ID " + message.id)
         rsmq.sendMessage({

@@ -13,7 +13,7 @@ import { Servicechain, ServicesInSC } from 'voluble-common'
 export namespace ServicechainManager {
 
     export interface ServicechainPriority {
-        service: string,
+        service: string
         priority: number
     }
 
@@ -109,9 +109,10 @@ export namespace ServicechainManager {
      * Creates a new Servicechain from the name and service IDs provided. Returns a Promise for the Sequelize object representing the new Servicechain.
      * @param {string} name The name of the new Servicechain
      */
-    export function createNewServicechain(name: string): BBPromise<db.ServicechainInstance> {
+    export function createNewServicechain(name: string, org_id: string): BBPromise<db.ServicechainInstance> {
         // First, create the new SC itself
         return db.models.Servicechain.create({
+            OrganizationId: org_id,
             name: name
         })
     }
