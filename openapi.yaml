@@ -662,7 +662,7 @@ paths:
           $ref: "#/components/responses/410"
         "500":
           $ref: "#/components/responses/500"
-  /organizations:
+  /orgs:
     get:
       tags:
         - Organizations
@@ -705,7 +705,7 @@ paths:
           $ref: "#/components/responses/400"
         "500":
           $ref: "#/components/responses/500"
-  /organizations/{org-id}:
+  /orgs/{org-id}:
     parameters:
       - $ref: "#/components/parameters/org-id"
     get:
