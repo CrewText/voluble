@@ -7,7 +7,7 @@ import { ServicechainManager } from '../../servicechain-manager';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { setupUserOrganizationMiddleware, checkHasOrgAccess, ResourceOutOfUserScopeError } from '../security/scopes';
 import { MessageStates } from 'voluble-common'
-import { isInt } from 'validator'
+import validator from 'validator'
 import { InvalidParameterValueError } from '../../voluble-errors'
 const router = express.Router();
 const winston = require('winston')
@@ -48,7 +48,7 @@ router.get('/:org_id/messages/', checkJwt,
     try {
       // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
       let offset = (req.query.offset == undefined ? 0 : req.query.offset)
-      if (!isInt(offset)) { throw new InvalidParameterValueError(`Supplied parameter value for 'offset' is not an integer`) }
+      if (!validator.isInt(offset)) { throw new InvalidParameterValueError(`Supplied parameter value for 'offset' is not an integer`) }
 
       checkHasOrgAccess(req.user, req.params.org_id)
 

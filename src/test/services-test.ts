@@ -27,20 +27,15 @@ let available_services: Service[]
 
 describe('/v1/services', function () {
 
-    this.beforeAll(function (done) {
+    // Setup auth_token
+    this.beforeAll(async function () {
         this.timeout(5000)
 
-        BBPromise.try(function () {
-            return server.initServer()
+        return new Promise(async (res, rej) => {
+            server_app = await server.initServer()
+            auth_token = await getAccessToken()
+            res()
         })
-            .then(function (svr) {
-                //Wait until the DB is up and running before we can use it
-                server_app = svr
-            })
-            .then(async () => {
-                auth_token = await getAccessToken()
-                done()
-            })
     })
 
     this.afterAll((done) => {

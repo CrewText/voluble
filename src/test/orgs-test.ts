@@ -26,20 +26,15 @@ let created_org: string
 
 describe('/v1/orgs', function () {
 
-    this.beforeAll(function (done) {
+    // Setup auth_token
+    this.beforeAll(async function () {
         this.timeout(5000)
 
-        BBPromise.try(function () {
-            return server.initServer()
+        return new Promise(async (res, rej) => {
+            server_app = await server.initServer()
+            auth_token = await getAccessToken()
+            res()
         })
-            .then(function (svr) {
-                //Wait until the DB is up and running before we can use it
-                server_app = svr
-            })
-            .then(async () => {
-                auth_token = await getAccessToken()
-                done()
-            })
     })
 
     this.afterAll((done) => {
@@ -65,6 +60,22 @@ describe('/v1/orgs', function () {
             supertest(server_app)
                 .post("/v1/orgs")
                 .send({ phone_number: faker.phone.phoneNumber("+447436######") })
+                .auth(auth_token, { type: "bearer" })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', "fail")
+                    done()
+                })
+        })
+
+        it('should fail to create a new Organization with an invalid phone number', function (done) {
+            supertest(server_app)
+                .post("/v1/orgs")
+                .send({
+                    name: "My Org Name",
+                    phone_number: "a phone number"
+                })
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
@@ -170,6 +181,24 @@ describe('/v1/orgs', function () {
                     chai.expect(response).to.have.property('id', created_org)
                     chai.expect(response).to.have.property('phone_number')
                     chai.expect(response).to.have.property('name', new_org_name)
+                    done()
+                })
+        })
+
+        it("should fail to change the phone number of the organization to an invalid number", function (done) {
+            if (!created_org) { this.skip() }
+
+            let new_org_phone = faker.phone.phoneNumber("+4474########")
+            supertest(server_app)
+                .put(`/v1/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    phone_number: "not a phone number"
+                })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
         })

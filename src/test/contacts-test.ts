@@ -29,20 +29,15 @@ let created_contact_id: string;
 
 describe('/v1/orgs/<org-id>/contacts', function () {
 
-    this.beforeAll(function (done) {
+    // Setup auth_token
+    this.beforeAll(async function () {
         this.timeout(5000)
 
-        BBPromise.try(function () {
-            return server.initServer()
+        return new Promise(async (res, rej) => {
+            server_app = await server.initServer()
+            auth_token = await getAccessToken()
+            res()
         })
-            .then(function (svr) {
-                //Wait until the DB is up and running before we can use it
-                server_app = svr
-            })
-            .then(async () => {
-                auth_token = await getAccessToken()
-                done()
-            })
     })
 
     this.afterAll((done) => {
@@ -366,7 +361,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.be.instanceOf(Array)
                     res.body.data.forEach(contact => {
-                        chai.expect(res.body.data[0]).to.have.property('id')
+                        chai.expect(contact).to.have.property('id')
                         chai.expect(contact).to.have.property('first_name')
                         chai.expect(contact).to.have.property('surname')
                         chai.expect(contact).to.have.property('email_address')
@@ -413,6 +408,10 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('first_name', new_first_name)
                     chai.expect(res.body.data).to.have.property('surname', new_surname)
+                    chai.expect(res.body.data).to.have.property('email_address')
+                    chai.expect(res.body.data).to.have.property('phone_number')
+                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(res.body.data).to.have.property('ServicechainId')
                     done()
                 })
         })
@@ -432,7 +431,30 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     if (err) { return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('first_name')
+                    chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property("email_address", new_email)
+                    chai.expect(res.body.data).to.have.property('phone_number')
+                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    done()
+                })
+        })
+
+        it("should fail to change the contact's email to an invalid address", function (done) {
+            if (!test_org_id || !created_contact_id) { this.skip() }
+
+            let new_email = "this is not an email address"
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    email_address: new_email
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
         })
@@ -452,6 +474,28 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property("email_address", null)
+                    chai.expect(res.body.data).to.have.property('first_name')
+                    chai.expect(res.body.data).to.have.property('surname')
+                    chai.expect(res.body.data).to.have.property('phone_number')
+                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    done()
+                })
+        })
+
+        it("should fail to change the contact's category to a non-existent category", function (done) {
+            if (!test_org_id || !created_contact_id) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    CategoryId: "non-existent-category"
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
         })
@@ -476,6 +520,24 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
         })
 
+        it("should fail to change the contact's phone number to an invalid number", function (done) {
+            if (!test_org_id || !created_contact_id) { this.skip() }
+
+            let new_email = faker.internet.exampleEmail()
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    phone_number: "not a phone number"
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
+                    done()
+                })
+        })
+
         it("should change the contact's phone number", function (done) {
             if (!test_org_id || !created_contact_id) { this.skip() }
 
@@ -491,7 +553,29 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     if (err) { return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('first_name')
+                    chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property("phone_number", new_phone)
+                    chai.expect(res.body.data).to.have.property('email_address')
+                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    done()
+                })
+        })
+
+        it("should fail to change the contact's servicechain to a non-existent servicechain", function (done) {
+            if (!test_org_id || !created_contact_id) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    ServicechainId: "not a sc ID"
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
         })

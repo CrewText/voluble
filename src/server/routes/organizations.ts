@@ -1,17 +1,16 @@
-import * as Promise from 'bluebird';
+import * as BBPromise from 'bluebird';
 import * as express from "express";
-import { scopes } from "voluble-common";
+import * as libphonenumber from 'google-libphonenumber';
+import { Org, scopes } from "voluble-common";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
+import { InvalidParameterValueError, ResourceNotFoundError, UserAlreadyInOrgError, UserNotInOrgError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 import winston = require("winston");
+import { getE164PhoneNumber } from '../../utilities';
 const router = express.Router();
-const errs = require('common-errors')
 //router.use(checkJwt, checkJwtErr)
-
-
-let UserNotInOrgError = errs.helpers.generateClass("UserNotInOrgError", { extends: errs.NotFoundError })
 
 /**
  * 
@@ -88,7 +87,7 @@ router.get('/',
  * 
  * 
  */
-router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
+router.post('/', checkJwt, checkJwtErr, async function (req, res, next) {
     if (req.user && req.user.organization) {
         res.status(400).jsend.fail(`User is already a member of Organization ${req.user.organization}`)
         return
@@ -103,46 +102,34 @@ router.post('/', checkJwt, checkJwtErr, function (req, res, next) {
     let org_phone_number = req.body.phone_number
     try {
         if (!org_name) {
-            throw new errs.ValidationError("Organization name has not been provided")
+            throw new InvalidParameterValueError("Organization name has not been provided")
         } else if (!org_phone_number) {
-            throw new errs.ValidationError("Organization phone number has not been provided")
+            throw new InvalidParameterValueError("Organization phone number has not been provided")
         }
-    } catch (err) {
-        res.status(400).jsend.fail(err)
-        return
+
+        let e164_phone_num: string
+        try { e164_phone_num = getE164PhoneNumber(org_phone_number) }
+        catch{
+            throw new InvalidParameterValueError(`Phone number supplied is invalid: ${org_phone_number}`)
+        }
+
+        let new_org = await OrgManager.createNewOrganization(org_name, e164_phone_num)
+        let new_user = await new_org.createUser({ auth0_id: req.user.sub })
+        await UserManager.setUserIdAuth0Claim(new_user.id)
+        if (req.user.sub != `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
+            await UserManager.setUserScopes(new_user.id, [scopes.OrganizationOwner])
+        }
+
+        res.status(201).jsend.success(await new_org.reload())
+
+    } catch (e) {
+        if (e instanceof InvalidParameterValueError) {
+            res.status(400).jsend.fail(e)
+        } else {
+            winston.error(e)
+            res.status(500).jsend.error(e)
+        }
     }
-
-    OrgManager.createNewOrganization(org_name, org_phone_number)
-        .then(function (new_org) {
-            winston.debug(`Created new Organization (ID: ${new_org.id})`)
-            return new_org.createUser({
-                // OrganizationId: new_org.id,
-                auth0_id: req.user.sub
-            })
-                .then(function (user) {
-                    winston.debug(`Created new User (ID:${new_org.id}) for Org (ID: ${new_org.id})`)
-                    return UserManager.setUserIdAuth0Claim(user.id)
-                        .then(function () {
-                            if (req.user.sub != `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
-                                return UserManager.setUserScopes(user.id, [scopes.OrganizationOwner])
-                            } else {
-                                return
-                            }
-                        })
-                        .then(function () {
-                            return res.status(201).jsend.success(new_org)
-                        })
-                })
-        })
-
-        .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
-            // An Org parameter hasn't been provided or is wrong
-            res.status(400).jsend.fail(err)
-        })
-        .catch(function (err) {
-            console.log(err)
-            res.status(500).jsend.error(err)
-        })
 })
 
 
@@ -210,41 +197,49 @@ router.put('/:org_id',
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware,
-    function (req, res, next) {
-        let org_id = req.params.org_id
-        let new_org_data = req.body
+    async function (req, res, next) {
 
-        if (!new_org_data) {
-            throw new errs.ArgumentNullError(`Parameter Organization not supplied`)
+        try {
+            let org_id = req.params.org_id
+            let new_org_data = req.body
+
+            checkHasOrgAccess(req.user, org_id)
+
+            if (!new_org_data) { throw new InvalidParameterValueError(`Request body must not be empty`) }
+
+            let org = await OrgManager.getOrganizationById(org_id)
+            if (!org) { throw new ResourceNotFoundError(`Resource not found: ${org_id}`) }
+
+            if (new_org_data.name) {
+                org.set("name", new_org_data.name)
+            }
+
+            if (new_org_data.phone_number) {
+                let parsed_phone_num: string
+                try {
+                    parsed_phone_num = getE164PhoneNumber(new_org_data.phone_number)
+                } catch {
+                    throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + req.body.phone_number)
+                }
+
+                org.set("phone_number", parsed_phone_num)
+            }
+
+            await org.save()
+            res.status(200).jsend.success(await org.reload())
+
+        } catch (e) {
+            if (e instanceof ResourceOutOfUserScopeError) {
+                res.status(403).jsend.fail(e)
+            } else if (e instanceof InvalidParameterValueError) {
+                res.status(400).jsend.fail(e)
+            } else if (e instanceof ResourceNotFoundError) {
+                res.status(404).jsend.fail(e)
+            } else {
+                winston.error(`${e.name}: ${e.message}`)
+                res.status(500).jsend.error(e)
+            }
         }
-
-        OrgManager.getOrganizationById(org_id)
-            .then(function (org) {
-                if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`) }
-                return Promise.map(Object.keys(new_org_data), function (key, index, length) {
-                    return org[key] = new_org_data[key]
-                })
-                    .then(function () {
-                        org.name = new_org_data.name
-                        return org.save()
-                    })
-                    .then((org) => {
-                        // We do this as `org.save()` only returns the changed fields
-                        return org.reload()
-                    })
-            })
-            .then(function (org) {
-                res.status(200).jsend.success(org)
-            })
-            .catch(errs.ArgumentNullError, errs.ValidationError, function (err) {
-                res.status(400).jsend.fail(err)
-            })
-            .catch(errs.NotFoundError, function (err) {
-                res.status(404).jsend.fail(err)
-            })
-            .catch(function (err) {
-                res.status(500).jsend.error(err)
-            })
     })
 
 
@@ -291,14 +286,14 @@ router.get('/:org_id/users', checkJwt,
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
                 if (!org) {
-                    throw new errs.NotFoundError(`Organization with ID ${org_id} does not exist`)
+                    throw new ResourceNotFoundError(`Organization with ID ${org_id} does not exist`)
                 }
                 return org.getUsers()
             })
             .then(function (users) {
                 res.status(200).jsend.success(users)
             })
-            .catch(errs.NotFoundError, function (err) {
+            .catch(ResourceNotFoundError, function (err) {
                 res.status(404).jsend.fail(err)
             })
             .catch(function (err) {
@@ -333,18 +328,18 @@ router.post('/:org_id/users',
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
                 if (!org) {
-                    return Promise.reject(new errs.NotFoundError(`No Organization found with ID ${org_id}`))
+                    return BBPromise.reject(new ResourceNotFoundError(`No Organization found with ID ${org_id}`))
                 }
                 return org.createUser({ auth0_id: new_user_auth0_id })
             })
             .then(function (user) {
                 res.status(201).jsend.success(user)
             })
-            .catch(errs.NotFoundError, (err) => {
+            .catch(ResourceNotFoundError, (err) => {
                 res.status(404).jsend.fail(err)
             })
             .catch((err) => {
-                winston.error(err.message)
+                winston.error(err)
                 res.status(500).jsend.error(err)
             })
     })
@@ -388,13 +383,13 @@ router.put('/:org_id/users', checkJwt,
 
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
-                if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} not found`) }
+                if (!org) { throw new ResourceNotFoundError(`Organization with ID ${org_id} not found`) }
                 return UserManager.getUserById(user_id)
                     .then(function (user) {
                         return org.hasUser(user)
                             .then(function (has_user) {
                                 if (has_user) {
-                                    throw new errs.AlreadyInUseError(`User is already in Organization`)
+                                    throw new UserAlreadyInOrgError(`User is already in Organization`)
                                 }
                                 return user
                             })
@@ -409,14 +404,14 @@ router.put('/:org_id/users', checkJwt,
             .then(function (user) {
                 res.status(200).jsend.success(user)
             })
-            .catch(errs.AlreadyInUseError, function (err) {
+            .catch(UserAlreadyInOrgError, function (err) {
                 // Get the user and send it back as success, to ensure idempotence
                 UserManager.getUserById(user_id)
                     .then(function (user) {
                         res.status(200).jsend.success(user)
                     })
             })
-            .catch(errs.NotFoundError, function (err) {
+            .catch(ResourceNotFoundError, function (err) {
                 res.status(404).jsend.fail(err)
             })
             .catch(function (err) {
@@ -440,7 +435,7 @@ router.get('/:org_id/users/:user_id',
 
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
-                if (!org) { throw new errs.NotFoundError(`Organization with ID ${org_id} not found`) }
+                if (!org) { throw new ResourceNotFoundError(`Organization with ID ${org_id} not found`) }
 
                 return org.hasUser(user_id)
                     .then(function (has_user) {
@@ -457,7 +452,7 @@ router.get('/:org_id/users/:user_id',
             .then(function (users) {
                 res.status(200).jsend.success(users[0])
             })
-            .catch(UserNotInOrgError, errs.NotFoundError, function (err) {
+            .catch(UserNotInOrgError, ResourceNotFoundError, function (err) {
                 res.status(404).jsend.fail(err)
             })
             .catch(function (err) {
@@ -480,14 +475,14 @@ router.delete('/:org_id/users/:user_id',
 
         UserManager.getUserById(user_id)
             .then(function (user) {
-                if (!user) { throw new errs.NotFoundError(`The user ${user_id} does not exist`) }
+                if (!user) { throw new ResourceNotFoundError(`The user ${user_id} does not exist`) }
 
                 return user.destroy()
             })
             .then(function () {
                 res.status(200).jsend.success(true)
             })
-            .catch(errs.NotFoundError, function (err) {
+            .catch(ResourceNotFoundError, function (err) {
                 // Return success to ensure idempotence
                 res.status(404).jsend.success(true)
             })

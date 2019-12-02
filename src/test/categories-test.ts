@@ -24,6 +24,8 @@ let auth_token: string
 let server_app: Server;
 
 describe('/v1/orgs/<org-id>/categories', function () {
+
+    // Setup auth_token
     this.beforeAll(async function () {
         this.timeout(5000)
 
@@ -41,6 +43,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
     let test_org_id: string
     let created_cat_id: string
 
+    // Setup test_org_id
     this.beforeAll((done) => {
         supertest(server_app)
             .post("/v1/orgs")

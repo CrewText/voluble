@@ -1,14 +1,14 @@
 import * as express from "express";
-import * as libphonenumber from 'google-libphonenumber';
 import * as validator from 'validator';
 import { scopes } from "voluble-common";
-import { ContactManager, CategoryManager } from '../../contact-manager';
+import { CategoryManager, ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager';
 import { OrgManager } from "../../org-manager";
 import { ServicechainManager } from '../../servicechain-manager';
+import { getE164PhoneNumber } from "../../utilities";
 import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, hasScope, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
 const router = express.Router();
 const winston = require('winston')
@@ -25,7 +25,7 @@ router.get('/:org_id/contacts', checkJwt,
     try {
       // TODO: Add a `limit` parameter to specify amount, rather than 100
       // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-      let offset: number = req.query.offset ? validator.toInt(req.query.offset) : 0
+      let offset: number = req.query.offset ? validator.default.toInt(req.query.offset) : 0
       if (isNaN(offset) || offset < 0) {
         throw new InvalidParameterValueError(`Value supplied for parameter 'offset' is invalid: ${offset}`)
       }
@@ -94,16 +94,14 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
         throw new InvalidParameterValueError("First name, surname, phone number, Organization, or Servicechain not supplied.")
       }
 
-      if (contact_email && (!(typeof contact_email == "string") || !validator.isEmail(contact_email, { require_tld: true }))) {
+      if (contact_email && (!(typeof contact_email == "string") || !validator.default.isEmail(contact_email, { require_tld: true }))) {
         //console.log(validator.isEmail(contact_email, { require_tld: true }))
         throw new InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
       }
 
       let e164_phone_num: string
-      const phone_util = libphonenumber.PhoneNumberUtil.getInstance()
       try {
-        phone_util.isValidNumber(phone_util.parse(contact_phone))
-        e164_phone_num = phone_util.format(phone_util.parse(contact_phone), libphonenumber.PhoneNumberFormat.E164)
+        e164_phone_num = getE164PhoneNumber(contact_phone)
       } catch {
         throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
       }
@@ -158,24 +156,47 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
       let contact = await ContactManager.getContactWithId(req.params.contact_id)
       if (!contact) { throw new ResourceNotFoundError(`Contact not found: ${req.params.contact_id}`) }
 
-      if ('CategoryId' in Object.keys(req.body)) {
-        let cat = await CategoryManager.getCategoryById(req.body.CategoryId)
-        if (!cat) { throw new InvalidParameterValueError(`Category does not exist: ${req.body.CategoryId}`) }
-        await contact.setCategory(req.body.CategoryId ? cat.id : null)
+      if (Object.keys(req.body).indexOf('CategoryId') > -1) {
+        if (req.body.CategoryId != null) {
+          let cat = await CategoryManager.getCategoryById(req.body.CategoryId)
+
+          if (!cat) { throw new InvalidParameterValueError(`Category does not exist: ${req.body.CategoryId}`) }
+          await contact.setCategory(cat.id)
+        } else {
+          await contact.setCategory(null)
+        }
       }
 
-      if ('ServicechainId' in Object.keys(req.body)) {
+      if (Object.keys(req.body).indexOf('ServicechainId') > -1) {
         let sc = await ServicechainManager.getServicechainById(req.body.ServicechainId)
         if (!sc) { throw new InvalidParameterValueError(`Servicechain does not exist: ${req.body.ServicechainId}`) }
         await contact.setServicechain(sc)
       }
 
-      ["first_name", "surname", "phone_number", "email_address"].forEach(trait => {
-        //TODO: Validate phone no and email
+      ["first_name", "surname"].forEach(trait => {
         if (Object.keys(req.body).indexOf(trait) > -1) {
           contact.set(trait, req.body[trait])
         }
       });
+
+      if (Object.keys(req.body).indexOf('phone_number') > -1) {
+        let e164_phone_num: string
+        try {
+          e164_phone_num = getE164PhoneNumber(req.body.phone_number)
+        } catch {
+          throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + req.body.phone_number)
+        }
+
+        contact.set('phone_number', e164_phone_num)
+      }
+
+      if (Object.keys(req.body).indexOf('email_address') > -1) {
+        if (req.body.email_address != null && !validator.default.isEmail(req.body.email_address, { require_tld: true })) {
+          throw new InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + req.body.email_address)
+        } else {
+          contact.set('email_address', req.body.email_address)
+        }
+      }
 
       await contact.save()
 
@@ -187,7 +208,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
       else if (e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail({ name: e.name, message: e.message })
       } else {
-        winston.error(e)
+        winston.error(e.message)
         res.status(500).jsend.error({ name: e.name, message: e.message })
       }
     }

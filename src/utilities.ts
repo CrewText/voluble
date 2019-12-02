@@ -1,7 +1,5 @@
 // import * as Promise from "bluebird";
 import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
-const errs = require('common-errors')
-
 
 /**
  * 
@@ -11,9 +9,9 @@ const errs = require('common-errors')
  */
 export function getE164PhoneNumber(phone_number: string): string {
   let phone_utils = PhoneNumberUtil.getInstance()
-  let parsed_number = phone_utils.parseAndKeepRawInput(phone_number)
+  let parsed_number = phone_utils.parse(phone_number)
   if (!phone_utils.isValidNumber(parsed_number)) {
-    throw new errs.ValidationError("The supplied phone number is invalid.")
+    throw new Error("The supplied phone number is invalid.")
   } else {
     return phone_utils.format(parsed_number, PhoneNumberFormat.E164)
   }

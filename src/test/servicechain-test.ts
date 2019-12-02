@@ -25,6 +25,7 @@ let server_app;
 
 describe('/v1/orgs/<org-id>/servicechains', function () {
 
+    // Setup auth_token
     this.beforeAll(async function () {
         this.timeout(5000)
 
@@ -36,7 +37,6 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
     })
 
     this.afterAll((done) => {
-        // done()
         server.shutdownServer().then(() => { done() })
     })
 
@@ -44,6 +44,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
     let test_services: Service[]
     let created_servicechain_id: string
 
+    // Setup test_org_id
     this.beforeAll((done) => {
         supertest(server_app)
             .post("/v1/orgs/")
@@ -61,6 +62,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             })
     })
 
+    // Setup test_services
     this.beforeAll((done) => {
         supertest(server_app)
             .get("/v1/services")
@@ -307,6 +309,46 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                         "service": faker.random.uuid(),
                         "priority": 3
                     }]
+                })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
+                    done()
+                })
+        })
+
+        it("should fail to overwrite when a non-integer priority is provided", function (done) {
+            if (!created_servicechain_id || !test_org_id) { this.skip() }
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/servicechains/${created_servicechain_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    name: "API Test Servicechain Overwrite",
+                    services: [{
+                        "service": test_services[0].id,
+                        "priority": "three"
+                    }]
+                })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
+                    done()
+                })
+        })
+
+        it("should fail to overwrite when a 'services' is not a list", function (done) {
+            if (!created_servicechain_id || !test_org_id) { this.skip() }
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/servicechains/${created_servicechain_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    name: "API Test Servicechain Overwrite",
+                    services: {
+                        "service": test_services[0].id,
+                        "priority": 2
+                    }
                 })
                 .expect(400)
                 .end((err, res) => {

@@ -1,13 +1,13 @@
 import * as express from "express";
+import * as validator from 'validator';
 import { scopes } from "voluble-common";
 import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
+import { InvalidParameterValueError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
-import { InvalidParameterValueError } from '../../voluble-errors'
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
 import winston = require("winston");
-import { setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, checkHasOrgAccess } from "../security/scopes";
-import { isInt } from "validator";
 const router = express.Router();
 
 const errs = require('common-errors')
@@ -38,12 +38,12 @@ router.post('/:org_id/servicechains/', checkJwt,
       if (!(req.body.services instanceof Array)) { throw new InvalidParameterValueError(`Parameter 'services' must be an Array`) }
 
       let services_supplied: any[] = req.body.services
-      let services_to_add: ServicechainManager.ServicechainPriority[] = []
+      let services_to_add: ServicechainManager.ServicePriority[] = []
 
       if (!services_supplied.length) { throw new InvalidParameterValueError(`Parameter 'services' is empty`) }
 
       services_supplied.forEach((svc_prio_pair, idx) => {
-        let s: ServicechainManager.ServicechainPriority = { service: svc_prio_pair.service, priority: svc_prio_pair.priority }
+        let s: ServicechainManager.ServicePriority = { service: svc_prio_pair.service, priority: svc_prio_pair.priority }
         services_to_add.push(s)
       });
 
@@ -118,8 +118,17 @@ router.put('/:org_id/servicechains/:id', checkJwt,
     try {
       let sc = await ServicechainManager.getServicechainById(sc_id)
       if (!sc) { throw new ServicechainManager.ServicechainNotFoundError(`Servicechain with ID ${sc_id} not found`) }
+      if (!Array.isArray(req.body.services)) { throw new InvalidParameterValueError(`The services parameter must be an Array of service-priority objects`) }
 
-      let services_to_add_list: ServicechainManager.ServicechainPriority[] = <ServicechainManager.ServicechainPriority[]>req.body.services
+      req.body.services.forEach(body_pair => {
+        if (!body_pair.service || !body_pair.priority) {
+          throw new InvalidParameterValueError(`The fields 'service' and 'priority' must be supplied on each item`)
+        } else if (typeof body_pair.priority != "number" || !validator.default.isInt(body_pair.priority.toString())) {
+          throw new InvalidParameterValueError(`The value supplied for 'priority' must be an integer: ${body_pair.priority}`)
+        }
+      });
+
+      let services_to_add_list: ServicechainManager.ServicePriority[] = <ServicechainManager.ServicePriority[]>req.body.services
 
       // And add all of the Services to it, same logic as the POST
 
@@ -128,6 +137,7 @@ router.put('/:org_id/servicechains/:id', checkJwt,
         if (!svc) {
           throw new PluginManager.ServiceNotFoundError(`Service with ID ${svc_prio_pair.service} could not be found!`);
         }
+
         await sc.addService(svc_prio_pair.service, {
           through: {
             service: svc_prio_pair.service,
@@ -142,9 +152,10 @@ router.put('/:org_id/servicechains/:id', checkJwt,
     }
 
     catch (e) {
-      if (e instanceof ServicechainManager.ServicechainNotFoundError || e instanceof PluginManager.ServiceNotFoundError) {
+      if (e instanceof ServicechainManager.ServicechainNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail(e)
       } else {
+        winston.error(e)
         res.status(500).jsend.error(e)
       }
     }

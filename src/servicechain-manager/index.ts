@@ -12,7 +12,7 @@ import { Servicechain, ServicesInSC } from 'voluble-common'
  */
 export namespace ServicechainManager {
 
-    export interface ServicechainPriority {
+    export interface ServicePriority {
         service: string
         priority: number
     }
