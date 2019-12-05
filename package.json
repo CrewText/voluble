@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node ./dist/server/index.js",
     "postinstall": "tsc -v; tsc",
-    "test": "mocha dist/test",
+    "test-tap": "mocha dist/test --exit --reporter tap",
+    "test": "mocha dist/test --exit",
     "start-server": "node ./dist/server/index.js",
     "start-worker": "node ./dist/worker/worker-main.js"
   },
