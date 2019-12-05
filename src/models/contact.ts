@@ -34,6 +34,7 @@ export interface ContactInstance extends Sequelize.Instance<ContactAttributes>, 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var Contact = sequelize.define('Contact', {
         id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+        title: { type: DataTypes.STRING, allowNull: false },
         first_name: { type: DataTypes.STRING, allowNull: false },
         surname: { type: DataTypes.STRING, allowNull: false },
         email_address: { type: DataTypes.STRING, validate: { isEmail: true } },
