@@ -1,16 +1,14 @@
 import * as BBPromise from 'bluebird';
 import * as express from "express";
-import * as libphonenumber from 'google-libphonenumber';
-import { Org, scopes } from "voluble-common";
+import { scopes } from "voluble-common";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
+import { getE164PhoneNumber } from '../../utilities';
 import { InvalidParameterValueError, ResourceNotFoundError, UserAlreadyInOrgError, UserNotInOrgError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 import winston = require("winston");
-import { getE164PhoneNumber } from '../../utilities';
 const router = express.Router();
-//router.use(checkJwt, checkJwtErr)
 
 /**
  * 
@@ -36,7 +34,7 @@ const router = express.Router();
 router.get('/',
     checkJwt,
     checkJwtErr,
-    checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]), setupUserOrganizationMiddleware, function (req, res, next) {
+    checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]), setupUserOrganizationMiddleware, function (req, res: express.Response, next) {
         if (req.user.scope.split(' ').indexOf(scopes.VolubleAdmin) > -1) {
             OrgManager.getAllOrganizations()
                 .then(function (organizations) {

@@ -10,9 +10,9 @@ if (!process.env.PATH || process.env.PATH.lastIndexOf("/app/.heroku") == -1) {
 
 process.env.NODE_ENV = "test"
 
-import * as BBPromise from 'bluebird'
 import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
+import * as faker from 'faker'
 import * as supertest from 'supertest'
 import { Service } from 'voluble-common'
 import * as server from '../server/server-main'
@@ -90,7 +90,7 @@ describe('/v1/services', function () {
         })
 
         it('should return the service with the specified ID', function (done) {
-            if (!available_services) { this.skip() }
+            if (!available_services || !auth_token) { this.skip() }
             supertest(server_app)
                 .get(`/v1/services/${available_services[0].id}`)
                 .auth(auth_token, { type: "bearer" })
@@ -101,6 +101,37 @@ describe('/v1/services', function () {
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('name')
                     chai.expect(res.body.data).to.have.property('directory_name')
+                    done()
+                })
+        })
+    })
+
+    describe('POST /v1/services/<svc_id>/', function () {
+        it("should fail when we touch an endpoint that doesn't exist", function (done) {
+
+            supertest(server_app)
+                .post(`/v1/services/${faker.random.uuid()}/endpoint`)
+                .send({ data: 'some data here' })
+                .expect(404)
+                .end((err, res) => {
+                    if (err) { done(err) }
+                    chai.expect(res.body).to.have.property('status', 'fail')
+                    done()
+                })
+        })
+    })
+
+    describe('POST /v1/services/<svc_id>/', function () {
+        it("should successfully touch a plugin endpoint", function (done) {
+            if (!available_services) { this.skip() }
+
+            supertest(server_app)
+                .post(`/v1/services/${available_services[0].directory_name}/endpoint`)
+                .send({ data: 'some data here' })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
                     done()
                 })
         })

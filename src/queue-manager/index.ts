@@ -46,16 +46,8 @@ export namespace QueueManager {
 
     }
 
-    export async function shutdownQueues() {
-        return new Promise((resolve, reject) => {
-            client.quit((err, reply) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve()
-                }
-            })
-        })
+    export function shutdownQueues() {
+        client.end(process.env.NODE_ENV == "production")
     }
 
     export function addMessageToSendRequest(message: MessageInstance) {

@@ -154,10 +154,11 @@ export function initServer() {
 }
 
 export async function shutdownServer() {
-  await QueueManager.shutdownQueues()
-  let p = new BBPromise((resolve, reject) => {
+  QueueManager.shutdownQueues()
+  let p = new Promise((resolve, reject) => {
     if (svr) {
-      svr.close(() => {
+      svr.close((err) => {
+        if (err) { winston.error(err) }
         resolve()
       })
     }

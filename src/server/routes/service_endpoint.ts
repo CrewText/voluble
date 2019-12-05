@@ -21,13 +21,13 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
         .then(function (service) {
             if (!service) {
                 winston.error(`SVC END: Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
-                res.jsend.fail(`Plugin ${request_service_dir} does not exist`)
+                res.status(404).jsend.fail(`Plugin ${request_service_dir} does not exist`)
                 return
             }
             winston.debug(`Passing message on to ${service.directory_name}`)
 
             QueueManager.addMessageReceivedRequest(req.body, service.id)
-            res.jsend.success(request_service_dir)
+            res.status(200).jsend.success(request_service_dir)
         })
 });
 
