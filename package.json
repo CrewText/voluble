@@ -29,7 +29,6 @@
     "google-libphonenumber": "^3.2.6",
     "jsend": "^1.1.0",
     "jwks-rsa": "^1.6.0",
-    "mysql2": "^1.7.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.5",
     "request-promise-native": "^1.0.8",
