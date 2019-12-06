@@ -199,6 +199,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             if (!test_org_id || !test_sc_id) { this.skip() }
             let contact_fname = faker.name.firstName()
             let contact_sname = faker.name.lastName()
+            let contact_title = faker.name.title()
             let contact_phone = faker.phone.phoneNumber("+4474########")
 
             supertest(server_app)
@@ -207,6 +208,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .send({
                     first_name: contact_fname,
                     surname: contact_sname,
+                    title: contact_title,
                     phone_number: contact_phone,
                     ServicechainId: test_sc_id,
                     CategoryId: test_cat_id
@@ -217,7 +219,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
-                    chai.expect(res.body.data).to.have.property('title')
+                    chai.expect(res.body.data).to.have.property('title', contact_title)
                     chai.expect(res.body.data).to.have.property('first_name', contact_fname)
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
@@ -234,6 +236,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             if (!test_org_id || !test_sc_id) { this.skip() }
             let contact_fname = faker.name.firstName()
             let contact_sname = faker.name.lastName()
+            let contact_title = faker.name.title()
             let contact_phone = faker.phone.phoneNumber("+4474########")
             let contact_email = faker.internet.email(contact_fname, contact_sname)
 
@@ -243,6 +246,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .send({
                     first_name: contact_fname,
                     surname: contact_sname,
+                    title: contact_title,
                     phone_number: contact_phone,
                     email_address: contact_email,
                     ServicechainId: test_sc_id,
@@ -253,7 +257,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
-                    chai.expect(res.body.data).to.have.property('title')
+                    chai.expect(res.body.data).to.have.property('title', contact_title)
                     chai.expect(res.body.data).to.have.property('first_name', contact_fname)
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
