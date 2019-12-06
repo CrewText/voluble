@@ -202,7 +202,7 @@ export namespace PluginManager {
      */
 
     export async function getAllServices(): Promise<db.ServiceInstance[]> {
-        return db.models.Service.findAll()
+        return db.models.Service.findAll({ order: [['createdAt', 'DESC']] })
     }
 
     /**

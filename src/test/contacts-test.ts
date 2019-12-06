@@ -158,6 +158,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it("should create a new contact", function (done) {
             if (!test_org_id || !test_sc_id) { this.skip() }
+            let contact_title = faker.name.title()
             let contact_fname = faker.name.firstName()
             let contact_sname = faker.name.lastName()
             let contact_phone = faker.phone.phoneNumber("+4474########")
@@ -167,6 +168,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .post(`/v1/orgs/${test_org_id}/contacts`)
                 .auth(auth_token, { type: "bearer" })
                 .send({
+                    title: contact_title,
                     first_name: contact_fname,
                     surname: contact_sname,
                     phone_number: contact_phone,
@@ -180,6 +182,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title', contact_title)
                     chai.expect(res.body.data).to.have.property('first_name', contact_fname)
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
@@ -196,6 +199,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             if (!test_org_id || !test_sc_id) { this.skip() }
             let contact_fname = faker.name.firstName()
             let contact_sname = faker.name.lastName()
+            let contact_title = faker.name.title()
             let contact_phone = faker.phone.phoneNumber("+4474########")
 
             supertest(server_app)
@@ -204,6 +208,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .send({
                     first_name: contact_fname,
                     surname: contact_sname,
+                    title: contact_title,
                     phone_number: contact_phone,
                     ServicechainId: test_sc_id,
                     CategoryId: test_cat_id
@@ -214,6 +219,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title', contact_title)
                     chai.expect(res.body.data).to.have.property('first_name', contact_fname)
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
@@ -230,6 +236,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             if (!test_org_id || !test_sc_id) { this.skip() }
             let contact_fname = faker.name.firstName()
             let contact_sname = faker.name.lastName()
+            let contact_title = faker.name.title()
             let contact_phone = faker.phone.phoneNumber("+4474########")
             let contact_email = faker.internet.email(contact_fname, contact_sname)
 
@@ -239,6 +246,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .send({
                     first_name: contact_fname,
                     surname: contact_sname,
+                    title: contact_title,
                     phone_number: contact_phone,
                     email_address: contact_email,
                     ServicechainId: test_sc_id,
@@ -249,6 +257,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title', contact_title)
                     chai.expect(res.body.data).to.have.property('first_name', contact_fname)
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
@@ -406,8 +415,35 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     if (err) { return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title')
                     chai.expect(res.body.data).to.have.property('first_name', new_first_name)
                     chai.expect(res.body.data).to.have.property('surname', new_surname)
+                    chai.expect(res.body.data).to.have.property('email_address')
+                    chai.expect(res.body.data).to.have.property('phone_number')
+                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    done()
+                })
+        })
+
+        it("should change the contact's title", function (done) {
+            if (!test_org_id || !created_contact_id) { this.skip() }
+
+            let new_title = faker.name.title()
+            supertest(server_app)
+                .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    title: new_title
+                })
+                .expect(200)
+                .end(function (err, res) {
+                    if (err) { return done(err) }
+                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title', new_title)
+                    chai.expect(res.body.data).to.have.property('first_name')
+                    chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property('email_address')
                     chai.expect(res.body.data).to.have.property('phone_number')
                     chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
@@ -431,6 +467,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     if (err) { return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title')
                     chai.expect(res.body.data).to.have.property('first_name')
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property("email_address", new_email)
@@ -474,6 +511,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property("email_address", null)
+                    chai.expect(res.body.data).to.have.property('title')
                     chai.expect(res.body.data).to.have.property('first_name')
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property('phone_number')
@@ -553,6 +591,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     if (err) { return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('title')
                     chai.expect(res.body.data).to.have.property('first_name')
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property("phone_number", new_phone)

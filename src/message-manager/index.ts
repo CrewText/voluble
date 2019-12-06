@@ -36,6 +36,15 @@ export namespace MessageManager {
             direction: direction == "INBOUND" ? MessageDirections.INBOUND : MessageDirections.OUTBOUND,
             message_state: msg_state
         })
+
+        if (msg.body.includes("<title>") || msg.body.includes("<first_name>") || msg.body.includes("<surname>")) {
+            let c = await ContactManager.getContactWithId(contact_id)
+            msg.set('body', body.replace("<title>", c.title))
+            msg.set('body', body.replace("<first_name>", c.first_name))
+            msg.set('body', body.replace("<surname>", c.surname))
+        }
+        // TODO: Add templating for User's name who sent Message
+
         return msg.save()
     }
 

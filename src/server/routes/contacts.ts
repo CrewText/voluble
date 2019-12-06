@@ -80,6 +80,7 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
   async function (req, res, next) {
 
     try {
+      let contact_title = req.body["title"]
       let contact_fname = req.body["first_name"]
       let contact_sname = req.body["surname"]
       let contact_email = req.body["email_address"]
@@ -90,8 +91,8 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
 
       checkHasOrgAccess(req.user, contact_org)
 
-      if (!contact_fname || !contact_sname || !contact_phone || !contact_sc) {
-        throw new InvalidParameterValueError("First name, surname, phone number, Organization, or Servicechain not supplied.")
+      if (!contact_title || !contact_fname || !contact_sname || !contact_phone || !contact_sc) {
+        throw new InvalidParameterValueError("First name, surname, title, phone number, Organization, or Servicechain not supplied.")
       }
 
       if (contact_email && (!(typeof contact_email == "string") || !validator.default.isEmail(contact_email, { require_tld: true }))) {
@@ -120,6 +121,7 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
       }
 
       let created_contact = await requested_org.createContact({
+        title: contact_title,
         ServicechainId: contact_sc,
         CategoryId: contact_cat,
         first_name: contact_fname,
@@ -173,7 +175,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
         await contact.setServicechain(sc)
       }
 
-      ["first_name", "surname"].forEach(trait => {
+      ["title", "first_name", "surname"].forEach(trait => {
         if (Object.keys(req.body).indexOf(trait) > -1) {
           contact.set(trait, req.body[trait])
         }
