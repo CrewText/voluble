@@ -25,7 +25,7 @@ export namespace OrgManager {
     }
 
     export function getAllOrganizations(): Promise<db.OrganizationInstance[]> {
-        return db.models.Organization.findAll()
+        return db.models.Organization.findAll({ order: [['createdAt', 'DESC']] })
     }
 
     export function getOrganizationById(id: string): Promise<db.OrganizationInstance> {
