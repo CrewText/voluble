@@ -12,7 +12,7 @@ export function setupUserOrganizationMiddleware(req, res, next) {
         UserManager.getUserFromAuth0Id(sub_id)
             .then(function (user) {
                 if (!user) {
-                    res.status(400).jsend.fail(new errs.NotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
+                    res.status(401).jsend.fail(new errs.NotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
                 }
                 return user.getOrganization()
             })
