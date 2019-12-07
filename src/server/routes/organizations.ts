@@ -112,16 +112,22 @@ router.post('/', checkJwt, checkJwtErr, async function (req, res, next) {
         }
 
         let new_org = await OrgManager.createNewOrganization(org_name, e164_phone_num)
+        winston.debug(`Created new Organization`, { 'org': new_org.id })
         let new_user = await new_org.createUser({ auth0_id: req.user.sub })
+        winston.debug(`Created new User in Organization`, { 'org': new_org.id, 'user': new_user.id })
         await UserManager.setUserIdAuth0Claim(new_user.id)
+        winston.debug('Set Auth0 user ID claim', { 'user': new_user.id })
+
         if (req.user.sub != `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
+            winston.debug('Setting user scope organization:owner', { 'user': new_user.id })
             await UserManager.setUserScopes(new_user.id, [scopes.OrganizationOwner])
-        }
+        } else { winston.debug(`Created by test client, not setting user claim`, { 'user': new_user.id }) }
 
         res.status(201).jsend.success(await new_org.reload())
 
     } catch (e) {
         if (e instanceof InvalidParameterValueError) {
+            winston.warn(e.message)
             res.status(400).jsend.fail(e)
         } else {
             winston.error(e)
