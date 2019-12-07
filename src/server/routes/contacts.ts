@@ -26,12 +26,18 @@ router.get('/:org_id/contacts', checkJwt,
       // TODO: Add a `limit` parameter to specify amount, rather than 100
       // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
       let offset: number = req.query.offset ? validator.default.toInt(req.query.offset) : 0
+      let limit: number = req.query.limit ? validator.default.toInt(req.query.limit) : 100
       if (isNaN(offset) || offset < 0) {
         throw new InvalidParameterValueError(`Value supplied for parameter 'offset' is invalid: ${offset}`)
       }
 
+      if (isNaN(limit) || limit < 1 || limit > 500) {
+        throw new InvalidParameterValueError(`Value supplied for parameter 'limit' is invalid (must be 0 < limit < 501): ${limit}`)
+      }
+
       checkHasOrgAccess(req.user, req.params.org_id)
-      let contacts = await ContactManager.getHundredContacts(offset, req.params.org_id)
+
+      let contacts = await ContactManager.getContacts(offset, limit, req.params.org_id)
       res.status(200).jsend.success(contacts)
     } catch (e) {
       if (e instanceof ResourceOutOfUserScopeError) {
