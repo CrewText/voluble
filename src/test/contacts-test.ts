@@ -282,10 +282,38 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .auth(auth_token, { type: "bearer" })
                 .send({
                     first_name: contact_fname,
+                    title: faker.name.title(),
                     surname: contact_sname,
                     phone_number: contact_phone,
                     email_address: contact_email,
                     CategoryId: test_cat_id
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { console.log(err); return done(err) }
+
+                    chai.expect(res.body).to.have.property('status', "fail")
+                    done()
+                })
+        })
+
+        it('should fail to create a new contact without a title', function (done) {
+            if (!test_org_id) { this.skip() }
+            let contact_fname = faker.name.firstName()
+            let contact_sname = faker.name.lastName()
+            let contact_phone = faker.phone.phoneNumber("+4474########")
+            let contact_email = faker.internet.email(contact_fname, contact_sname)
+
+            supertest(server_app)
+                .post(`/v1/orgs/${test_org_id}/contacts`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    first_name: contact_fname,
+                    surname: contact_sname,
+                    phone_number: contact_phone,
+                    email_address: contact_email,
+                    CategoryId: test_cat_id,
+                    ServicechainId: test_sc_id
                 })
                 .expect(400)
                 .end(function (err, res) {
@@ -307,6 +335,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .post(`/v1/orgs/${test_org_id}/contacts`)
                 .auth(auth_token, { type: "bearer" })
                 .send({
+                    title: faker.name.title(),
                     first_name: contact_fname,
                     surname: contact_sname,
                     phone_number: contact_phone,
