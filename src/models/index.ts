@@ -43,7 +43,6 @@ export interface DbConnection {
 export var models: DbConnection = {}
 let db_url = process.env.NODE_ENV == "test" ? "mysql://root@localhost/voluble_test" : process.env.CLEARDB_DATABASE_URL
 
-//export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: process.env.NODE_ENV == "production" ? false : true })
 export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: false })
 
 fs
@@ -97,6 +96,6 @@ models.Sequelize = Sequelize;
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
  */
 export function initialize_database(): Promise<any> {
-    process.env.NODE_ENV == "test" ? console.warn("Dropping DB") : console.info("Using existing DB structure")
+    process.env.NODE_ENV == "test" ? console.warn(`Dropping DB? YES, resetting DB because NODE_ENV is 'test'`) : console.info(`Dropping DB? NO, because NODE_ENV is ${process.env.NODE_ENV}`)
     return sequelize.sync({ force: process.env.NODE_ENV == "test" ? true : false })
 }

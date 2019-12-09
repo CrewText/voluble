@@ -128,10 +128,10 @@ router.post('/', checkJwt, checkJwtErr, async function (req, res, next) {
     } catch (e) {
         if (e instanceof InvalidParameterValueError) {
             winston.warn(e.message)
-            res.status(400).jsend.fail(e)
+            res.status(400).jsend.fail(e.message)
         } else {
             winston.error(e)
-            res.status(500).jsend.error(e)
+            res.status(500).jsend.error(e.message)
         }
     }
 })
