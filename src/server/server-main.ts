@@ -147,7 +147,7 @@ export function initServer() {
       return PluginManager.initAllPlugins()
     })
     .then(function () {
-      svr = process.env.NODE_ENV == "production" ? app.listen(port, onServerListening) : app.listen(port, "localhost", onServerListening)
+      svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost", onServerListening) : app.listen(port, onServerListening)
       return svr
     })
 }
