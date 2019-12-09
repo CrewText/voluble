@@ -116,8 +116,8 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
       let contact = await ContactManager.getContactWithId(req.body.contact_id)
       let sc = req.body.servicechain_id ? await ServicechainManager.getServicechainById(req.body.servicechain_id) : await contact.getServicechain()
 
-      let msg = await MessageManager.createMessage(req.body.msg_body,
-        req.body.contact_id,
+      let msg = await MessageManager.createMessage(req.body.body,
+        req.body.contact,
         req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
         MessageStates.MSG_PENDING,
         sc.id || null,
