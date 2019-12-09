@@ -114,7 +114,7 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
       checkHasOrgAccess(req.user, req.params.org_id)
 
       let contact = await ContactManager.getContactWithId(req.body.contact)
-      let sc = req.body.servicechain_id ? await ServicechainManager.getServicechainById(req.body.servicechain_id) : await contact.getServicechain()
+      let sc = req.body.ServicechainId ? await ServicechainManager.getServicechainById(req.body.ServicechainId) : await contact.getServicechain()
 
       let msg = await MessageManager.createMessage(req.body.body,
         req.body.contact,
@@ -129,11 +129,14 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
 
     } catch (e) {
       if (e instanceof ResourceOutOfUserScopeError) {
+        winston.warn(e)
         res.status(403).jsend.fail(e.message)
       } else if (e instanceof InvalidParameterValueError) {
+        winston.warn(e)
         res.status(400).jsend.fail(e.message)
       } else {
-        res.status(500).jsend.error(e.message)
+        winston.error(e)
+        res.status(500).jsend.error(`An internal error has occurred: ${e.name}`)
       }
     }
   })
