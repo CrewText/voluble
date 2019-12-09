@@ -1,7 +1,7 @@
 import * as Sequelize from "sequelize";
 import { Category as CategoryAttributes, Org as OrgAttributes, Contact as ContactAttributes } from 'voluble-common';
-import { OrgInstance } from "./organization";
 import { ContactInstance } from "./contact";
+import { OrgInstance } from "./organization";
 
 export interface CategoryInstance extends Sequelize.Instance<CategoryAttributes>, CategoryAttributes {
     getOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>
@@ -18,7 +18,6 @@ export interface CategoryInstance extends Sequelize.Instance<CategoryAttributes>
     hasContacts: Sequelize.HasManyHasAssociationsMixin<ContactInstance, ContactInstance['id']>,
     removeContact: Sequelize.HasManyRemoveAssociationMixin<ContactAttributes, ContactInstance['id']>,
     removeContacts: Sequelize.HasManyRemoveAssociationsMixin<ContactInstance, ContactInstance['id']>
-
 }
 
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
