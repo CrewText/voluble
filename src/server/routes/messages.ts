@@ -106,14 +106,14 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
   async function (req, res, next) {
     try {
       if (!req.body.contact) {
-        throw new InvalidParameterValueError(`Invalid value for parameter 'contact_id': ${req.body.contact_id}`)
+        throw new InvalidParameterValueError(`Invalid value for parameter 'contact': ${req.body.contact}`)
       }
       if (!req.body.body) {
-        throw new InvalidParameterValueError(`Invalid value for parameter 'msg_body': ${req.body.msg_body}`)
+        throw new InvalidParameterValueError(`Invalid value for parameter 'body': ${req.body.body}`)
       }
       checkHasOrgAccess(req.user, req.params.org_id)
 
-      let contact = await ContactManager.getContactWithId(req.body.contact_id)
+      let contact = await ContactManager.getContactWithId(req.body.contact)
       let sc = req.body.servicechain_id ? await ServicechainManager.getServicechainById(req.body.servicechain_id) : await contact.getServicechain()
 
       let msg = await MessageManager.createMessage(req.body.body,
