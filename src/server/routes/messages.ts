@@ -105,10 +105,10 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
   checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
   async function (req, res, next) {
     try {
-      if (!req.body.contact_id) {
+      if (!req.body.contact) {
         throw new InvalidParameterValueError(`Invalid value for parameter 'contact_id': ${req.body.contact_id}`)
       }
-      if (!req.body.msg_body) {
+      if (!req.body.body) {
         throw new InvalidParameterValueError(`Invalid value for parameter 'msg_body': ${req.body.msg_body}`)
       }
       checkHasOrgAccess(req.user, req.params.org_id)
