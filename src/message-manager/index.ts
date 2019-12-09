@@ -141,7 +141,7 @@ export namespace MessageManager {
     }
 
     export function updateMessageState(msg_id: string, msg_state: string): Promise<db.MessageInstance> {
-        winston.info("MM: Updating message state")
+        winston.info("MM: Updating message state", { 'message': msg_id, 'state': MessageStates[msg_state] })
         return getMessageFromId(msg_id)
             .then(function (msg) {
                 if (msg) {
@@ -152,7 +152,7 @@ export namespace MessageManager {
                     }
                     return msg.save()
                 } else {
-                    winston.info(`MM: Could not find message with ID ${msg_id}`)
+                    winston.warn(`MM: Could not find message with ID ${msg_id}`)
                     return Promise.reject(new errs.NotFoundError(`Message with ID ${msg_id} was not found`))
                 }
             })

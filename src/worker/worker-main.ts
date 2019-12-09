@@ -46,9 +46,14 @@ worker_msg_send.on("message", async function (message, next, message_id) {
     let parsed_msg: db.MessageInstance = JSON.parse(message)
     winston.debug(`Main: Worker has collected message ${parsed_msg.id} for sending`)
     QueueManager.addMessageStateUpdateRequest(parsed_msg.id, "MSG_SENDING")
-    winston.debug(`Main: Attempting message send for message ${parsed_msg.id}`)
-    await MessageManager.doMessageSend(parsed_msg)
-    next()
+    winston.debug(`Main: Attempting message send`, { 'message': parsed_msg.id })
+    try {
+        await MessageManager.doMessageSend(parsed_msg)
+    } catch (e) {
+        winston.error(e)
+    } finally {
+        next()
+    }
 }).start()
 
 async function attemptContactIdentification(phone_number?: string, email_address?: string): Promise<string | null> {
