@@ -27,6 +27,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
+        console.log('Getting auth token')
         this.timeout(5000)
 
         return new Promise(async (res, rej) => {
@@ -45,6 +46,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
 
     // Setup test_org_id
     this.beforeAll((done) => {
+        console.log('Setting up test Org')
         supertest(server_app)
             .post("/v1/orgs")
             .auth(auth_token, { type: "bearer" })

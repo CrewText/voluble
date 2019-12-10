@@ -77,7 +77,7 @@ models.Category.belongsTo(models.Organization)
 models.Organization.hasMany(models.Category)
 
 models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC, foreignKey: 'service' })
-models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC, foreignKey: 'servicechain' })
+models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC, foreignKey: 'servicechain', as: 'services' })
 
 models.Organization.hasMany(models.Servicechain)
 models.Servicechain.belongsTo(models.Organization)

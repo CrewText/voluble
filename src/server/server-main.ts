@@ -13,7 +13,7 @@ const bodyParser = require('body-parser');
 var xmlParser = require('express-xml-bodyparser');
 
 let logger = winston.loggers.add('voluble-log', {
-  format: winston.format.json(),
+  format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
   level: process.env.NODE_ENV == "production" ? "info" : "debug",
   defaultMeta: { module: 'Server-Main' }
 })
