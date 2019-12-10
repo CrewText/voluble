@@ -33,7 +33,9 @@ function createRedisClient() {
         let rtg = require("url").parse(process.env.REDISTOGO_URL);
         winston.info(`Connecting to Redis server at ${rtg.hostname}:${rtg.port}`)
         client = redis.createClient(rtg.port, rtg.hostname)
+        winston.info(`Connected to Redis server; now authorizing`)
         client.auth(rtg.auth.split(":")[1]);
+        winston.info(`Successfully authorized`)
     } else {
         winston.warn(`No REDISTOGO_URL variable found, using localhost...`)
         client = redis.createClient()
