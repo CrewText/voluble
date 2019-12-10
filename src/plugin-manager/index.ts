@@ -30,7 +30,7 @@ export namespace PluginManager {
          */
 
         return new Promise<voluble_plugin>(async (resolve, reject) => {
-            let svc = await db.models.Service.findById(id)
+            let svc = await db.models.Service.findByPk(id)
 
             if (!svc) {
                 reject(new errs.NotFoundError(`Plugin with ID ${id} cannot be found`))
@@ -211,6 +211,6 @@ export namespace PluginManager {
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
     export async function getServiceById(id: string): Promise<db.ServiceInstance | null> {
-        return db.models.Service.findById(id)
+        return db.models.Service.findByPk(id)
     }
 }

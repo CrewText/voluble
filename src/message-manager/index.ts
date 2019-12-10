@@ -188,7 +188,7 @@ export namespace MessageManager {
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
     export async function getMessageFromId(id: string): Promise<db.MessageInstance | null> {
-        return db.models.Message.findById(id)
+        return db.models.Message.findByPk(id)
     }
 
     export async function getMessagesForContact(contact_id: string, offset: number = 0): Promise<db.MessageInstance[] | null> {

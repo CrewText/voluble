@@ -43,7 +43,7 @@ export namespace ServicechainManager {
     export function getServicechainFromContactId(contact_id: string): BBPromise<db.ServicechainInstance | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
-                return db.models.Contact.findById(cont_id)
+                return db.models.Contact.findByPk(cont_id)
             })
             .then(function (contact) {
                 return contact.getServicechain()
@@ -55,12 +55,12 @@ export namespace ServicechainManager {
     }
 
     export function getServicechainById(id: string): BBPromise<db.ServicechainInstance | null> {
-        return db.models.Servicechain.findById(id)
+        return db.models.Servicechain.findByPk(id)
     }
 
     export function getServiceInServicechainByPriority(sc_id: string, priority: number): BBPromise<db.ServiceInstance | null> {
 
-        return db.models.Servicechain.findById(sc_id, {
+        return db.models.Servicechain.findByPk(sc_id, {
             include: [
                 {
                     model: db.models.Service,
@@ -88,7 +88,7 @@ export namespace ServicechainManager {
     }
 
     export function getServiceCountInServicechain(sc_id: string): BBPromise<number> {
-        return db.models.Servicechain.findById(sc_id)
+        return db.models.Servicechain.findByPk(sc_id)
             .then(function (sc) {
                 if (sc) {
                     return sc.getServices()
