@@ -18,6 +18,8 @@ let logger = winston.loggers.add('voluble-log', {
   defaultMeta: { module: 'Server-Main' }
 })
 
+logger.add(new winston.transports.Console())
+
 const http = require('https');
 
 logger.info("Loading plugin manager")

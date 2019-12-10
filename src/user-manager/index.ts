@@ -6,6 +6,7 @@ import * as db from '../models';
 const errs = require('common-errors')
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'UserMgr' })
+
 /**
  * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and
  * constructing full user profiles from the information stored in the Voluble database and extra
