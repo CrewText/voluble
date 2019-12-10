@@ -1,17 +1,16 @@
-import * as BBPromise from "bluebird";
 import * as express from "express";
-import { scopes } from "voluble-common";
+import validator from 'validator';
+import { MessageStates, scopes } from "voluble-common";
+import * as winston from 'winston';
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
+import { InvalidParameterValueError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
-import { setupUserOrganizationMiddleware, checkHasOrgAccess, ResourceOutOfUserScopeError } from '../security/scopes';
-import { MessageStates } from 'voluble-common'
-import validator from 'validator'
-import { InvalidParameterValueError } from '../../voluble-errors'
-const router = express.Router();
-const winston = require('winston')
+import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
+const router = express.Router();
+let logger = winston.loggers.get('voluble-log').child({ module: 'MessagesRoute' })
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
@@ -129,13 +128,13 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
 
     } catch (e) {
       if (e instanceof ResourceOutOfUserScopeError) {
-        winston.warn(e)
+        logger.warn(e)
         res.status(403).jsend.fail(e.message)
       } else if (e instanceof InvalidParameterValueError) {
-        winston.warn(e)
+        logger.warn(e)
         res.status(400).jsend.fail(e.message)
       } else {
-        winston.error(e)
+        logger.error(e)
         res.status(500).jsend.error(`An internal error has occurred: ${e.name}`)
       }
     }

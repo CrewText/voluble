@@ -1,34 +1,33 @@
 import * as BBPromise from 'bluebird';
 import * as cors from 'cors';
 import * as express from "express";
+import { Server } from 'http';
 import * as jsend from 'jsend';
+import * as winston from 'winston';
 import * as db from '../models';
 import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
-import { Server } from 'http';
 
 const path = require('path');
 const bodyParser = require('body-parser');
 var xmlParser = require('express-xml-bodyparser');
-const winston = require('winston')
 
-if (process.env.NODE_ENV == "production") {
-  winston.info("Detected prod environment")
-  winston.level = 'info'
-} else {
-  winston.info("Detected non-prod environment")
-  winston.level = 'debug'
-}
+let logger = winston.loggers.add('voluble-log', {
+  format: winston.format.json(),
+  level: process.env.NODE_ENV == "production" ? "info" : "debug",
+  defaultMeta: { module: 'Server-Main' }
+})
+
 const http = require('https');
 
-winston.info("Loading plugin manager")
+logger.info("Loading plugin manager")
 
-winston.info("Loading queue manager")
+logger.info("Loading queue manager")
 QueueManager.init_queues()
 
-winston.info("Connecting to database")
+logger.info("Connecting to database")
 
-winston.info("Loading routes")
+logger.info("Loading routes")
 const routes_index = require('./routes')
 //const routes_users = require('./routes/users')
 const routes_orgs = require('./routes/organizations')
@@ -40,7 +39,7 @@ const routes_blasts = require('./routes/blasts')
 const routes_servicechains = require('./routes/servicechains')
 const routes_service_endpoint_generic = require('./routes/service_endpoint')
 
-winston.info("Starting Express server")
+logger.info("Starting Express server")
 const app = express();
 app.use(jsend.middleware)
 
@@ -101,7 +100,7 @@ app.use('/v1/orgs', routes_servicechains)
 function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.headers['x-forwarded-proto'] !== 'https') {
     let secure_url = ['https://', req.get('Host'), req.url].join('')
-    winston.debug("Got insecure request, redirecting to " + secure_url)
+    logger.debug("Got insecure request, redirecting to " + secure_url)
     return res.redirect(secure_url);
   }
   return next();
@@ -109,14 +108,14 @@ function forceSSL(req: express.Request, res: express.Response, next: express.Nex
 
 // Force SSL
 if (process.env.NODE_ENV != "production") {
-  winston.debug("Not forcing SSL")
+  logger.debug("Not forcing SSL")
 } else {
-  winston.debug("Forcing SSL redirects")
+  logger.debug("Forcing SSL redirects")
   app.use(forceSSL)
 }
 
 function onServerListening() {
-  winston.info("Server listening on " + port)
+  logger.info("Server listening on " + port)
 }
 export function initServer() {
   return BBPromise.try(function () {
@@ -143,7 +142,7 @@ export function initServer() {
     })
     .then(function () {
       // Set up plugin manager
-      winston.info("Initing all plugins")
+      logger.info("Initing all plugins")
       return PluginManager.initAllPlugins()
     })
     .then(function () {
@@ -157,7 +156,7 @@ export async function shutdownServer() {
   let p = new Promise((resolve, reject) => {
     if (svr) {
       svr.close((err) => {
-        if (err) { winston.error(err) }
+        if (err) { logger.error(err) }
         resolve()
       })
     }

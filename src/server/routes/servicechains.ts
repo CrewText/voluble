@@ -1,13 +1,15 @@
 import * as express from "express";
 import * as validator from 'validator';
 import { scopes } from "voluble-common";
+import * as winston from 'winston';
 import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
 import { InvalidParameterValueError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-import winston = require("winston");
+let logger = winston.loggers.get('voluble-log').child({ module: 'ServicechainsRoute' })
+
 const router = express.Router();
 
 const errs = require('common-errors')
@@ -82,7 +84,7 @@ router.post('/:org_id/servicechains/', checkJwt,
         res.status(400).jsend.fail(e)
       }
       else {
-        winston.error(e)
+        logger.error(e)
         res.status(500).jsend.error(`Internal error: ${e}`)
       }
     }
@@ -155,7 +157,7 @@ router.put('/:org_id/servicechains/:id', checkJwt,
       if (e instanceof ServicechainManager.ServicechainNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail(e)
       } else {
-        winston.error(e)
+        logger.error(e)
         res.status(500).jsend.error(e)
       }
     }

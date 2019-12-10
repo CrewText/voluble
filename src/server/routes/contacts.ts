@@ -1,6 +1,7 @@
 import * as express from "express";
 import * as validator from 'validator';
 import { scopes } from "voluble-common";
+import * as winston from 'winston';
 import { CategoryManager, ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager';
 import { OrgManager } from "../../org-manager";
@@ -10,8 +11,8 @@ import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
+let logger = winston.loggers.get('voluble-log').child({ module: 'ContactsRoute' })
 const router = express.Router();
-const winston = require('winston')
 
 /**
  * Handles the route `GET /contacts`.
@@ -45,7 +46,7 @@ router.get('/:org_id/contacts', checkJwt,
       } else if (e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail(`Parameter 'name' was not provided`)
       } else {
-        winston.error(e)
+        logger.error(e)
         res.status(500).jsend.error(e)
       }
     }
@@ -144,7 +145,7 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
         res.status(403).jsend.fail(e.message)
       }
       else {
-        winston.error(e.name, e.message)
+        logger.error(e.name, e.message)
         res.status(500).jsend.error(e.message)
       }
     }
@@ -216,7 +217,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
       else if (e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail({ name: e.name, message: e.message })
       } else {
-        winston.error(e.message)
+        logger.error(e.message)
         res.status(500).jsend.error({ name: e.name, message: e.message })
       }
     }

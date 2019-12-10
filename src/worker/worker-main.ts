@@ -1,5 +1,3 @@
-// const winston = require('winston')
-// import * as Promise from 'bluebird';
 import * as redis from 'redis'
 import * as rsmq from 'rsmq'
 import * as rsmqWorker from 'rsmq-worker'
@@ -12,12 +10,15 @@ import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'Worker-Main' })
+
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
-    winston.info("Main: Detected dev/test environment")
-    // winston.level = 'debug'
+    logger.info("Main: Detected dev/test environment")
+    // logger.level = 'debug'
 } else {
-    winston.info("Main: Detected prod environment")
-    // winston.level = 'info'
+    logger.info("Main: Detected prod environment")
+    // logger.level = 'info'
 }
 
 
@@ -25,39 +26,39 @@ class EmptyMessageInfoError extends Error { }
 class InvalidMessageInfoError extends Error { }
 
 
-winston.info("Main: Initializing worker process")
+logger.info("Main: Initializing worker process")
 
 function createRedisClient() {
     let client: redis.RedisClient;
     if (process.env.REDISTOGO_URL) {
         let rtg = require("url").parse(process.env.REDISTOGO_URL);
-        winston.info(`Connecting to Redis server at ${rtg.hostname}:${rtg.port}`)
+        logger.info(`Connecting to Redis server at ${rtg.hostname}:${rtg.port}`)
         client = redis.createClient(rtg.port, rtg.hostname)
-        winston.info(`Connected to Redis server; now authorizing`)
+        logger.info(`Connected to Redis server; now authorizing`)
         client.auth(rtg.auth.split(":")[1]);
-        winston.info(`Successfully authorized`)
+        logger.info(`Successfully authorized`)
     } else {
-        winston.warn(`No REDISTOGO_URL variable found, using localhost...`)
+        logger.warn(`No REDISTOGO_URL variable found, using localhost...`)
         client = redis.createClient()
     }
     return client
 }
 
 let client = createRedisClient()
-winston.debug("Main: conn ID " + client.connection_id)
+logger.debug("Main: conn ID " + client.connection_id)
 let rsmq_client = new rsmq({ client: client })
 let worker_msg_send = new rsmqWorker("message-send", { rsmq: rsmq_client })
 let worker_msg_recv = new rsmqWorker("message-recv", { rsmq: rsmq_client })
 
 worker_msg_send.on("message", async function (message, next, message_id) {
     let parsed_msg: MessageInstance = JSON.parse(message)
-    winston.debug(`Main: Worker has collected message ${parsed_msg.id} for sending`)
+    logger.debug(`Main: Worker has collected message ${parsed_msg.id} for sending`)
     QueueManager.addMessageStateUpdateRequest(parsed_msg.id, "MSG_SENDING")
-    winston.debug(`Main: Attempting message send`, { 'message': parsed_msg.id })
+    logger.debug(`Main: Attempting message send`, { 'message': parsed_msg.id })
     try {
         await MessageManager.doMessageSend(parsed_msg)
     } catch (e) {
-        winston.error(e)
+        logger.error(e)
     } finally {
         next()
     }
@@ -90,7 +91,7 @@ async function attemptContactIdentification(phone_number?: string, email_address
                     }
                 })
         } catch (e) {
-            winston.warn(`Could not identify inbound contact from phone number: ${e.name}: ${e.message}`)
+            logger.warn(`Could not identify inbound contact from phone number: ${e.name}: ${e.message}`)
         }
     }
 
@@ -106,7 +107,7 @@ async function attemptContactIdentification(phone_number?: string, email_address
                     }
                 })
         } catch (e) {
-            winston.warn(`Could not identify inbound contact from email address: ${e.name}: ${e.message}`)
+            logger.warn(`Could not identify inbound contact from email address: ${e.name}: ${e.message}`)
         }
     }
 
@@ -123,10 +124,9 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
 
         let plugin = await PluginManager.getPluginById(incoming_message_request.service_id)
         if (!plugin) { throw new ResourceNotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
-        winston.debug(`MAIN: Worker has received incoming message request for service with ID ${incoming_message_request.service_id}`)
+        logger.debug(`MAIN: Worker has received incoming message request for service with ID ${incoming_message_request.service_id}`)
 
         let message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
-        winston.debug(``)
 
         /* At this point, the plugin has returned an InterpretedIncomingMessage.
         * This contains the message body, and if the plugin has been able to identify the origin contact, the contacts' ID.
@@ -141,7 +141,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         if (message_info.contact_id) {
             let contact = await ContactManager.getContactWithId(message_info.contact_id)
             if (!contact) {
-                winston.warn(`InterpretedIncomingMessage supplied with Contact ID, but Contact not found!`, { contact_id: message_info.contact_id })
+                logger.warn(`InterpretedIncomingMessage supplied with Contact ID, but Contact not found!`, { contact_id: message_info.contact_id })
             } else {
                 identified_contact_id = contact.id
             }
@@ -150,7 +150,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         if (!identified_contact_id && message_info.is_reply_to) {
             let outbound_message = await MessageManager.getMessageFromId(message_info.is_reply_to)
             if (!outbound_message) {
-                winston.warn(`Message supplied as is_reply_to does not exist!`, { 'message_id': message_info.is_reply_to })
+                logger.warn(`Message supplied as is_reply_to does not exist!`, { 'message_id': message_info.is_reply_to })
             } else {
                 identified_contact_id = await outbound_message.getContact().then((contact) => { return contact.id })
             }
@@ -174,7 +174,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         let contact = await ContactManager.getContactWithId(identified_contact_id)
         let sc = await contact.getServicechain()
 
-        winston.debug(`Creating new Message from inbound message`, { service: incoming_message_request.service_id, contact: contact.id })
+        logger.debug(`Creating new Message from inbound message`, { service: incoming_message_request.service_id, contact: contact.id })
 
         let new_message = await MessageManager.createMessage(message_info.message_body,
             contact.id,
@@ -183,15 +183,15 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
             sc ? sc.id : null,
             message_info.is_reply_to ? message_info.is_reply_to : null)
 
-        winston.debug(`Created new inbound Message`, { message: new_message.id })
+        logger.debug(`Created new inbound Message`, { message: new_message.id })
 
     } catch (e) {
         if (e instanceof EmptyMessageInfoError) {
-            winston.warn(`Received inbound Message without any message_info! Could be a plugin-related service message...`)
+            logger.warn(`Received inbound Message without any message_info! Could be a plugin-related service message...`)
         } else if (e instanceof ResourceNotFoundError || e instanceof InvalidMessageInfoError) {
-            winston.warn(`${e.name} ${e.message}`)
+            logger.warn(`${e.name} ${e.message}`)
         } else {
-            winston.error(`${e.name} ${e.message}`)
+            logger.error(`${e.name} ${e.message}`)
         }
     } finally {
         next()
@@ -199,5 +199,5 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
 }).start()
 
 client.on('error', function () {
-    winston.error("Main: Failed to connect to the redis server!")
+    logger.error("Main: Failed to connect to the redis server!")
 })

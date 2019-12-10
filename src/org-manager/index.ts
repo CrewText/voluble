@@ -1,7 +1,9 @@
-const winston = require('winston')
 import * as Promise from "bluebird";
+import * as winston from 'winston';
 import * as db from '../models';
 const errs = require('common-errors')
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'OrgMgr' })
 
 export namespace OrgManager {
 

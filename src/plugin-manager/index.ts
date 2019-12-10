@@ -1,13 +1,13 @@
 import * as fs from 'fs'
 import * as path from 'path'
-const winston = require('winston')
-// import * as Promise from "bluebird"
-const errs = require('common-errors')
-
-import { voluble_plugin } from '../plugins/plugin_base'
+import * as winston from 'winston'
 import * as db from '../models'
-import { QueueManager } from '../queue-manager';
+import { voluble_plugin } from '../plugins/plugin_base'
+import { QueueManager } from '../queue-manager'
+const errs = require('common-errors')
 const voluble_errors = require('../voluble-errors')
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'PluginMgr' })
 
 interface IPluginDirectoryMap {
     subdirectory: string,
@@ -39,7 +39,7 @@ export namespace PluginManager {
             try {
                 let plugin_directory = path.join(__plugin_dir, svc.directory_name)
                 let plugin_fullpath = path.join(plugin_directory, "plugin.js")
-                winston.debug("PM: Importing plugin from:" + plugin_fullpath)
+                logger.debug("PM: Importing plugin from:" + plugin_fullpath)
                 let p: voluble_plugin = require(plugin_fullpath)()
                 p._plugin_dir = plugin_directory
                 resolve(p)
@@ -64,8 +64,8 @@ export namespace PluginManager {
  * @param {string} plugin_dir The path to the directory containing the plugins that Voluble should use.
  */
     export async function initAllPlugins() {
-        winston.debug("PM: Attempting to load plugins from " + __plugin_dir)
-        winston.info("PM: Loading plugins from\n\t" + __plugin_dir)
+        logger.debug("PM: Attempting to load plugins from " + __plugin_dir)
+        logger.info("PM: Loading plugins from\n\t" + __plugin_dir)
 
         let plugin_subdir_list = discoverPlugins(__plugin_dir)
         let plugin_map = await plugin_subdir_list.then((plugin_subdirs) => {
@@ -75,7 +75,7 @@ export namespace PluginManager {
                 let plugin_file_abs = path.join(__plugin_dir, plugin_subdir, "plugin.js")
                 try {
                     let plug_obj: voluble_plugin = require(plugin_file_abs)()
-                    winston.info("PM: Loaded plugin: " + plug_obj.name)
+                    logger.info("PM: Loaded plugin: " + plug_obj.name)
                     plug_obj._eventEmitter.on('message-state-update', (msg: db.MessageInstance, message_state: string) => {
                         QueueManager.addMessageStateUpdateRequest(msg.id, message_state)
                     })
@@ -104,7 +104,7 @@ export namespace PluginManager {
             else { return false }
         })
 
-        winston.debug("PM: Found plugins at:\n\t" + plugin_subdirs)
+        logger.debug("PM: Found plugins at:\n\t" + plugin_subdirs)
 
         return Promise.resolve(plugin_subdirs)
     }
@@ -129,12 +129,12 @@ export namespace PluginManager {
     //     if (plugin_dir_map.plugin.data_tables) {
     //         return Promise.map(Object.keys(plugin_dir_map.plugin.data_tables), function (table) {
     //             let table_name = `pl_${plugin_dir_map.subdirectory}_${table}`
-    //             winston.info(`Creating table ${table_name}`)
+    //             logger.info(`Creating table ${table_name}`)
 
     //             let cols = {}
     //             let current_table: string[] = plugin_dir_map.plugin.data_tables[table]
 
-    //             winston.debug(current_table)
+    //             logger.debug(current_table)
     //             //console.log(current_table)
 
     //             current_table.forEach(function (col) {

@@ -1,11 +1,13 @@
 import * as express from "express";
 import { scopes } from "voluble-common";
+import * as winston from 'winston';
 import { CategoryManager } from "../../contact-manager";
-import { checkJwt, checkJwtErr, checkScopesMiddleware } from "../security/jwt";
-import { setupUserOrganizationMiddleware, checkHasOrgAccess, ResourceOutOfUserScopeError } from "../security/scopes";
 import { OrgManager } from "../../org-manager";
-import { ResourceNotFoundError } from "../../voluble-errors"
-const winston = require('winston')
+import { ResourceNotFoundError } from "../../voluble-errors";
+import { checkJwt, checkJwtErr, checkScopesMiddleware } from "../security/jwt";
+import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from "../security/scopes";
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'CategoriesRoute' })
 
 const router = express.Router();
 
@@ -27,7 +29,7 @@ router.get('/:org_id/categories', checkJwt,
             if (e instanceof ResourceOutOfUserScopeError) {
                 res.status(401).jsend.fail(e)
             } else {
-                winston.error(e.message)
+                logger.error(e.message)
                 res.status(500).jsend.error(e.message)
             }
 
@@ -54,7 +56,7 @@ router.post('/:org_id/categories', checkJwt,
             if (e instanceof ResourceOutOfUserScopeError) {
                 res.status(401).jsend.fail(e)
             } else {
-                winston.error(e.message)
+                logger.error(e.message)
                 res.status(500).jsend.error(e)
             }
         }
@@ -78,7 +80,7 @@ router.get('/:org_id/categories/:cat_id',
             } else if (e instanceof ResourceOutOfUserScopeError) {
                 res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
             } else {
-                winston.error(e.message)
+                logger.error(e.message)
                 res.status(500).jsend.error(e)
             }
         }

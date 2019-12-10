@@ -1,9 +1,11 @@
-const winston = require('winston')
 import * as BBPromise from "bluebird"
-let errs = require('common-errors')
-import * as db from '../models'
-import { ContactManager } from '../contact-manager/'
 import { Servicechain, ServicesInSC } from 'voluble-common'
+import * as winston from 'winston'
+import { ContactManager } from '../contact-manager/'
+import * as db from '../models'
+let errs = require('common-errors')
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'SCMgr' })
 
 /**
  * The ServicechainManager handles all operations that relate to Servicechains and ServiceInServicechains, which includes

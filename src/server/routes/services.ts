@@ -1,9 +1,12 @@
 import * as express from 'express';
 import { scopes } from "voluble-common";
+import * as winston from 'winston';
 import { PluginManager } from '../../plugin-manager';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'ServicesRoute' })
+
 const router = express.Router();
-const winston = require('winston')
 
 router.get('/', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ServiceView]), function (req, res, next) {
   PluginManager.getAllServices()

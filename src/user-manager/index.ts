@@ -1,9 +1,11 @@
 import * as Promise from "bluebird";
 //import { Auth0Manager } from './auth0-manager'
 import * as request from 'request';
+import * as winston from 'winston';
 import * as db from '../models';
-import winston = require("winston");
 const errs = require('common-errors')
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'UserMgr' })
 /**
  * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and
  * constructing full user profiles from the information stored in the Voluble database and extra
@@ -62,7 +64,7 @@ export namespace UserManager {
             .then(function (token) {
                 return getUserById(user_id)
                     .then(function (user) {
-                        winston.debug("Setting Auth0 User claim for Voluble ID")
+                        logger.debug("Setting Auth0 User claim for Voluble ID")
                         return req_prom(
                             {
                                 url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.auth0_id}`,

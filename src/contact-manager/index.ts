@@ -1,11 +1,10 @@
-const winston = require('winston')
-import * as BBPromise from "bluebird"
+import * as BBPromise from "bluebird";
+import * as winston from 'winston';
+import * as db from '../models';
 import { ContactInstance } from "../models/contact";
-import { MessageManager } from '../message-manager'
-import * as db from '../models'
-import { OrgManager } from "../org-manager";
 const errs = require('common-errors')
 
+let logger = winston.loggers.get('voluble-log').child({ module: 'ContactMgr' })
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
  * removing Contacts and finding information about Contacts.

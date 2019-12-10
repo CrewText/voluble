@@ -1,7 +1,9 @@
 import * as express from "express"
+import * as winston from 'winston'
 import { PluginManager } from '../../plugin-manager'
 import { QueueManager } from '../../queue-manager'
-const winston = require('winston')
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'ServiceEndpointRoute' })
 var router = express.Router();
 
 //router.get('/', function)
@@ -16,15 +18,15 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
 
     let request_service_dir = req.params["plugin_subdir"]
 
-    winston.info("SVC END: incoming req to " + request_service_dir)
+    logger.info("SVC END: incoming req to " + request_service_dir)
     PluginManager.getServiceByDirName(request_service_dir)
         .then(function (service) {
             if (!service) {
-                winston.error(`SVC END: Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
+                logger.error(`SVC END: Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
                 res.status(404).jsend.fail(`Plugin ${request_service_dir} does not exist`)
                 return
             }
-            winston.debug(`Passing message on to ${service.directory_name}`)
+            logger.debug(`Passing message on to ${service.directory_name}`)
 
             QueueManager.addMessageReceivedRequest(req.body, service.id)
             res.status(200).jsend.success(request_service_dir)

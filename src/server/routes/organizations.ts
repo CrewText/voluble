@@ -1,13 +1,15 @@
 import * as BBPromise from 'bluebird';
 import * as express from "express";
 import { scopes } from "voluble-common";
+import * as winston from 'winston';
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { getE164PhoneNumber } from '../../utilities';
 import { InvalidParameterValueError, ResourceNotFoundError, UserAlreadyInOrgError, UserNotInOrgError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
-import winston = require("winston");
+
+let logger = winston.loggers.get('voluble-log').child({ module: 'OrgsRoute' })
 const router = express.Router();
 
 /**
@@ -112,25 +114,25 @@ router.post('/', checkJwt, checkJwtErr, async function (req, res, next) {
         }
 
         let new_org = await OrgManager.createNewOrganization(org_name, e164_phone_num)
-        winston.debug(`Created new Organization`, { 'org': new_org.id })
+        logger.debug(`Created new Organization`, { 'org': new_org.id })
         let new_user = await new_org.createUser({ auth0_id: req.user.sub })
-        winston.debug(`Created new User in Organization`, { 'org': new_org.id, 'user': new_user.id })
+        logger.debug(`Created new User in Organization`, { 'org': new_org.id, 'user': new_user.id })
         await UserManager.setUserIdAuth0Claim(new_user.id)
-        winston.debug('Set Auth0 user ID claim', { 'user': new_user.id })
+        logger.debug('Set Auth0 user ID claim', { 'user': new_user.id })
 
         if (req.user.sub != `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
-            winston.debug('Setting user scope organization:owner', { 'user': new_user.id })
+            logger.debug('Setting user scope organization:owner', { 'user': new_user.id })
             await UserManager.setUserScopes(new_user.id, [scopes.OrganizationOwner])
-        } else { winston.debug(`Created by test client, not setting user claim`, { 'user': new_user.id }) }
+        } else { logger.debug(`Created by test client, not setting user claim`, { 'user': new_user.id }) }
 
         res.status(201).jsend.success(await new_org.reload())
 
     } catch (e) {
         if (e instanceof InvalidParameterValueError) {
-            winston.warn(e.message)
+            logger.warn(e.message)
             res.status(400).jsend.fail(e.message)
         } else {
-            winston.error(e)
+            logger.error(e)
             res.status(500).jsend.error(e.message)
         }
     }
@@ -240,7 +242,7 @@ router.put('/:org_id',
             } else if (e instanceof ResourceNotFoundError) {
                 res.status(404).jsend.fail(e)
             } else {
-                winston.error(`${e.name}: ${e.message}`)
+                logger.error(`${e.name}: ${e.message}`)
                 res.status(500).jsend.error(e)
             }
         }
@@ -343,7 +345,7 @@ router.post('/:org_id/users',
                 res.status(404).jsend.fail(err)
             })
             .catch((err) => {
-                winston.error(err)
+                logger.error(err)
                 res.status(500).jsend.error(err)
             })
     })

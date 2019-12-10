@@ -1,4 +1,3 @@
-import winston = require("winston");
 const jwt = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 const jwtAuthz = require('express-jwt-authz');
@@ -29,7 +28,7 @@ export var checkJwt = jwt({
 
 export const checkJwtErr = function (err, req, res, next) {
     if (err) {
-        // winston.error(err)
+        // logger.error(err)
         res.status(401).jsend.fail(err)
     } else {
         next()
