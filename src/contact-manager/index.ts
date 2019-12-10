@@ -106,11 +106,11 @@ export namespace ContactManager {
      * @returns { promise} Promise resolving to a Sequelize row representing the given contact
      */
     export function getContactWithId(id: string): BBPromise<ContactInstance | null> {
-        return db.models.Contact.findById(id)
+        return db.models.Contact.findByPk(id)
     }
 
     export function getContactFromEmail(email_address: string): BBPromise<ContactInstance | null> {
-        return db.models.Contact.find({
+        return db.models.Contact.findOne({
             where: {
                 email_address: email_address
             }
@@ -118,7 +118,7 @@ export namespace ContactManager {
     }
 
     export function getContactFromPhone(phone_number: string): BBPromise<ContactInstance | null> {
-        return db.models.Contact.find({
+        return db.models.Contact.findOne({
             where: {
                 phone_number: phone_number
             }
@@ -142,7 +142,7 @@ export namespace ContactManager {
 export namespace CategoryManager {
     export class CategoryDoesNotExistError extends Error { }
     export async function getCategoriesInOrg(org_id: string) {
-        return db.models.Category.find({
+        return db.models.Category.findOne({
             where:
             {
                 OrganizationId: org_id

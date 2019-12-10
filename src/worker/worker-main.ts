@@ -19,7 +19,6 @@ import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
-const errs = require('common-errors')
 
 class EmptyMessageInfoError extends Error { }
 class InvalidMessageInfoError extends Error { }
@@ -84,7 +83,7 @@ async function attemptContactIdentification(phone_number?: string, email_address
                     if (contact) {
                         return contact.id
                     } else {
-                        throw new errs.NotFoundError(`No contact found with phone number ${phone_number} (parsed as ${phone_number_e164})`)
+                        throw new ResourceNotFoundError(`No contact found with phone number ${phone_number} (parsed as ${phone_number_e164})`)
                     }
                 })
         } catch (e) {
@@ -100,7 +99,7 @@ async function attemptContactIdentification(phone_number?: string, email_address
                     if (contact) {
                         return contact.id
                     } else {
-                        throw new errs.NotFoundError(`No contact found with email ${email_address}`)
+                        throw new ResourceNotFoundError(`No contact found with email ${email_address}`)
                     }
                 })
         } catch (e) {
@@ -120,7 +119,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         let incoming_message_request = <QueueManager.MessageReceivedRequest>JSON.parse(message)
 
         let plugin = await PluginManager.getPluginById(incoming_message_request.service_id)
-        if (!plugin) { throw errs.NotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
+        if (!plugin) { throw new ResourceNotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
         winston.debug(`MAIN: Worker has received incoming message request for service with ID ${incoming_message_request.service_id}`)
 
         let message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)

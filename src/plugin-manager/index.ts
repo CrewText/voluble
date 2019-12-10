@@ -52,9 +52,9 @@ export namespace PluginManager {
 
     }
 
-    export async function getServiceByDirName(id: string): Promise<db.ServiceInstance | null> {
-        return await db.models.Service.find({
-            where: { directory_name: id }
+    export async function getServiceByDirName(dir_name: string): Promise<db.ServiceInstance | null> {
+        return await db.models.Service.findOne({
+            where: { directory_name: dir_name }
         })
     }
 
