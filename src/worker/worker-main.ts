@@ -11,7 +11,12 @@ import { QueueManager } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'Worker-Main' })
+let logger = winston.loggers.add('voluble-log-worker', {
+    format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
+    level: process.env.NODE_ENV == "production" ? "info" : "debug",
+    defaultMeta: { module: 'Worker-Main' }
+})
+logger.add(new winston.transports.Console())
 
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
     logger.info("Main: Detected dev/test environment")
