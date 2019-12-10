@@ -9,7 +9,7 @@ if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
 
 // import * as Promise from 'bluebird';
 import * as redis from 'redis'
-// import * as rsmq from 'rsmq'
+import * as rsmq from 'rsmq'
 import * as rsmqWorker from 'rsmq-worker'
 import { MessageStates } from 'voluble-common'
 import { ContactManager } from '../contact-manager'
@@ -43,9 +43,9 @@ function createRedisClient() {
 
 let client = createRedisClient()
 winston.debug("Main: conn ID " + client.connection_id)
-let worker_msg_send = new rsmqWorker("message-send", { redis: client })
-let worker_msg_recv = new rsmqWorker("message-recv", { redis: client })
-// let rsmq_client = new rsmq({ client: client })
+let rsmq_client = new rsmq({ client: client })
+let worker_msg_send = new rsmqWorker("message-send", { rsmq: rsmq_client })
+let worker_msg_recv = new rsmqWorker("message-recv", { rsmq: rsmq_client })
 
 worker_msg_send.on("message", async function (message, next, message_id) {
     let parsed_msg: MessageInstance = JSON.parse(message)
