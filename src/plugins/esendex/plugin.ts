@@ -121,7 +121,6 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     */
 
     let parsed_message = <IncomingEsendexMessage>message_data
-    console.log(parsed_message.inboundmessage)
 
     // TODO: Actually find the contact out?
     let interpreted_message: plugin_base.InterpretedIncomingMessage = {

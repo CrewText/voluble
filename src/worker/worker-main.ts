@@ -1,10 +1,11 @@
-const winston = require('winston')
+// const winston = require('winston')
+import * as winston from 'winston'
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
     winston.info("Main: Detected dev/test environment")
-    winston.level = 'debug'
+    // winston.level = 'debug'
 } else {
     winston.info("Main: Detected prod environment")
-    winston.level = 'info'
+    // winston.level = 'info'
 }
 
 // import * as Promise from 'bluebird';
@@ -123,6 +124,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         winston.debug(`MAIN: Worker has received incoming message request for service with ID ${incoming_message_request.service_id}`)
 
         let message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
+        winston.debug(``)
 
         /* At this point, the plugin has returned an InterpretedIncomingMessage.
         * This contains the message body, and if the plugin has been able to identify the origin contact, the contacts' ID.
@@ -170,22 +172,24 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         let contact = await ContactManager.getContactWithId(identified_contact_id)
         let sc = await contact.getServicechain()
 
-        await MessageManager.createMessage(message_info.message_body,
+        winston.debug(`Creating new Message from inbound message`, { service: incoming_message_request.service_id, contact: contact.id })
+
+        let new_message = await MessageManager.createMessage(message_info.message_body,
             contact.id,
             "INBOUND",
             MessageStates.MSG_ARRIVED,
             sc ? sc.id : null,
             message_info.is_reply_to ? message_info.is_reply_to : null)
 
+        winston.debug(`Created new inbound Message`, { message: new_message.id })
+
     } catch (e) {
         if (e instanceof EmptyMessageInfoError) {
             winston.warn(`Received inbound Message without any message_info! Could be a plugin-related service message...`)
-        } else if (e instanceof ResourceNotFoundError) {
-            winston.warn(e)
-        } else if (e instanceof InvalidMessageInfoError) {
-            winston.warn(e)
+        } else if (e instanceof ResourceNotFoundError || e instanceof InvalidMessageInfoError) {
+            winston.warn(`${e.name} ${e.message}`)
         } else {
-            winston.error(e)
+            winston.error(`${e.name} ${e.message}`)
         }
     } finally {
         next()
