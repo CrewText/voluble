@@ -1,5 +1,17 @@
 // const winston = require('winston')
+// import * as Promise from 'bluebird';
+import * as redis from 'redis'
+import * as rsmq from 'rsmq'
+import * as rsmqWorker from 'rsmq-worker'
+import { MessageStates } from 'voluble-common'
 import * as winston from 'winston'
+import { ContactManager } from '../contact-manager'
+import { MessageManager } from '../message-manager'
+import { MessageInstance } from '../models'
+import { PluginManager } from '../plugin-manager'
+import { QueueManager } from '../queue-manager'
+import { getE164PhoneNumber } from '../utilities'
+import { ResourceNotFoundError } from '../voluble-errors'
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
     winston.info("Main: Detected dev/test environment")
     // winston.level = 'debug'
@@ -8,18 +20,6 @@ if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
     // winston.level = 'info'
 }
 
-// import * as Promise from 'bluebird';
-import * as redis from 'redis'
-import * as rsmq from 'rsmq'
-import * as rsmqWorker from 'rsmq-worker'
-import { MessageStates } from 'voluble-common'
-import { ContactManager } from '../contact-manager'
-import { MessageManager } from '../message-manager'
-import { MessageInstance } from '../models'
-import { PluginManager } from '../plugin-manager'
-import { QueueManager } from '../queue-manager'
-import { getE164PhoneNumber } from '../utilities'
-import { ResourceNotFoundError } from '../voluble-errors'
 
 class EmptyMessageInfoError extends Error { }
 class InvalidMessageInfoError extends Error { }
