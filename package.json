@@ -60,7 +60,6 @@
     "@types/request-promise": "^4.1.45",
     "@types/request-promise-native": "^1.0.17",
     "@types/rsmq": "^0.3.27",
-    "@types/rsmq-worker": "^0.3.29",
     "@types/sequelize": "^4.28.8",
     "@types/supertest": "^2.0.8",
     "@types/winston": "^2.4.4",
