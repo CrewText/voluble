@@ -126,11 +126,11 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         let message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
 
         /* At this point, the plugin has returned an InterpretedIncomingMessage.
-                    * This contains the message body, and if the plugin has been able to identify the origin contact, the contacts' ID.
-                    * However, if not, it must contain one of the following: contact phone number or contact email.
-                    * This is so voluble can attempt to determine the origin of the message.
-                    * It may also contain the is_reply_to field.
-                    */
+        * This contains the message body, and if the plugin has been able to identify the origin contact, the contacts' ID.
+        * However, if not, it must contain one of the following: contact phone number or contact email.
+        * This is so voluble can attempt to determine the origin of the message.
+        * It may also contain the is_reply_to field.
+        */
         if (!message_info) {
             throw new EmptyMessageInfoError()
         }
@@ -141,6 +141,15 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
                 winston.warn(`InterpretedIncomingMessage supplied with Contact ID, but Contact not found!`, { contact_id: message_info.contact_id })
             } else {
                 identified_contact_id = contact.id
+            }
+        }
+
+        if (!identified_contact_id && message_info.is_reply_to) {
+            let outbound_message = await MessageManager.getMessageFromId(message_info.is_reply_to)
+            if (!outbound_message) {
+                winston.warn(`Message supplied as is_reply_to does not exist!`, { 'message_id': message_info.is_reply_to })
+            } else {
+                identified_contact_id = await outbound_message.getContact().then((contact) => { return contact.id })
             }
         }
 
@@ -182,8 +191,6 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
     } finally {
         next()
     }
-    // TODO: What if is_reply_to is supplied? We can guess the Contact from that!
-
 }).start()
 
 client.on('error', function () {
