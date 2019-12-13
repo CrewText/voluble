@@ -45,7 +45,6 @@ export namespace MessageManager {
             msg.set('body', msg.body.replace("<first_name>", c.first_name))
             msg.set('body', msg.body.replace("<surname>", c.surname))
         }
-        // TODO: Add templating for User's name who sent Message
 
         return msg.save()
     }

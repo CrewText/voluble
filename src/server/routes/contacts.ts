@@ -24,7 +24,6 @@ router.get('/:org_id/contacts', checkJwt,
   setupUserOrganizationMiddleware,
   async function (req, res, next) {
     try {
-      // TODO: Add a `limit` parameter to specify amount, rather than 100
       // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
       let offset: number = req.query.offset ? validator.default.toInt(req.query.offset) : 0
       let limit: number = req.query.limit ? validator.default.toInt(req.query.limit) : 100
