@@ -120,7 +120,8 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
         req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
         MessageStates.MSG_PENDING,
         sc.id || null,
-        req.body.is_reply_to || null)
+        req.body.is_reply_to || null,
+        req.user.sub || null)
 
       msg = MessageManager.sendMessage(msg)
 

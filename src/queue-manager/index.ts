@@ -85,7 +85,6 @@ export namespace QueueManager {
     export function addMessageReceivedRequest(request_data: any, service_id: string) {
         let q_msg: MessageReceivedRequest = { request_data: request_data, service_id: service_id }
         logger.debug(`Sending queue message`)
-        // console.log(JSON.stringify(q_msg))
         rsmq.sendMessage({
             qname: "message-recv",
             message: JSON.stringify(q_msg)

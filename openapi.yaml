@@ -143,6 +143,14 @@ components:
             The UUID of the Message that this Message is a reply to. NULL if
             this is message was not a reply to a previous message
           example: c616d114-4f68-4dba-b976-cd5ae0aa359d
+        user:
+          type: string
+          nullable: true
+          description: >-
+            The UUID of the User that send the Message, if this is an outbound Message.
+            Otherwise, null.
+          readOnly: true
+          example: c616d114-4f68-4dba-b976-cd5ae0aa359d
         direction:
           type: string
           enum:

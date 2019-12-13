@@ -31,6 +31,7 @@ export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.Da
         body: DataTypes.STRING(1024),
         contact: DataTypes.UUID,
         is_reply_to: DataTypes.UUID,
+        user: DataTypes.STRING,
         direction: DataTypes.ENUM(Object.keys(MessageDirections)),
         sent_time: { type: DataTypes.DATE, defaultValue: sequelize.fn('NOW') },
         message_state: DataTypes.ENUM(Object.keys(MessageStates))
