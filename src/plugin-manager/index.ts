@@ -44,7 +44,7 @@ export namespace PluginManager {
                 p._plugin_dir = plugin_directory
                 resolve(p)
             } catch (e) {
-                winston.error(e, `Could not import plugin in directory '${svc.directory_name}': ${e.message}`)
+                logger.error(e, `Could not import plugin in directory '${svc.directory_name}': ${e.message}`)
                 reject(new PluginImportFailedError(`Failed to import plugin in directory ${svc.directory_name}`))
             }
         })
@@ -83,7 +83,7 @@ export namespace PluginManager {
                     let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir }
                     plugin_object_map.push(p)
                 } catch (e) {
-                    winston.error(e, `Could not load plugin in subdirectory ${plugin_subdir}: ${e.message}`)
+                    logger.error(e, `Could not load plugin in subdirectory ${plugin_subdir}: ${e.message}`)
                 }
             });
 

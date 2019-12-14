@@ -13,9 +13,9 @@ import { ResourceNotFoundError } from '../voluble-errors'
 
 let logger = winston.loggers.add(process.mainModule.filename, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
-    level: process.env.NODE_ENV == "production" ? "info" : "debug",
     defaultMeta: { module: 'Worker-Main' }
 })
+logger.level = process.env.NODE_ENV === "production" ? "info" : "debug"
 logger.add(new winston.transports.Console())
 
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {

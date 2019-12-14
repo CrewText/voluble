@@ -59,52 +59,29 @@ export namespace ServicechainManager {
         return db.models.Servicechain.findByPk(id)
     }
 
-    export function getServiceInServicechainByPriority(sc_id: string, priority: number): BBPromise<db.ServiceInstance | null> {
+    export async function getServiceInServicechainByPriority(sc_id: string, priority: number): Promise<db.ServiceInstance> {
 
-        return db.models.Servicechain.findByPk(sc_id, {
-            include: [
-                {
-                    model: db.models.Service,
-                    through: {
-                        where: {
-                            priority: priority,
-                            as: 'services'
-                        }
-                    }
-                }
-            ]
-        }).then(function (sc) {
-            if (sc) {
-                //@ts-ignore
-                if (sc.Services.length) {
-                    //@ts-ignore
-                    let sc_to_ret: db.ServiceInstance = sc.Services[0]
-                    return BBPromise.resolve(sc_to_ret)
-                } else {
-                    return BBPromise.reject(new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`))
-                }
-            } else {
-                return BBPromise.reject(new ResourceNotFoundError(`Servicechain with ID ${sc_id} does not exist`))
-            }
-        })
+        let sc = await db.models.Servicechain.findByPk(sc_id)
+
+        if (!sc) { throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} does not exist`) }
+
+        let svcs = await sc.getServices()
+
+        if (!svcs) { throw new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`) }
+
+        return svcs[0]
     }
 
-    export function getServiceCountInServicechain(sc_id: string): BBPromise<number> {
-        return db.models.Servicechain.findByPk(sc_id)
-            .then(function (sc) {
-                if (sc) {
-                    return sc.getServices()
-                        .then(function (svcs) {
-                            if (svcs) {
-                                return svcs.length
-                            } else {
-                                throw new EmptyServicechainError(`No plugins found in servicechain ${sc_id}`)
-                            }
-                        })
-                } else {
-                    return BBPromise.reject(new ResourceNotFoundError(`No servicechain found with ID ${sc_id}`))
-                }
-            })
+    export async function getServiceCountInServicechain(sc_id: string): Promise<number> {
+        let sc = await db.models.Servicechain.findByPk(sc_id)
+        if (sc) {
+            let count = await sc.countServices()
+            if (count) { return count }
+            else { throw new EmptyServicechainError(`No plugins found in servicechain ${sc_id}`) }
+
+        } else {
+            throw new ResourceNotFoundError(`No servicechain found with ID ${sc_id}`)
+        }
     }
 
     /**

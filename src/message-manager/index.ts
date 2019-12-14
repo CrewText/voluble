@@ -68,54 +68,45 @@ export namespace MessageManager {
     export async function doMessageSend(msg: db.MessageInstance): Promise<db.MessageInstance> {
         // First, acquire the first service in the servicechain
 
-        return ServicechainManager.getServiceCountInServicechain(msg.ServicechainId)
-            .then(async function (svc_count) {
-                let is_sent = false
+        let sc = await ServicechainManager.getServicechainById(msg.ServicechainId)
+        let svc_count = await sc.countServices()
+        if (!svc_count) {
+            QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
+        }
 
-                logger.debug(`MM: Beginning message send attempt loop for message ${msg.id}; ${svc_count} plugins in servicechain ${msg.ServicechainId}`)
+        let is_sent = false
 
-                for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
-                    logger.debug(`MM: Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.ServicechainId}`)
+        logger.debug(`Beginning message send attempt loop`, { msg: msg.id, sc: sc.id, svc_count: svc_count })
 
-                    is_sent = await ServicechainManager.getServiceInServicechainByPriority(msg.ServicechainId, current_svc_prio)
-                        .then(function (svc) {
-                            if (svc) {
-                                logger.debug(`MM: Servicechain ${msg.ServicechainId} priority ${current_svc_prio}: ${svc.directory_name}. Attempting message ${msg.id} send...`)
-                                return sendMessageWithService(msg, svc)
-                            } else {
-                                // return Promise.reject(`No service with priority ${svc_priority} in servicechain ${msg.ServicechainId}`)
-                                return false
-                            }
-                        }).catch(ServicechainManager.EmptyServicechainError, function (error) {
-                            winston.warn(error)
-                            is_sent = false
-                            QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
-                            return false
-                        })
-                        .catch(ResourceNotFoundError, function (error) {
-                            winston.warn(error)
-                            return false
-                        })
-                        .catch(function (error) {
-                            winston.error(error)
-                            return false
-                        })
+        for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
+            logger.debug(`MM: Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.ServicechainId}`)
 
-                    if (!is_sent) {
-                        // Wasn't able to send the message with this service, try the next one
-                        logger.debug(`MM: Failed to send message ${msg.id}, trying next priority plugin...`)
-                    }
-                }
-
-                if (is_sent) {
-                    QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
-                    return Promise.resolve(msg)
+            try {
+                let svc = await ServicechainManager.getServiceInServicechainByPriority(msg.ServicechainId, current_svc_prio)
+                logger.debug(`Found service; Attempting message send`, { msg: msg.id, sc: sc.id, svc: svc.directory_name, priority: current_svc_prio })
+                is_sent = await sendMessageWithService(msg, svc)
+            } catch (e) {
+                if (e instanceof ResourceNotFoundError) {
+                    logger.warn(e)
                 } else {
-                    logger.info(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
-                    QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
-                    return Promise.reject(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
+                    logger.error(e)
                 }
-            })
+            }
+
+            if (!is_sent) {
+                // Wasn't able to send the message with this service, try the next one
+                logger.debug(`Failed to send message ${msg.id}, trying next priority plugin...`)
+            }
+        }
+
+        if (is_sent) {
+            QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
+            return msg
+        } else {
+            logger.info(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
+            QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
+            return Promise.reject(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
+        }
     }
 
     async function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance): Promise<boolean> {
@@ -131,7 +122,7 @@ export namespace MessageManager {
                                     return await plugin.send_message(msg, contact)
                                 } catch (e) {
                                     if (e instanceof PluginManager.PluginImportFailedError) {
-                                        winston.warn(e.message, e)
+                                        logger.warn(e.message, e)
                                         return Promise.reject(e)
                                     } else { throw e }
                                 }
