@@ -18,7 +18,6 @@
     "auth0": "^2.20.0",
     "bluebird": "^3.7.2",
     "body-parser": "^1.19.0",
-    "common-errors": "^1.0.5",
     "cors": "^2.8.5",
     "debug": "~2.6.3",
     "esendex": "^0.1.8",

@@ -5,7 +5,8 @@ import * as db from '../models'
 import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
-const errs = require('common-errors')
+import { ResourceNotFoundError } from '../voluble-errors'
+// const errs = require('common-errors')
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'MessageMgr' })
 
@@ -87,13 +88,17 @@ export namespace MessageManager {
                                 return false
                             }
                         }).catch(ServicechainManager.EmptyServicechainError, function (error) {
-                            errs.log(error, error.message)
+                            winston.warn(error)
                             is_sent = false
                             QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
                             return false
                         })
-                        .catch(errs.NotFoundError, function (error) {
-                            errs.log(error.message, error)
+                        .catch(ResourceNotFoundError, function (error) {
+                            winston.warn(error)
+                            return false
+                        })
+                        .catch(function (error) {
+                            winston.error(error)
                             return false
                         })
 
@@ -127,16 +132,16 @@ export namespace MessageManager {
                                     return await plugin.send_message(msg, contact)
                                 } catch (e) {
                                     if (e instanceof PluginManager.PluginImportFailedError) {
-                                        errs.log(e.message, e)
+                                        winston.warn(e.message, e)
                                         return Promise.reject(e)
                                     } else { throw e }
                                 }
                             } else {
-                                return Promise.reject(new errs.NotFoundError(`Could not find contact with ID ${msg.contact}`))
+                                return Promise.reject(new ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`))
                             }
                         })
                 } else {
-                    return Promise.reject(new errs.NotFoundError(`Could not find plugin with ID ${svc.id}`))
+                    return Promise.reject(new ResourceNotFoundError(`Could not find plugin with ID ${svc.id}`))
                 }
             })
     }
@@ -154,7 +159,7 @@ export namespace MessageManager {
                     return msg.save()
                 } else {
                     logger.warn(`MM: Could not find message with ID ${msg_id}`)
-                    return Promise.reject(new errs.NotFoundError(`Message with ID ${msg_id} was not found`))
+                    return Promise.reject(new ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
                 }
             })
     }
