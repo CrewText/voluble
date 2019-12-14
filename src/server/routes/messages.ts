@@ -10,7 +10,7 @@ import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
 const router = express.Router();
-let logger = winston.loggers.get('voluble-log').child({ module: 'MessagesRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.

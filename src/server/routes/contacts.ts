@@ -11,7 +11,7 @@ import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'ContactsRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactsRoute' })
 const router = express.Router();
 
 /**

@@ -3,7 +3,7 @@ import * as request from 'request';
 import * as winston from 'winston';
 import * as db from '../models';
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'UserMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UserMgr' })
 
 /**
  * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and

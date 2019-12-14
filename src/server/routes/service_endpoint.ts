@@ -3,7 +3,7 @@ import * as winston from 'winston'
 import { PluginManager } from '../../plugin-manager'
 import { QueueManager } from '../../queue-manager'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'ServiceEndpointRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServiceEndpointRoute' })
 var router = express.Router();
 
 //router.get('/', function)

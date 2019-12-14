@@ -4,7 +4,7 @@ import * as winston from 'winston';
 import { PluginManager } from '../../plugin-manager';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'ServicesRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicesRoute' })
 
 const router = express.Router();
 

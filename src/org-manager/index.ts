@@ -3,7 +3,7 @@ import * as winston from 'winston';
 import * as db from '../models';
 import { InvalidParameterValueError } from '../voluble-errors'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'OrgMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgMgr' })
 
 export namespace OrgManager {
 

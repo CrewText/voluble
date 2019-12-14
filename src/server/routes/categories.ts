@@ -7,7 +7,7 @@ import { ResourceNotFoundError } from "../../voluble-errors";
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from "../security/jwt";
 import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from "../security/scopes";
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'CategoriesRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CategoriesRoute' })
 
 const router = express.Router();
 

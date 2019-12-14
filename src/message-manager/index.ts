@@ -7,7 +7,7 @@ import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'MessageMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessageMgr' })
 
 /**
  * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,

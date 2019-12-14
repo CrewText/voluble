@@ -5,7 +5,7 @@ import { ContactManager } from '../contact-manager/'
 import * as db from '../models'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'SCMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'SCMgr' })
 
 /**
  * The ServicechainManager handles all operations that relate to Servicechains and ServiceInServicechains, which includes

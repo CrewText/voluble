@@ -9,7 +9,7 @@ import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 import { ResourceNotFoundError } from '../../voluble-errors'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'ServicechainsRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicechainsRoute' })
 
 const router = express.Router();
 

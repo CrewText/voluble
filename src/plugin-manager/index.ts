@@ -7,7 +7,7 @@ import { QueueManager } from '../queue-manager'
 import { ResourceNotFoundError } from '../voluble-errors'
 import { ResourceOutOfUserScopeError } from '../server/security/scopes'
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'PluginMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'PluginMgr' })
 
 interface IPluginDirectoryMap {
     subdirectory: string,

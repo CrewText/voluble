@@ -4,7 +4,7 @@ import * as db from '../models';
 import { ContactInstance } from "../models/contact";
 import { ResourceNotFoundError } from '../voluble-errors';
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'ContactMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactMgr' })
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
  * removing Contacts and finding information about Contacts.

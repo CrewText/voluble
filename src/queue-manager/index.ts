@@ -6,7 +6,7 @@ import { MessageManager } from "../message-manager";
 import { MessageInstance } from "../models";
 import { ResourceNotFoundError } from '../voluble-errors';
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'QueueMgr' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'QueueMgr' })
 
 export namespace QueueManager {
 

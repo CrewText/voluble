@@ -9,7 +9,7 @@ import { InvalidParameterValueError, ResourceNotFoundError, UserAlreadyInOrgErro
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
 
-let logger = winston.loggers.get('voluble-log').child({ module: 'OrgsRoute' })
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
 const router = express.Router();
 
 /**
