@@ -68,7 +68,8 @@ export namespace ServicechainManager {
                     model: db.models.Service,
                     through: {
                         where: {
-                            priority: priority
+                            priority: priority,
+                            as: 'services'
                         }
                     }
                 }
