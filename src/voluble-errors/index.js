@@ -7,6 +7,8 @@ class UserNotInOrgError extends Error { }
 class UserAlreadyInOrgError extends Error { }
 class ResourceNotFoundError extends Error { }
 class InvalidParameterValueError extends Error { }
+class NotImplementedError extends Error { }
+
 let Errors = {
     MessageAlreadySentError,
     MessageFailedError,
@@ -16,7 +18,8 @@ let Errors = {
     ResourceNotFoundError,
     InvalidParameterValueError,
     UserNotInOrgError,
-    UserAlreadyInOrgError
+    UserAlreadyInOrgError,
+    NotImplementedError
 }
 
 module.exports = Errors

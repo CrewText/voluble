@@ -3,7 +3,7 @@ import { Servicechain, ServicesInSC } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager/'
 import * as db from '../models'
-let errs = require('common-errors')
+import { ResourceNotFoundError } from '../voluble-errors'
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'SCMgr' })
 
@@ -25,9 +25,8 @@ export namespace ServicechainManager {
         services: ServicesInSC[]
     }
 
-    export class ServicechainNotFoundError extends Error { }
-
-    export const EmptyServicechainError = errs.helpers.generateClass('EmptyServicechainError')
+    // export class ResourceNotFoundError extends Error { }
+    export class EmptyServicechainError extends Error { }
 
     /**
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
@@ -85,7 +84,7 @@ export namespace ServicechainManager {
                     return BBPromise.reject(new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`))
                 }
             } else {
-                return BBPromise.reject(new ServicechainNotFoundError(`Servicechain with ID ${sc_id} does not exist`))
+                return BBPromise.reject(new ResourceNotFoundError(`Servicechain with ID ${sc_id} does not exist`))
             }
         })
     }
@@ -103,7 +102,7 @@ export namespace ServicechainManager {
                             }
                         })
                 } else {
-                    return BBPromise.reject(new ServicechainNotFoundError(`No servicechain found with ID ${sc_id}`))
+                    return BBPromise.reject(new ResourceNotFoundError(`No servicechain found with ID ${sc_id}`))
                 }
             })
     }
@@ -140,7 +139,7 @@ export namespace ServicechainManager {
         })
             .then((sc) => {
                 if (!sc) {
-                    throw new ServicechainNotFoundError(`Servicechain with ID ${sc_id} not found`)
+                    throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`)
                 }
                 let services_in_sc_list: ServicesInSC[] = []
 
@@ -172,7 +171,7 @@ export namespace ServicechainManager {
         return db.models.Servicechain.destroy({ where: { id: id } })
             .then(function (destroyedRowsCount) {
                 if (!destroyedRowsCount) {
-                    return BBPromise.reject(new errs.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+                    return BBPromise.reject(new ResourceNotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
                 } else {
                     return BBPromise.resolve(destroyedRowsCount)
                 }

@@ -4,7 +4,7 @@ import * as rsmqWorker from 'rsmq-worker';
 import * as winston from 'winston';
 import { MessageManager } from "../message-manager";
 import { MessageInstance } from "../models";
-const errs = require('common-errors')
+import { ResourceNotFoundError } from '../voluble-errors';
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'QueueMgr' })
 
@@ -35,7 +35,7 @@ export namespace QueueManager {
             logger.debug("QM: Got message update for message " + update.message_id + ": " + update.status)
             MessageManager.updateMessageState(update.message_id, update.status)
                 .catch(function (error) {
-                    if (error instanceof errs.NotFoundError) {
+                    if (error instanceof ResourceNotFoundError) {
                         logger.info("QM: Dropping message update request for message with ID " + update.message_id)
                     } else {
                         throw error

@@ -4,8 +4,8 @@ import * as winston from 'winston'
 import * as db from '../models'
 import { voluble_plugin } from '../plugins/plugin_base'
 import { QueueManager } from '../queue-manager'
-const errs = require('common-errors')
-const voluble_errors = require('../voluble-errors')
+import { ResourceNotFoundError } from '../voluble-errors'
+import { ResourceOutOfUserScopeError } from '../server/security/scopes'
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'PluginMgr' })
 
@@ -19,7 +19,7 @@ interface IPluginDirectoryMap {
  * It also handles all plugin- and service-related operations.
  */
 export namespace PluginManager {
-    export const PluginImportFailedError = errs.helpers.generateClass('PluginImportFailedError')
+    export class PluginImportFailedError extends Error { }
     export class ServiceNotFoundError extends Error { }
 
     let __plugin_dir: string = path.resolve(path.join(__dirname, "../plugins"))
@@ -33,7 +33,7 @@ export namespace PluginManager {
             let svc = await db.models.Service.findByPk(id)
 
             if (!svc) {
-                reject(new errs.NotFoundError(`Plugin with ID ${id} cannot be found`))
+                reject(new ResourceOutOfUserScopeError(`Plugin with ID ${id} cannot be found`))
             }
 
             try {
@@ -44,7 +44,7 @@ export namespace PluginManager {
                 p._plugin_dir = plugin_directory
                 resolve(p)
             } catch (e) {
-                errs.log(e, `Could not import plugin in directory '${svc.directory_name}': ${e.message}`)
+                winston.error(e, `Could not import plugin in directory '${svc.directory_name}': ${e.message}`)
                 reject(new PluginImportFailedError(`Failed to import plugin in directory ${svc.directory_name}`))
             }
         })
@@ -83,7 +83,7 @@ export namespace PluginManager {
                     let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir }
                     plugin_object_map.push(p)
                 } catch (e) {
-                    errs.log(e, `Could not load plugin in subdirectory ${plugin_subdir}: ${e.message}`)
+                    winston.error(e, `Could not load plugin in subdirectory ${plugin_subdir}: ${e.message}`)
                 }
             });
 

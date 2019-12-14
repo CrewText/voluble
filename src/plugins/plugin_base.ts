@@ -1,15 +1,8 @@
-var errors = require('common-errors')
 import * as db from '../models'
-// import * as Promise from 'bluebird'
 import { EventEmitter } from 'events';
 export type contactInstance = db.ContactInstance
 export type messageInstance = db.MessageInstance
-
-interface Manifest {
-    plugin_name: string,
-    plugin_description: string,
-    npm_modules?: string[]
-}
+import { NotImplementedError } from '../voluble-errors'
 
 export interface InterpretedIncomingMessage {
     message_body: string,
@@ -49,11 +42,11 @@ export abstract class voluble_plugin implements IVolublePluginBase {
         // Check for mandatory fields
         this.name = plugin_name
         if (!this.name) {
-            throw new errors.NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_name' in it's constructor: ${__dirname}`)
+            throw new NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_name' in it's constructor: ${__dirname}`)
         }
         this.description = plugin_description
         if (!this.description) {
-            throw new errors.NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_description' in it's constructor: ${__dirname}`)
+            throw new NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_description' in it's constructor: ${__dirname}`)
         }
     }
 

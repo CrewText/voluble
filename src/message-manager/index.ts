@@ -6,7 +6,6 @@ import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
 import { ResourceNotFoundError } from '../voluble-errors'
-// const errs = require('common-errors')
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'MessageMgr' })
 

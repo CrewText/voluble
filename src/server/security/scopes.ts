@@ -1,6 +1,6 @@
+import { scopes } from "voluble-common";
 import { UserManager } from "../../user-manager";
-const errs = require('common-errors')
-import { scopes } from "voluble-common"
+import { ResourceNotFoundError } from '../../voluble-errors';
 
 export class ResourceOutOfUserScopeError extends Error { }
 
@@ -12,7 +12,7 @@ export function setupUserOrganizationMiddleware(req, res, next) {
         UserManager.getUserFromAuth0Id(sub_id)
             .then(function (user) {
                 if (!user) {
-                    res.status(401).jsend.fail(new errs.NotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
+                    res.status(401).jsend.fail(new ResourceNotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
                 }
                 return user.getOrganization()
             })

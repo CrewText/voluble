@@ -2,7 +2,7 @@ import * as BBPromise from "bluebird";
 import * as winston from 'winston';
 import * as db from '../models';
 import { ContactInstance } from "../models/contact";
-const errs = require('common-errors')
+import { ResourceNotFoundError } from '../voluble-errors';
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'ContactMgr' })
 /**
@@ -71,7 +71,7 @@ export namespace ContactManager {
             return db.models.Contact.count({ where: { id: id } })
                 .then(function (count: number) {
                     if (!count) {
-                        return BBPromise.reject(errs.NotFoundError(`No contact with ID ${id}`))
+                        return BBPromise.reject(new ResourceNotFoundError(`No contact with ID ${id}`))
                     } else {
                         // Contact exists, return the same ID what was provided, for Promise continuity
                         return BBPromise.resolve(id)

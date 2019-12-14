@@ -1,7 +1,7 @@
 import * as Promise from "bluebird";
 import * as winston from 'winston';
 import * as db from '../models';
-const errs = require('common-errors')
+import { InvalidParameterValueError } from '../voluble-errors'
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'OrgMgr' })
 
@@ -14,15 +14,15 @@ export namespace OrgManager {
      */
     export function createNewOrganization(name: string, phone_number: string): Promise<db.OrganizationInstance> {
         if (!name) {
-            return Promise.reject(new errs.ArgumentNullError("An Organization name was not provided."))
+            return Promise.reject(new InvalidParameterValueError("An Organization name was not provided."))
         } else if (!phone_number) {
-            return Promise.reject(new errs.ArgumentNullError("An Organization phone number was not provided."))
+            return Promise.reject(new InvalidParameterValueError("An Organization phone number was not provided."))
         }
         return db.models.Organization.create({
             name: name, phone_number: phone_number
         })
             .catch(db.sequelize.ValidationError, (err) => {
-                throw new errs.ValidationError(err)
+                throw new InvalidParameterValueError(err.message)
             })
     }
 

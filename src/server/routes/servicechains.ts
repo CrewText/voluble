@@ -7,12 +7,11 @@ import { ServicechainManager } from '../../servicechain-manager/';
 import { InvalidParameterValueError } from '../../voluble-errors';
 import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
+import { ResourceNotFoundError } from '../../voluble-errors'
 
 let logger = winston.loggers.get('voluble-log').child({ module: 'ServicechainsRoute' })
 
 const router = express.Router();
-
-const errs = require('common-errors')
 
 router.get('/:org_id/servicechains/', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
 
@@ -77,7 +76,7 @@ router.post('/:org_id/servicechains/', checkJwt,
       if (e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail({ name: e.name, message: e.message })
       }
-      else if (e instanceof ServicechainManager.ServicechainNotFoundError) {
+      else if (e instanceof ResourceNotFoundError) {
         res.status(500).jsend.error("Internal error: Failed to create new Servicechain")
       }
       else if (e instanceof PluginManager.ServiceNotFoundError) {
@@ -96,7 +95,7 @@ router.get('/:org_id/servicechains/:sc_id', checkJwt, checkJwtErr, checkScopesMi
     let full_sc = await ServicechainManager.getFullServicechain(req.params.sc_id)
     res.status(200).jsend.success(full_sc)
   } catch (e) {
-    if (e instanceof ServicechainManager.ServicechainNotFoundError) {
+    if (e instanceof ResourceNotFoundError) {
       res.status(400).jsend.fail(`Servicechain with ID ${req.params.sc_id} not found`)
     }
     else {
@@ -119,7 +118,7 @@ router.put('/:org_id/servicechains/:id', checkJwt,
 
     try {
       let sc = await ServicechainManager.getServicechainById(sc_id)
-      if (!sc) { throw new ServicechainManager.ServicechainNotFoundError(`Servicechain with ID ${sc_id} not found`) }
+      if (!sc) { throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`) }
       if (!Array.isArray(req.body.services)) { throw new InvalidParameterValueError(`The services parameter must be an Array of service-priority objects`) }
 
       req.body.services.forEach(body_pair => {
@@ -154,7 +153,7 @@ router.put('/:org_id/servicechains/:id', checkJwt,
     }
 
     catch (e) {
-      if (e instanceof ServicechainManager.ServicechainNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
+      if (e instanceof ResourceNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
         res.status(400).jsend.fail(e)
       } else {
         logger.error(e)
