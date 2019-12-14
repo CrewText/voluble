@@ -11,7 +11,7 @@ import { QueueManager } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-let logger = winston.loggers.add('voluble-log-worker', {
+let logger = winston.loggers.add(process.mainModule.filename, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
     level: process.env.NODE_ENV == "production" ? "info" : "debug",
     defaultMeta: { module: 'Worker-Main' }
