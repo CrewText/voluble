@@ -9,7 +9,7 @@ export function setupUserOrganizationMiddleware(req, res, next) {
     if (sub_id == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
         next() // test client, let it do everything
     } else {
-        UserManager.getUserFromAuth0Id(sub_id)
+        UserManager.getUserById(sub_id)
             .then(function (user) {
                 if (!user) {
                     res.status(401).jsend.fail(new ResourceNotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
