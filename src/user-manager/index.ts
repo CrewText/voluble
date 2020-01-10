@@ -42,41 +42,8 @@ export namespace UserManager {
             })
     }
 
-    export function getUserFromAuth0Id(auth0_id: string): Promise<db.UserInstance> {
-        return db.models.User.findOne({
-            where:
-            {
-                auth0_id: auth0_id
-            }
-        })
-    }
-
     export function getUserById(id: string): Promise<db.UserInstance> {
-        return db.models.User.findOne({
-            where:
-                { id: id }
-        })
-    }
-
-    export function setUserIdAuth0Claim(user_id: string): Promise<void> {
-        return getMgmtAccessToken()
-            .then(function (token) {
-                return getUserById(user_id)
-                    .then(function (user) {
-                        logger.debug("Setting Auth0 User claim for Voluble ID")
-                        return req_prom(
-                            {
-                                url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.auth0_id}`,
-                                method: 'PATCH',
-                                headers: { 'Authorization': 'Bearer ' + token, "Content-Type": 'application/json' },
-                                body: { 'user_metadata': { 'voluble_id': user.id } },
-                                json: true
-                            })
-                    })
-            })
-            .then(function (resp) {
-                return
-            })
+        return db.models.User.findByPk(id)
     }
 
     export function setUserScopes(user_id: string, desired_scopes: string[]): Promise<void> {
@@ -85,7 +52,7 @@ export namespace UserManager {
                 return getUserById(user_id)
                     .then(function (user) {
                         return req_prom({
-                            url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.auth0_id}`,
+                            url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.id}`,
                             method: 'GET',
                             headers: { 'Authorization': 'Bearer ' + token },
                             json: true
@@ -98,7 +65,7 @@ export namespace UserManager {
                             .then(function (scopes_available) {
                                 scopes_available.push(...desired_scopes)
                                 return req_prom({
-                                    url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/${user.auth0_id}`,
+                                    url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/${user.id}`,
                                     method: 'PATCH',
                                     headers: { 'Authorization': 'Bearer ' + token },
                                     body: { 'app_metadata': { 'scopes': scopes_available } },

@@ -16,14 +16,9 @@ export interface UserInstance extends Sequelize.Instance<UserAttributes>, UserAt
 export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
     var User = sequelize.define('User', {
         id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
-        },
-        auth0_id: {
             type: DataTypes.STRING,
-            allowNull: false
-        },
+            primaryKey: true
+        }
     })
 
     return User

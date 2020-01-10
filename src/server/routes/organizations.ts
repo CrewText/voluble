@@ -1,4 +1,3 @@
-import * as BBPromise from 'bluebird';
 import * as express from "express";
 import { scopes } from "voluble-common";
 import * as winston from 'winston';
@@ -115,10 +114,8 @@ router.post('/', checkJwt, checkJwtErr, async function (req, res, next) {
 
         let new_org = await OrgManager.createNewOrganization(org_name, e164_phone_num)
         logger.debug(`Created new Organization`, { 'org': new_org.id })
-        let new_user = await new_org.createUser({ auth0_id: req.user.sub })
+        let new_user = await new_org.createUser({ id: req.user.sub })
         logger.debug(`Created new User in Organization`, { 'org': new_org.id, 'user': new_user.id })
-        await UserManager.setUserIdAuth0Claim(new_user.id)
-        logger.debug('Set Auth0 user ID claim', { 'user': new_user.id })
 
         if (req.user.sub != `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
             logger.debug('Setting user scope organization:owner', { 'user': new_user.id })
@@ -321,33 +318,29 @@ router.post('/:org_id/users',
     checkScopesMiddleware([scopes.UserAdd,
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
+    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, async function (req, res, next) {
         let org_id = req.params.org_id
-        let new_user_auth0_id = req.body.auth0_id
+        let new_user_id = req.body.id
 
         if (!org_id) {
             return res.status(404).jsend.fail(`Organization with ID ${org_id} does not exist`)
-        } else if (!new_user_auth0_id) {
-            return res.status(400).jsend.fail(`Parameter 'auth0_id' not specified`)
+        } else if (!new_user_id) {
+            return res.status(400).jsend.fail(`Parameter 'id' not specified`)
         }
 
-        OrgManager.getOrganizationById(org_id)
-            .then(function (org) {
-                if (!org) {
-                    return BBPromise.reject(new ResourceNotFoundError(`No Organization found with ID ${org_id}`))
-                }
-                return org.createUser({ auth0_id: new_user_auth0_id })
-            })
-            .then(function (user) {
-                res.status(201).jsend.success(user)
-            })
-            .catch(ResourceNotFoundError, (err) => {
-                res.status(404).jsend.fail(err)
-            })
-            .catch((err) => {
-                logger.error(err)
-                res.status(500).jsend.error(err)
-            })
+        try {
+            let org = await OrgManager.getOrganizationById(org_id)
+            if (!org) { throw new ResourceNotFoundError(`No Organization found with ID ${org_id}`) }
+
+            org.createUser({ id: new_user_id })
+        } catch (e) {
+            if (e instanceof ResourceNotFoundError) {
+                logger.warn(e)
+                res.status(404).jsend.fail(e)
+                res.status(500).jsend.error(e)
+                logger.error(e)
+            }
+        }
     })
 
 /**
@@ -370,9 +363,8 @@ router.post('/:org_id/users',
  * 
  * @apiSuccessExample {json} Success-Response:
  * {
- *     id : "a0e77f72-2415-462b-9526-af87dbed2ee4",
  *     OrganizationId: "c26399b7-d6ad-481f-bb7c-16add635323d",
- *     auth0_id: "6d66f919-f7e2-4485-a913-0f2c0d52e5bc"
+ *     id: "6d66f919-f7e2-4485-a913-0f2c0d52e5bc"
  * }
  * 
  * 

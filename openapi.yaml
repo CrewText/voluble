@@ -272,15 +272,9 @@ components:
           type: string
           nullable: false
           readOnly: true
-          description: The UUID of the User within Voluble
-          example: c616d114-4f68-4dba-b976-cd5ae0aa359d
-        auth0_id:
-          type: string
-          nullable: false
-          readOnly: false
-          description: >-
-            The Auth0-generated ID of the corresponding user in Auth0 for
-            authentication management
+          description: The Auth0-generated ID of the corresponding user in Auth0 for
+            authentication management.
+          example: auth0|c616d114-4f68-4dba-b976-cd5ae0aa359d
   securitySchemes:
     jwt:
       type: http
