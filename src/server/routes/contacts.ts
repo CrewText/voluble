@@ -65,11 +65,13 @@ router.get('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr, checkScopesMi
         res.status(200).jsend.success(user)
       } else { throw new ResourceNotFoundError(`User with ID ${req.params.contact_id} is not found!`) }
     })
-    .catch(ResourceNotFoundError, function (error) {
-      res.status(404).jsend.fail(error.message)
+    .catch(function (e) {
+      if (e instanceof ResourceNotFoundError) {
+        res.status(404).jsend.fail(e.message)
+      } else { throw e }
     })
-    .catch(function (error: any) {
-      res.status(500).jsend.error(error.message)
+    .catch(function (e: any) {
+      res.status(500).jsend.error(e.message)
     })
 
 })

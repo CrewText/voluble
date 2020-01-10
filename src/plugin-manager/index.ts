@@ -4,7 +4,6 @@ import * as winston from 'winston'
 import * as db from '../models'
 import { voluble_plugin } from '../plugins/plugin_base'
 import { QueueManager } from '../queue-manager'
-import { ResourceNotFoundError } from '../voluble-errors'
 import { ResourceOutOfUserScopeError } from '../server/security/scopes'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'PluginMgr' })
@@ -39,7 +38,7 @@ export namespace PluginManager {
             try {
                 let plugin_directory = path.join(__plugin_dir, svc.directory_name)
                 let plugin_fullpath = path.join(plugin_directory, "plugin.js")
-                logger.debug("PM: Importing plugin from:" + plugin_fullpath)
+                logger.debug("Importing plugin", { plugin_dir: plugin_fullpath })
                 let p: voluble_plugin = require(plugin_fullpath)()
                 p._plugin_dir = plugin_directory
                 resolve(p)
@@ -64,8 +63,8 @@ export namespace PluginManager {
  * @param {string} plugin_dir The path to the directory containing the plugins that Voluble should use.
  */
     export async function initAllPlugins() {
-        logger.debug("PM: Attempting to load plugins from " + __plugin_dir)
-        logger.info("PM: Loading plugins from\n\t" + __plugin_dir)
+        logger.debug("Attempting to load plugins from " + __plugin_dir)
+        logger.info("Loading plugins from" + __plugin_dir)
 
         let plugin_subdir_list = discoverPlugins(__plugin_dir)
         let plugin_map = await plugin_subdir_list.then((plugin_subdirs) => {
@@ -75,7 +74,7 @@ export namespace PluginManager {
                 let plugin_file_abs = path.join(__plugin_dir, plugin_subdir, "plugin.js")
                 try {
                     let plug_obj: voluble_plugin = require(plugin_file_abs)()
-                    logger.info("PM: Loaded plugin: " + plug_obj.name)
+                    logger.info("Loaded plugin: " + plug_obj.name)
                     plug_obj._eventEmitter.on('message-state-update', (msg: db.MessageInstance, message_state: string) => {
                         QueueManager.addMessageStateUpdateRequest(msg.id, message_state)
                     })
@@ -104,7 +103,7 @@ export namespace PluginManager {
             else { return false }
         })
 
-        logger.debug("PM: Found plugins at:\n\t" + plugin_subdirs)
+        logger.debug("Found plugin", { dirs: plugin_subdirs })
 
         return Promise.resolve(plugin_subdirs)
     }
@@ -125,76 +124,6 @@ export namespace PluginManager {
         })
     }
 
-    // function createPluginDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any[]> {
-    //     if (plugin_dir_map.plugin.data_tables) {
-    //         return Promise.map(Object.keys(plugin_dir_map.plugin.data_tables), function (table) {
-    //             let table_name = `pl_${plugin_dir_map.subdirectory}_${table}`
-    //             logger.info(`Creating table ${table_name}`)
-
-    //             let cols = {}
-    //             let current_table: string[] = plugin_dir_map.plugin.data_tables[table]
-
-    //             logger.debug(current_table)
-    //             //console.log(current_table)
-
-    //             current_table.forEach(function (col) {
-    //                 cols[col] = db.models.Sequelize.STRING
-    //             })
-
-    //             db.sequelize.define(table_name, cols).sync()
-
-    //         })
-    //     } else {
-    //         return Promise.resolve([])
-    //     }
-    // }
-
-    // function createPluginObjectDataTables(plugin_dir_map: IPluginDirectoryMap): Promise<any> {
-    //     let plugin = plugin_dir_map.plugin
-    //     let db_define_proms: Promise<any>[] = []
-
-    //     Object.keys(plugin.object_data).forEach(object_type => {
-    //         let cols = {
-    //             id: {
-    //                 type: db.models.Sequelize.INTEGER,
-    //                 primaryKey: true,
-    //             }
-    //         }
-
-    //         plugin.object_data[object_type].forEach(attr => {
-    //             cols[attr] = db.models.Sequelize.STRING
-    //         });
-
-    //         let table_name = `pl_${plugin.name.replace(' ', '')}_${object_type}`
-
-    //         // For the sake of convenience, since we know that our table is referencing a particulary entry in a table
-    //         // that alreasy exists, we can set up the foreign keys too. This will help us populate the `plugin.object_data` field later.
-    //         let related_model
-    //         switch (object_type) {
-    //             case "message":
-    //                 related_model = db.models.Message
-    //                 break
-    //             case "contact":
-    //                 related_model = db.models.Contact
-    //                 break
-    //             case "organization":
-    //                 related_model = db.models.Organization
-    //                 break
-    //             case "user":
-    //                 related_model = db.models.User
-    //                 break
-    //         }
-
-    //         let model = db.sequelize.define(table_name, cols)
-    //         if (related_model) {
-    //             related_model.hasOne(model, { foreignKey: "object_id" })
-    //         }
-    //         let prom = model.sync()
-    //         db_define_proms.push(prom)
-    //     });
-
-    //     return Promise.all(db_define_proms)
-    // }
 
     /**
      * Gets the list of services from the DB with their status.

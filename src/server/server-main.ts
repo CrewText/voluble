@@ -1,4 +1,3 @@
-import * as BBPromise from 'bluebird';
 import * as cors from 'cors';
 import * as express from "express";
 import { Server } from 'http';
@@ -118,38 +117,17 @@ if (process.env.NODE_ENV != "production") {
 function onServerListening() {
   logger.info("Server listening on " + port)
 }
-export function initServer() {
-  return BBPromise.try(function () {
-    // app.use(function (req: express.Request, res: express.Response, next: express.NextFunction) {
-    //   let err: any = new Error('Not Found');
-    //   err.status = 404;
-    //   next(err);
-    // });
+export async function initServer() {
 
-    // error handler
-    app.use(function (err: any, req: express.Request, res: express.Response, next: express.NextFunction) {
-      // set locals, only providing error in development/testing
-      res.locals.message = err.message;
-      res.locals.error = process.env.NODE_ENV = "production" ? {} : err;
+  logger.debug("Initializing DB")
+  await db.initialize_database();
 
-      // render the error page
-      res.status(err.status || 500);
-    });
+  // Set up plugin manager
+  logger.info("Initing all plugins");
+  await PluginManager.initAllPlugins();
 
-    return
-  })
-    .then(function () {
-      return db.initialize_database()
-    })
-    .then(function () {
-      // Set up plugin manager
-      logger.info("Initing all plugins")
-      return PluginManager.initAllPlugins()
-    })
-    .then(function () {
-      svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost", onServerListening) : app.listen(port, onServerListening)
-      return svr
-    })
+  svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost", onServerListening) : app.listen(port, onServerListening);
+  return svr;
 }
 
 export async function shutdownServer() {

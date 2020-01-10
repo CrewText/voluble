@@ -79,7 +79,7 @@ export namespace MessageManager {
         logger.debug(`Beginning message send attempt loop`, { msg: msg.id, sc: sc.id, svc_count: svc_count })
 
         for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
-            logger.debug(`MM: Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.ServicechainId}`)
+            logger.debug(`Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.ServicechainId}`)
 
             try {
                 let svc = await ServicechainManager.getServiceInServicechainByPriority(msg.ServicechainId, current_svc_prio)
@@ -113,11 +113,11 @@ export namespace MessageManager {
         return PluginManager.getPluginById(svc.id)
             .then(function (plugin) {
                 if (plugin) {
-                    logger.debug(`MM: Loaded plugin ${plugin.name}`)
+                    logger.debug(`Loaded plugin ${plugin.name}`)
                     return ContactManager.getContactWithId(msg.contact)
                         .then(async function (contact) {
                             if (contact) {
-                                logger.debug(`MM: Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
+                                logger.debug(`Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
                                 try {
                                     return await plugin.send_message(msg, contact)
                                 } catch (e) {
@@ -137,7 +137,7 @@ export namespace MessageManager {
     }
 
     export function updateMessageState(msg_id: string, msg_state: string): Promise<db.MessageInstance> {
-        logger.info("MM: Updating message state", { 'message': msg_id, 'state': MessageStates[msg_state] })
+        logger.info("Updating message state", { 'message': msg_id, 'state': MessageStates[msg_state] })
         return getMessageFromId(msg_id)
             .then(function (msg) {
                 if (msg) {
@@ -148,7 +148,7 @@ export namespace MessageManager {
                     }
                     return msg.save()
                 } else {
-                    logger.warn(`MM: Could not find message with ID ${msg_id}`)
+                    logger.warn(`Could not find message with ID ${msg_id}`)
                     return Promise.reject(new ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
                 }
             })

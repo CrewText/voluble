@@ -11,7 +11,6 @@ if (!process.env.PATH || process.env.PATH.lastIndexOf("/app/.heroku") == -1) {
 
 process.env.NODE_ENV = "test"
 
-import * as BBPromise from 'bluebird'
 import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
@@ -31,6 +30,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
+        console.log(`Setting up server and access token`)
         this.timeout(5000)
 
         return new Promise(async (res, rej) => {
@@ -53,6 +53,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_org_id
     this.beforeAll((done) => {
+        console.log(`Setting up test org`)
         supertest(server_app)
             .post(`/v1/orgs`)
             .auth(auth_token, { type: "bearer" })
@@ -67,6 +68,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_services
     this.beforeAll((done => {
+        console.log(`Setting up test services`)
         supertest(server_app)
             .get("/v1/services")
             .auth(auth_token, { type: "bearer" })
@@ -89,6 +91,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_sc_id
     this.beforeAll(function (done) {
+        console.log(`Setting up test servicechain`)
         if (!test_org_id) { this.skip() }
 
         supertest(server_app)
@@ -123,6 +126,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_cat_id
     this.beforeAll(function (done) {
+        console.log(`Setting up test category`)
         if (!test_org_id) { this.skip() }
         let cat_name = faker.name.jobArea()
         supertest(server_app)

@@ -1,4 +1,3 @@
-import * as BBPromise from "bluebird"
 import { Servicechain, ServicesInSC } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager/'
@@ -32,7 +31,7 @@ export namespace ServicechainManager {
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
-    export function getServicesInServicechain(servicechain_id: string): BBPromise<db.ServicesInSCInstance[]> {
+    export function getServicesInServicechain(servicechain_id: string): Promise<db.ServicesInSCInstance[]> {
         return db.models.ServicesInSC.findAll({
             where: {
                 servicechainId: servicechain_id
@@ -41,7 +40,7 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServicechainFromContactId(contact_id: string): BBPromise<db.ServicechainInstance | null> {
+    export function getServicechainFromContactId(contact_id: string): Promise<db.ServicechainInstance | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
                 return db.models.Contact.findByPk(cont_id)
@@ -51,11 +50,11 @@ export namespace ServicechainManager {
             })
     }
 
-    export function getAllServicechains(): BBPromise<db.ServicechainInstance[]> {
+    export function getAllServicechains(): Promise<db.ServicechainInstance[]> {
         return db.models.Servicechain.findAll()
     }
 
-    export function getServicechainById(id: string): BBPromise<db.ServicechainInstance | null> {
+    export function getServicechainById(id: string): Promise<db.ServicechainInstance | null> {
         return db.models.Servicechain.findByPk(id)
     }
 
@@ -88,7 +87,7 @@ export namespace ServicechainManager {
      * Creates a new Servicechain from the name and service IDs provided. Returns a Promise for the Sequelize object representing the new Servicechain.
      * @param {string} name The name of the new Servicechain
      */
-    export function createNewServicechain(name: string, org_id: string): BBPromise<db.ServicechainInstance> {
+    export function createNewServicechain(name: string, org_id: string): Promise<db.ServicechainInstance> {
         // First, create the new SC itself
         return db.models.Servicechain.create({
             OrganizationId: org_id,
@@ -96,7 +95,7 @@ export namespace ServicechainManager {
         })
     }
 
-    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): BBPromise<db.ServicesInSCInstance> {
+    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): Promise<db.ServicesInSCInstance> {
         return db.models.ServicesInSC.create({
             servicechain: sc_id,
             service: service_id,
@@ -144,13 +143,13 @@ export namespace ServicechainManager {
      * Removes a Servicechain from the database. Returns the ID number of the servicechain removed.
      * @param {Number} id ID number of the Servicechain to remove.
      */
-    export function deleteServicechain(id: string): BBPromise<number> {
+    export function deleteServicechain(id: string): Promise<number> {
         return db.models.Servicechain.destroy({ where: { id: id } })
             .then(function (destroyedRowsCount) {
                 if (!destroyedRowsCount) {
-                    return BBPromise.reject(new ResourceNotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+                    return Promise.reject(new ResourceNotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
                 } else {
-                    return BBPromise.resolve(destroyedRowsCount)
+                    return Promise.resolve(destroyedRowsCount)
                 }
             })
         // TODO: Update SC DELETE route handler to catch this and drop error to ensure idempotence

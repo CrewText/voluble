@@ -32,11 +32,11 @@ export namespace QueueManager {
         let worker_send_msg_update = new rsmqWorker("message-state-update", { redis: client })
         worker_send_msg_update.on("message", function (message, next, message_id) {
             let update = JSON.parse(message)
-            logger.debug("QM: Got message update for message " + update.message_id + ": " + update.status)
+            logger.debug("Got message update for message " + update.message_id + ": " + update.status)
             MessageManager.updateMessageState(update.message_id, update.status)
                 .catch(function (error) {
                     if (error instanceof ResourceNotFoundError) {
-                        logger.info("QM: Dropping message update request for message with ID " + update.message_id)
+                        logger.info("Dropping message update request for message with ID " + update.message_id)
                     } else {
                         throw error
                     }
@@ -52,13 +52,13 @@ export namespace QueueManager {
     }
 
     export function addMessageToSendRequest(message: MessageInstance) {
-        logger.debug("QM: Sending message with ID " + message.id)
+        logger.debug("Sending message with ID " + message.id)
         rsmq.sendMessage({
             qname: "message-send",
             message: JSON.stringify(message)
         }, function (err, resp) {
             if (resp) {
-                logger.info("QM: Added send request for message " + message.id)
+                logger.info("Added send request for message " + message.id)
                 return true
             } else {
                 logger.error(err)

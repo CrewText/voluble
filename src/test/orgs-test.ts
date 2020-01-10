@@ -10,7 +10,6 @@ if (!process.env.PATH || process.env.PATH.lastIndexOf("/app/.heroku") == -1) {
 
 process.env.NODE_ENV = "test"
 
-import * as BBPromise from 'bluebird'
 import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
