@@ -19,7 +19,6 @@ import { Service } from 'voluble-common'
 import * as server from '../server/server-main'
 import { getAccessToken } from './test-utils'
 
-chai.should()
 chai.use(chaiAsPromised)
 let auth_token: string
 let server_app;
@@ -33,15 +32,15 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         console.log(`Setting up server and access token`)
         this.timeout(5000)
 
-        return new Promise(async (res, rej) => {
-            server_app = await server.initServer()
-            auth_token = await getAccessToken()
-            res()
-        })
+        return Promise.all([server.initServer(), getAccessToken()])
+            .then(([server, token]) => {
+                server_app = server
+                auth_token = token
+                return true
+            })
     })
 
     this.afterAll((done) => {
-        // done()
         server.shutdownServer().then(() => { done() })
     })
 
@@ -74,7 +73,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             .auth(auth_token, { type: "bearer" })
             .expect(200)
             .end((err, res) => {
-                if (err) { done(err) }
+                if (err) { console.log(err); console.log(res.error); return done(err) }
                 chai.expect(res.body).to.have.property('status', 'success')
                 let response = res.body.data
                 chai.expect(response).to.be.instanceof(Array)
@@ -106,7 +105,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             .auth(auth_token, { type: "bearer" })
             .expect(201)
             .end((err, res) => {
-                if (err) { return done(err) }
+                if (err) { console.log(err); console.log(res.error); return done(err) }
                 chai.expect(res.body).to.have.property('status', 'success')
                 let response = res.body.data
                 chai.expect(response).to.have.property('id')
@@ -141,7 +140,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
                 let data: any = res.body.data
                 chai.expect(data).to.have.property('name', cat_name)
-                chai.expect(data).to.have.property('OrganizationId', test_org_id)
+                chai.expect(data).to.have.property('organization', test_org_id)
                 test_cat_id = data.id
                 done()
             })
@@ -177,12 +176,12 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     surname: contact_sname,
                     phone_number: contact_phone,
                     email_address: contact_email,
-                    ServicechainId: test_sc_id,
-                    CategoryId: test_cat_id
+                    servicechain: test_sc_id,
+                    category: test_cat_id
                 })
                 .expect(201)
                 .end(function (err, res) {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
@@ -191,9 +190,9 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
                     chai.expect(res.body.data).to.have.property('email_address', contact_email)
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId', test_sc_id)
-                    chai.expect(res.body.data).to.have.property('CategoryId', test_cat_id)
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain', test_sc_id)
+                    chai.expect(res.body.data).to.have.property('category', test_cat_id)
                     created_contact_id = res.body.data.id
                     done()
                 })
@@ -214,12 +213,12 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     surname: contact_sname,
                     title: contact_title,
                     phone_number: contact_phone,
-                    ServicechainId: test_sc_id,
-                    CategoryId: test_cat_id
+                    servicechain: test_sc_id,
+                    category: test_cat_id
                 })
                 .expect(201)
                 .end(function (err, res) {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
@@ -228,9 +227,9 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
                     chai.expect(res.body.data).to.have.property('email_address', null)
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId', test_sc_id)
-                    chai.expect(res.body.data).to.have.property('CategoryId', test_cat_id)
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain', test_sc_id)
+                    chai.expect(res.body.data).to.have.property('category', test_cat_id)
                     created_contact_id = res.body.data.id
                     done()
                 })
@@ -253,11 +252,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     title: contact_title,
                     phone_number: contact_phone,
                     email_address: contact_email,
-                    ServicechainId: test_sc_id,
+                    servicechain: test_sc_id,
                 })
                 .expect(201)
                 .end(function (err, res) {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
@@ -266,9 +265,9 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname', contact_sname)
                     chai.expect(res.body.data).to.have.property('phone_number') // Not checking value, as Voluble may change the format
                     chai.expect(res.body.data).to.have.property('email_address', contact_email)
-                    chai.expect(res.body.data).to.have.property('CategoryId', null)
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId', test_sc_id)
+                    chai.expect(res.body.data).to.have.property('category', null)
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain', test_sc_id)
                     created_contact_id = res.body.data.id
                     done()
                 })
@@ -290,11 +289,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     surname: contact_sname,
                     phone_number: contact_phone,
                     email_address: contact_email,
-                    CategoryId: test_cat_id
+                    category: test_cat_id
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
@@ -316,12 +315,41 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     surname: contact_sname,
                     phone_number: contact_phone,
                     email_address: contact_email,
-                    CategoryId: test_cat_id,
-                    ServicechainId: test_sc_id
+                    category: test_cat_id,
+                    servicechain: test_sc_id
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+
+                    chai.expect(res.body).to.have.property('status', "fail")
+                    done()
+                })
+        })
+
+        it('should fail to create a new contact with extraneous parameters', function (done) {
+            if (!test_org_id) { this.skip() }
+            let contact_fname = faker.name.firstName()
+            let contact_sname = faker.name.lastName()
+            let contact_phone = faker.phone.phoneNumber("+4474########")
+            let contact_email = faker.internet.email(contact_fname, contact_sname)
+
+            supertest(server_app)
+                .post(`/v1/orgs/${test_org_id}/contacts`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    title: faker.name.title(),
+                    first_name: contact_fname,
+                    surname: contact_sname,
+                    phone_number: contact_phone,
+                    email_address: contact_email,
+                    category: test_cat_id,
+                    servicechain: test_sc_id,
+                    randomCustomParameter: "completerubbish"
+                })
+                .expect(400)
+                .end(function (err, res) {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
@@ -344,11 +372,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     surname: contact_sname,
                     phone_number: contact_phone,
                     email_address: contact_email,
-                    ServicechainId: test_sc_id
+                    servicechain: test_sc_id
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { console.error(res.body); return done(err) }
+                    if (err) { console.error(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -373,7 +401,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -385,7 +413,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -399,7 +427,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .expect(200)
                 .expect('Content-Type', /json/)
                 .end(function (err, res) {
-                    if (err) { console.error(res.body); return done(err) }
+                    if (err) { console.error(res.body); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.be.instanceOf(Array)
                     res.body.data.forEach(contact => {
@@ -409,8 +437,8 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                         chai.expect(contact).to.have.property('email_address')
                         chai.expect(contact).to.have.property('phone_number') // Not checking value, as Voluble may change the format
 
-                        chai.expect(contact).to.have.property('OrganizationId', test_org_id)
-                        chai.expect(contact).to.have.property('ServicechainId', test_sc_id)
+                        chai.expect(contact).to.have.property('organization', test_org_id)
+                        chai.expect(contact).to.have.property('servicechain', test_sc_id)
                     });
 
                     done()
@@ -425,7 +453,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .send({})
                 .expect(401)
                 .end((err, res) => {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -445,7 +473,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('title')
@@ -453,8 +481,8 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname', new_surname)
                     chai.expect(res.body.data).to.have.property('email_address')
                     chai.expect(res.body.data).to.have.property('phone_number')
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain')
                     done()
                 })
         })
@@ -471,7 +499,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('title', new_title)
@@ -479,8 +507,8 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property('email_address')
                     chai.expect(res.body.data).to.have.property('phone_number')
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain')
                     done()
                 })
         })
@@ -497,7 +525,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('title')
@@ -505,8 +533,8 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property("email_address", new_email)
                     chai.expect(res.body.data).to.have.property('phone_number')
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain')
                     done()
                 })
         })
@@ -523,7 +551,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -540,16 +568,16 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
-                    chai.expect(res.body.data).to.have.property('id')
+                    chai.expect(res.body.data).to.have.property('id', created_contact_id)
                     chai.expect(res.body.data).to.have.property("email_address", null)
                     chai.expect(res.body.data).to.have.property('title')
                     chai.expect(res.body.data).to.have.property('first_name')
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property('phone_number')
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain')
                     done()
                 })
         })
@@ -561,11 +589,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
                 .send({
-                    CategoryId: "non-existent-category"
+                    category: "non-existent-category"
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -579,14 +607,14 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
                 .send({
-                    CategoryId: null
+                    category: null
                 })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
-                    chai.expect(res.body.data).to.have.property("CategoryId", null)
+                    chai.expect(res.body.data).to.have.property("category", null)
                     done()
                 })
         })
@@ -603,7 +631,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -621,7 +649,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('title')
@@ -629,8 +657,8 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                     chai.expect(res.body.data).to.have.property('surname')
                     chai.expect(res.body.data).to.have.property("phone_number", new_phone)
                     chai.expect(res.body.data).to.have.property('email_address')
-                    chai.expect(res.body.data).to.have.property('OrganizationId', test_org_id)
-                    chai.expect(res.body.data).to.have.property('ServicechainId')
+                    chai.expect(res.body.data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body.data).to.have.property('servicechain')
                     done()
                 })
         })
@@ -642,11 +670,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
                 .send({
-                    ServicechainId: "not a sc ID"
+                    servicechain: "not a sc ID"
                 })
                 .expect(400)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -659,7 +687,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .delete(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .expect(401)
                 .end((err, res) => {
-                    if (err) { console.log(err); return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -673,7 +701,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     done()
                 })
@@ -687,7 +715,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(404)
                 .end(function (err, res) {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     done()
                 })

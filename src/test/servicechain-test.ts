@@ -27,13 +27,13 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
-        this.timeout(5000)
-
-        return new Promise(async (res, rej) => {
-            server_app = await server.initServer()
-            auth_token = await getAccessToken()
-            res()
-        })
+        return Promise.all([server.initServer(), getAccessToken()])
+            .then(([server, token]) => {
+                server_app = server
+                auth_token = token
+                // done()
+                return true
+            })
     })
 
     this.afterAll((done) => {
@@ -52,7 +52,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             .send({ name: faker.company.companyName(), phone_number: faker.phone.phoneNumber("+4474########") })
             .expect(201)
             .end((err, res) => {
-                if (err) { return done(err) }
+                if (err) { console.log(err); console.log(res.error); return done(err) }
                 chai.expect(res.body).to.have.property('status', "success")
                 chai.expect(res.body.data).to.have.property('id')
                 chai.expect(res.body.data).to.have.property('name')
@@ -69,7 +69,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             .auth(auth_token, { type: "bearer" })
             .expect(200)
             .end((err, res) => {
-                if (err) { done(err) }
+                if (err) { console.log(err); console.log(res.error); return done(err) }
                 chai.expect(res.body).to.have.property('status', 'success')
                 let response = res.body.data
                 chai.expect(response).to.be.instanceof(Array)
@@ -112,7 +112,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -129,7 +129,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -147,7 +147,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -165,7 +165,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -180,6 +180,10 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                     services: [{
                         "service": test_services[0].id,
                         "priority": 1
+                    },
+                    {
+                        "service": test_services[1].id,
+                        "priority": 2
                     }]
                 })
                 .auth(auth_token, { type: "bearer" })
@@ -228,7 +232,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     let response = res.body.data
                     chai.expect(response).to.be.instanceOf(Array)
@@ -281,7 +285,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     let response = res.body.data
                     chai.expect(response).to.have.property('id', created_servicechain_id)
@@ -312,7 +316,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -332,7 +336,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -352,7 +356,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })

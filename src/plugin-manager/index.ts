@@ -2,8 +2,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as winston from 'winston'
 import * as db from '../models'
+import { Service } from '../models/service'
 import { voluble_plugin } from '../plugins/plugin_base'
-import { QueueManager } from '../queue-manager'
 import { ResourceOutOfUserScopeError } from '../server/security/scopes'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'PluginMgr' })
@@ -51,7 +51,7 @@ export namespace PluginManager {
 
     }
 
-    export async function getServiceByDirName(dir_name: string): Promise<db.ServiceInstance | null> {
+    export async function getServiceByDirName(dir_name: string): Promise<Service | null> {
         return await db.models.Service.findOne({
             where: { directory_name: dir_name }
         })
@@ -75,9 +75,9 @@ export namespace PluginManager {
                 try {
                     let plug_obj: voluble_plugin = require(plugin_file_abs)()
                     logger.info("Loaded plugin: " + plug_obj.name)
-                    plug_obj._eventEmitter.on('message-state-update', (msg: db.MessageInstance, message_state: string) => {
-                        QueueManager.addMessageStateUpdateRequest(msg.id, message_state)
-                    })
+                    // plug_obj._eventEmitter.on('message-state-update', (msg: MessageModel, message_state: string) => {
+                    //     QueueManager.addMessageStateUpdateRequest(msg.id, message_state)
+                    // })
 
                     let p: IPluginDirectoryMap = { plugin: plug_obj, subdirectory: plugin_subdir }
                     plugin_object_map.push(p)
@@ -85,7 +85,6 @@ export namespace PluginManager {
                     logger.error(e, `Could not load plugin in subdirectory ${plugin_subdir}: ${e.message}`)
                 }
             });
-
             return plugin_object_map
         })
 
@@ -96,16 +95,33 @@ export namespace PluginManager {
         // Cycle through plugin directory and return a list of all of the valid subdirectories containing plugins
 
         // Get a list of all of the directories under the plugin directory
-        let plugin_subdirs = fs.readdirSync(directory).filter(function (element) {
-            let plugin_subdir_fullpath = path.join(directory, element)
-
-            if (fs.statSync(plugin_subdir_fullpath).isDirectory() && fs.existsSync(path.join(plugin_subdir_fullpath, "plugin.js"))) { return true }
-            else { return false }
+        return new Promise<string[]>((resolve, reject) => {
+            fs.readdir(directory, (err, files) => {
+                if (err) { reject(err); return }
+                resolve(files)
+            })
         })
+            .then((files) => {
+                return files.filter((f) => {
+                    let plugin_subdir_fullpath = path.join(directory, f)
+                    if (fs.statSync(plugin_subdir_fullpath).isDirectory() && fs.existsSync(path.join(plugin_subdir_fullpath, "plugin.js"))) { return true }
+                    else { return false }
+                })
+            })
+            .then((plugin_subdirs) => {
+                logger.debug("Found plugins in", { dirs: plugin_subdirs })
+                return plugin_subdirs
+            })
+        // let plugin_subdirs = fs.readdirSync(directory).filter(function (element) {
+        //     let plugin_subdir_fullpath = path.join(directory, element)
 
-        logger.debug("Found plugin", { dirs: plugin_subdirs })
+        //     if (fs.statSync(plugin_subdir_fullpath).isDirectory() && fs.existsSync(path.join(plugin_subdir_fullpath, "plugin.js"))) { return true }
+        //     else { return false }
+        // })
 
-        return Promise.resolve(plugin_subdirs)
+        // logger.debug("Found plugin", { dirs: plugin_subdirs })
+
+        // return Promise.resolve(plugin_subdirs)
     }
 
     function synchronizePluginDatabase(plugin_list: IPluginDirectoryMap[]) {
@@ -127,10 +143,10 @@ export namespace PluginManager {
 
     /**
      * Gets the list of services from the DB with their status.
-     * @returns {Promise<db.ServiceInstance[]>} An array of Sequelize rows representing loaded services.
+     * @returns {Promise<Service[]>} An array of Sequelize rows representing loaded services.
      */
 
-    export async function getAllServices(): Promise<db.ServiceInstance[]> {
+    export async function getAllServices(): Promise<Service[]> {
         return db.models.Service.findAll({ order: [['createdAt', 'DESC']] })
     }
 
@@ -139,7 +155,7 @@ export namespace PluginManager {
      * @param {string} id The ID of the service to find.
      * @returns {Sequelize.Plugin} The row representing the plugin with a given ID.
      */
-    export async function getServiceById(id: string): Promise<db.ServiceInstance | null> {
+    export async function getServiceById(id: string): Promise<Service | null> {
         return db.models.Service.findByPk(id)
     }
 }

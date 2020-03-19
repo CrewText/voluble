@@ -1,5 +1,6 @@
 import * as plugin_base from '../plugin_base'
-import * as rp from 'request-promise'
+// import * as rp from 'request-promise'
+// import * as request from 'request'
 
 class TelegramPlugin extends plugin_base.voluble_plugin {
     private TELEGRAM_SERVER_ADDR: string

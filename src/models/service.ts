@@ -1,31 +1,41 @@
-import * as Sequelize from "sequelize";
-import { Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes } from 'voluble-common';
-import { ServicechainInstance } from "./servicechain";
+import { BelongsToManyAddAssociationMixin, BelongsToManyAddAssociationsMixin, BelongsToManyCountAssociationsMixin, BelongsToManyCreateAssociationMixin, BelongsToManyGetAssociationsMixin, BelongsToManyHasAssociationMixin, BelongsToManyHasAssociationsMixin, BelongsToManyRemoveAssociationMixin, BelongsToManyRemoveAssociationsMixin, BelongsToManySetAssociationsMixin, DataTypes, Model, Sequelize, Association } from 'sequelize';
+import { Service as ServiceAttributes } from 'voluble-common';
+import { Servicechain } from "./servicechain";
+import { ServicesInSC } from './servicesInServicechain';
 
-export interface ServiceInstance extends Sequelize.Instance<ServiceAttributes>, ServiceAttributes {
-    createServicechain: Sequelize.BelongsToManyCreateAssociationMixin<ServicechainAttributes, ServicechainInstance, ServicesInSCAttributes>
-    getServicechains: Sequelize.BelongsToManyGetAssociationsMixin<ServicechainInstance>,
-    addServicechain: Sequelize.BelongsToManyAddAssociationMixin<ServicechainInstance, ServicechainInstance['id'], ServicesInSCAttributes>,
-    addServicechains: Sequelize.BelongsToManyAddAssociationsMixin<ServicechainInstance, ServicechainInstance['id'], ServicesInSCAttributes>,
-    countServicechains: Sequelize.BelongsToManyCountAssociationsMixin,
-    hasServicechain: Sequelize.BelongsToManyHasAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
-    hasServicechains: Sequelize.BelongsToManyHasAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
-    removeServicechain: Sequelize.BelongsToManyRemoveAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
-    removeServicechains: Sequelize.BelongsToManyRemoveAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
-    setServicechains: Sequelize.BelongsToManySetAssociationsMixin<ServicechainInstance, ServicechainInstance['id'], ServicesInSCAttributes>
+export class Service extends Model implements ServiceAttributes {
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
+    public id!: string
+    public name!: string
+    public directory_name!: string
 
-}
+    public ServicesInSC!: ServicesInSC
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Service = sequelize.define('Service', {
-        id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
+    public createServicechain!: BelongsToManyCreateAssociationMixin<Servicechain>
+    public getServicechains!: BelongsToManyGetAssociationsMixin<Servicechain>
+    public addServicechain!: BelongsToManyAddAssociationMixin<Servicechain, Servicechain['id']>
+    public addServicechains!: BelongsToManyAddAssociationsMixin<Servicechain, Servicechain['id']>
+    public countServicechains!: BelongsToManyCountAssociationsMixin
+    public hasServicechain!: BelongsToManyHasAssociationMixin<Servicechain, Servicechain['id']>
+    public hasServicechains!: BelongsToManyHasAssociationsMixin<Servicechain, Servicechain['id']>
+    public removeServicechain!: BelongsToManyRemoveAssociationMixin<Servicechain, Servicechain['id']>
+    public removeServicechains!: BelongsToManyRemoveAssociationsMixin<Servicechain, Servicechain['id']>
+    public setServicechains!: BelongsToManySetAssociationsMixin<Servicechain, Servicechain['id']>
+
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+            id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+                defaultValue: DataTypes.UUIDV4
+            },
+            name: DataTypes.STRING,
+            directory_name: DataTypes.STRING,
         },
-        name: DataTypes.STRING,
-        directory_name: DataTypes.STRING,
-    })
-
-    return Service
+            {
+                sequelize: sequelize,
+                tableName: "services"
+            })
+    }
 }

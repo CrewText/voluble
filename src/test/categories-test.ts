@@ -17,11 +17,15 @@ import { Server } from 'http'
 import * as supertest from 'supertest'
 import * as server from '../server/server-main'
 import { getAccessToken } from './test-utils'
+import * as axios from 'axios'
+import { AddressInfo } from 'net'
 
 chai.should()
 chai.use(chaiAsPromised)
 let auth_token: string
 let server_app: Server;
+let address: string
+let port: number
 
 describe('/v1/orgs/<org-id>/categories', function () {
 
@@ -30,11 +34,18 @@ describe('/v1/orgs/<org-id>/categories', function () {
         console.log('Getting auth token')
         this.timeout(5000)
 
-        return new Promise(async (res, rej) => {
-            server_app = await server.initServer()
-            auth_token = await getAccessToken()
-            res()
-        })
+        return Promise.all([server.initServer(), getAccessToken()])
+            .then(([server, token]) => {
+                server_app = server
+
+                let addr = server_app.address() as AddressInfo
+                address = addr.address
+                port = addr.port
+                auth_token = token
+
+                console.log(`URL: ${address}:${port}`)
+                return true
+            })
     })
 
     this.afterAll((done) => {
@@ -46,13 +57,26 @@ describe('/v1/orgs/<org-id>/categories', function () {
 
     // Setup test_org_id
     this.beforeAll((done) => {
+        // this.timeout()
         console.log('Setting up test Org')
+
+        // return axios.default.post(`http://${address}:${port}/v1/orgs`,
+        //     { name: "API Test Organization-CATS TEST", phone_number: faker.phone.phoneNumber("+4474########") },
+        //     { headers: { 'Authorization': `Bearer ${auth_token}` } })
+        //     .then((resp) => {
+        //         chai.expect(resp.status == 201)
+        //         test_org_id = resp.data.id
+        //         return
+        //     })
+
+
         supertest(server_app)
             .post("/v1/orgs")
             .auth(auth_token, { type: "bearer" })
             .send({ name: "API Test Organization-CATS TEST", phone_number: faker.phone.phoneNumber("+4474########") })
             .expect(201)
             .end((err, res) => {
+                // console.log("DONE THE TEST THINGS")
                 if (err) { console.log(err); return done(err) }
                 test_org_id = res.body.data.id
                 done()
@@ -104,7 +128,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
 
                     let data: any = res.body.data
                     chai.expect(data).to.have.property('name', cat_name)
-                    chai.expect(data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(data).to.have.property('organization', test_org_id)
                     created_cat_id = data.id
                     done()
                 })
@@ -140,7 +164,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     data.forEach(cat => {
                         chai.expect(cat).to.have.property('id')
                         chai.expect(cat).to.have.property('name')
-                        chai.expect(cat).to.have.property('OrganizationId')
+                        chai.expect(cat).to.have.property('organization')
                     });
 
                     done();
@@ -174,7 +198,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     let data: any = res.body.data
                     chai.expect(data).to.have.property('id', created_cat_id)
                     chai.expect(data).to.have.property('name')
-                    chai.expect(data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(data).to.have.property('organization', test_org_id)
                     done()
                 })
         })
@@ -209,7 +233,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     let data: any = res.body.data
                     chai.expect(data).to.have.property('id', created_cat_id)
                     chai.expect(data).to.have.property('name', "API Test Category Name")
-                    chai.expect(data).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(data).to.have.property('organization', test_org_id)
 
                     done()
                 })

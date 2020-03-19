@@ -6,8 +6,11 @@ import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
 import { InvalidParameterValueError } from '../../voluble-errors';
-import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
+import { Message } from "../../models/message";
+import { checkExtendsModel } from "../helpers/check_extends_model";
 
 const router = express.Router();
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
@@ -39,19 +42,18 @@ let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'M
  * 
  */
 router.get('/:org_id/messages/', checkJwt,
-  checkJwtErr,
+
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
+  checkLimit(0, 100),
+  checkOffset(0),
   async function (req, res, next) {
 
     try {
-      // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-      let offset = (req.query.offset == undefined ? 0 : req.query.offset)
-      if (!validator.isInt(offset)) { throw new InvalidParameterValueError(`Supplied parameter value for 'offset' is not an integer`) }
 
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
-      let msg_ids = await MessageManager.getHundredMessageIds(offset, req.params.org_id)
+      let msg_ids = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id)
 
       res.status(200).jsend.success(msg_ids)
     }
@@ -73,11 +75,11 @@ router.get('/:org_id/messages/', checkJwt,
  * Lists all of the details about the contact with the specified ID.
  */
 router.get('/:org_id/messages/:message_id', checkJwt,
-  checkJwtErr, checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
+  checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware, async function (req: any, res: any, _next) {
 
     try {
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
       let msg = await MessageManager.getMessageFromId(req.params.message_id)
       if (msg) {
@@ -100,17 +102,18 @@ router.get('/:org_id/messages/:message_id', checkJwt,
  * Handles the route POST /messages
  * Creates a new message, adds it to the database and attempts to send it.
  */
-router.post('/:org_id/messages/', checkJwt, checkJwtErr,
+router.post('/:org_id/messages/', checkJwt,
   checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
   async function (req, res, next) {
     try {
-      if (!req.body.contact) {
-        throw new InvalidParameterValueError(`Invalid value for parameter 'contact': ${req.body.contact}`)
-      }
-      if (!req.body.body) {
-        throw new InvalidParameterValueError(`Invalid value for parameter 'body': ${req.body.body}`)
-      }
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkExtendsModel(req.body, Message)
+      //   if (!req.body.contact) {
+      //     throw new InvalidParameterValueError(`Invalid value for parameter 'contact': ${req.body.contact}`)
+      //   }
+      //   if (!req.body.body) {
+      //     throw new InvalidParameterValueError(`Invalid value for parameter 'body': ${req.body.body}`)
+      //   }
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
       let contact = await ContactManager.getContactWithId(req.body.contact)
       let sc = req.body.ServicechainId ? await ServicechainManager.getServicechainById(req.body.ServicechainId) : await contact.getServicechain()
@@ -121,7 +124,7 @@ router.post('/:org_id/messages/', checkJwt, checkJwtErr,
         MessageStates.MSG_PENDING,
         sc.id || null,
         req.body.is_reply_to || null,
-        req.user.sub || null)
+        req['user'].sub || null)
 
       msg = MessageManager.sendMessage(msg)
 

@@ -2,9 +2,11 @@ import * as express from "express";
 import { scopes } from "voluble-common";
 import * as winston from 'winston';
 import { CategoryManager } from "../../contact-manager";
+import { Category } from "../../models/category";
 import { OrgManager } from "../../org-manager";
-import { ResourceNotFoundError } from "../../voluble-errors";
-import { checkJwt, checkJwtErr, checkScopesMiddleware } from "../security/jwt";
+import { InvalidParameterValueError, ResourceNotFoundError } from "../../voluble-errors";
+import { checkExtendsModel } from "../helpers/check_extends_model";
+import { checkJwt, checkScopesMiddleware } from "../security/jwt";
 import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from "../security/scopes";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CategoriesRoute' })
@@ -12,22 +14,23 @@ let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'C
 const router = express.Router();
 
 router.get('/:org_id/categories', checkJwt,
-    checkJwtErr, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
-    setupUserOrganizationMiddleware, async (req, res, next) => {
+    checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    async (req, res, next) => {
 
         try {
-            checkHasOrgAccess(req.user, req.params.org_id)
+            checkHasOrgAccess(req['user'], req.params.org_id)
             let org = await OrgManager.getOrganizationById(req.params.org_id)
             if (!org) {
                 throw new ResourceNotFoundError(`Organization not found: ${req.params.org_id}`)
             }
-
-            let cats = await org.getCategories()
+            let cats = await org.getCategories({
+            })
             res.status(200).jsend.success(cats)
         }
         catch (e) {
             if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(401).jsend.fail(e)
+                res.status(401).jsend.fail(e.message)
             } else {
                 logger.error(e.message)
                 res.status(500).jsend.error(e.message)
@@ -37,14 +40,13 @@ router.get('/:org_id/categories', checkJwt,
     })
 
 router.post('/:org_id/categories', checkJwt,
-    checkJwtErr, checkScopesMiddleware([scopes.ContactAdd, scopes.VolubleAdmin]),
-    setupUserOrganizationMiddleware, async (req, res, next) => {
-        if (!req.body.name) {
-            res.status(400).jsend.fail(`Parameter 'name' was not provided`)
-            return
-        }
+    checkScopesMiddleware([scopes.ContactAdd, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware, async (req, res, _next) => {
+
         try {
-            checkHasOrgAccess(req.user, req.params.org_id)
+            checkHasOrgAccess(req['user'], req.params.org_id)
+            checkExtendsModel(req.body, Category)
+
             let org = await OrgManager.getOrganizationById(req.params.org_id)
             if (!org) { throw new ResourceNotFoundError(`Organization not found: ${req.params.org_id}`) }
             let new_cat = await org.createCategory({
@@ -54,16 +56,19 @@ router.post('/:org_id/categories', checkJwt,
             res.status(201).jsend.success(new_cat)
         } catch (e) {
             if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(401).jsend.fail(e)
-            } else {
+                res.status(401).jsend.fail(e.message)
+            } else if (e instanceof InvalidParameterValueError) {
+                res.status(400).jsend.fail(e.message)
+            }
+            else {
                 logger.error(e.message)
-                res.status(500).jsend.error(e)
+                res.status(500).jsend.error(e.message)
             }
         }
     })
 
 router.get('/:org_id/categories/:cat_id',
-    checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+    checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
@@ -71,7 +76,7 @@ router.get('/:org_id/categories/:cat_id',
                 throw new ResourceNotFoundError(`Category ${req.params.cat_id} not found`)
             }
             let cat_org = await cat.getOrganization()
-            checkHasOrgAccess(req.user, cat_org.id)
+            checkHasOrgAccess(req['user'], cat_org.id)
 
             res.status(200).jsend.success(cat)
         } catch (e) {
@@ -81,12 +86,12 @@ router.get('/:org_id/categories/:cat_id',
                 res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
             } else {
                 logger.error(e.message)
-                res.status(500).jsend.error(e)
+                res.status(500).jsend.error(e.message)
             }
         }
     })
 
-router.put('/:org_id/categories/:cat_id', checkJwt, checkJwtErr,
+router.put('/:org_id/categories/:cat_id', checkJwt,
     checkScopesMiddleware([scopes.ContactEdit, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
@@ -95,7 +100,7 @@ router.put('/:org_id/categories/:cat_id', checkJwt, checkJwtErr,
                 throw new ResourceNotFoundError(`Category ${req.params.cat_id} not found`)
             }
 
-            checkHasOrgAccess(req.user, req.params.org_id)
+            checkHasOrgAccess(req['user'], req.params.org_id)
 
             if (!req.body.name) {
                 return res.status(400).jsend.fail(`Parameter 'name' was not provided`)
@@ -112,13 +117,13 @@ router.put('/:org_id/categories/:cat_id', checkJwt, checkJwtErr,
             } else if (e instanceof ResourceOutOfUserScopeError) {
                 res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
             } else {
-                res.status(500).jsend.error(e)
+                res.status(500).jsend.error(e.message)
             }
         }
     })
 
 router.delete('/:org_id/categories/:cat_id',
-    checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]),
+    checkJwt, checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
@@ -128,7 +133,7 @@ router.delete('/:org_id/categories/:cat_id',
             }
 
             let cat_org = await cat.getOrganization()
-            checkHasOrgAccess(req.user, cat_org.id)
+            checkHasOrgAccess(req['user'], cat_org.id)
 
             await cat.destroy()
             res.status(200).jsend.success(true)
@@ -139,7 +144,7 @@ router.delete('/:org_id/categories/:cat_id',
             } else if (e instanceof ResourceOutOfUserScopeError) {
                 res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
             } else {
-                res.status(500).jsend.error(e)
+                res.status(500).jsend.error(e.message)
             }
         }
     })

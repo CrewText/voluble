@@ -1,40 +1,55 @@
-import * as Sequelize from "sequelize"
-import { ContactInstance } from "./contact";
-import { Message as MessageAttributes, Contact as ContactAttributes, MessageStates, MessageDirections } from 'voluble-common'
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, fn, Model, Sequelize } from 'sequelize'
+import { Message as MessageAttributes, MessageDirections, MessageStates } from 'voluble-common'
+import { Contact } from './contact'
+import { Category } from './category'
+import { User } from './user'
+import { Servicechain } from './servicechain'
 
-export interface MessageInstance extends Sequelize.Instance<MessageAttributes>, MessageAttributes {
-    // id: string,
-    // createdAt: Date,
-    // updatedAt: Date,
+export class Message extends Model implements MessageAttributes {
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
+    public id!: string
 
-    // body: string
-    // ServicechainId: string,
-    // contact: string
-    // is_reply_to: string | null | undefined
-    // direction: string,
-    // sent_time: Date,
-    // message_state: string
+    public body!: string
+    public ServicechainId: string
+    public contact!: string
+    public direction!: MessageDirections
+    public message_state!: MessageStates
 
-    getContact: Sequelize.BelongsToGetAssociationMixin<ContactInstance>,
-    setContact: Sequelize.BelongsToSetAssociationMixin<ContactInstance, ContactInstance['id']>,
-    createContact: Sequelize.BelongsToCreateAssociationMixin<ContactAttributes, ContactInstance>,
-}
+    public getContact!: BelongsToGetAssociationMixin<Contact>
+    public setContact!: BelongsToSetAssociationMixin<Contact, Contact['id']>
+    public createContact!: BelongsToCreateAssociationMixin<Contact>
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Message = sequelize.define('Message', {
+    public getCategory!: BelongsToGetAssociationMixin<Category>
+    public setCategory!: BelongsToSetAssociationMixin<Category, Category['id']>
+    public createCategory!: BelongsToCreateAssociationMixin<Category>
 
-        id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4,
-        },
-        body: DataTypes.STRING(1024),
-        contact: DataTypes.UUID,
-        is_reply_to: DataTypes.UUID,
-        user: DataTypes.STRING,
-        direction: DataTypes.ENUM(Object.keys(MessageDirections)),
-        sent_time: { type: DataTypes.DATE, defaultValue: sequelize.fn('NOW') },
-        message_state: DataTypes.ENUM(Object.keys(MessageStates))
-    })
-    return Message
+    public getUser!: BelongsToGetAssociationMixin<User>
+    public setUser!: BelongsToSetAssociationMixin<User, User['id']>
+    public createUser!: BelongsToCreateAssociationMixin<User>
+
+    public getServicechain!: BelongsToGetAssociationMixin<Servicechain>
+    public setServicechain!: BelongsToSetAssociationMixin<Servicechain, Servicechain['id']>
+    public createServicechain!: BelongsToCreateAssociationMixin<Servicechain>
+
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+
+            id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+                defaultValue: DataTypes.UUIDV4,
+            },
+            body: DataTypes.STRING(1024),
+            contact: DataTypes.UUID,
+            is_reply_to: DataTypes.UUID,
+            user: DataTypes.STRING,
+            direction: DataTypes.ENUM(...Object.keys(MessageDirections)),
+            sent_time: { type: DataTypes.DATE, defaultValue: fn('NOW') },
+            message_state: DataTypes.ENUM(...Object.keys(MessageStates))
+        }, {
+            sequelize: sequelize,
+            tableName: "messages"
+        })
+    }
 }

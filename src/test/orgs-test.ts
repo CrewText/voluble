@@ -29,11 +29,13 @@ describe('/v1/orgs', function () {
     this.beforeAll(async function () {
         this.timeout(5000)
 
-        return new Promise(async (res, rej) => {
-            server_app = await server.initServer()
-            auth_token = await getAccessToken()
-            res()
-        })
+        return Promise.all([server.initServer(), getAccessToken()])
+            .then(([server, token]) => {
+                server_app = server
+                auth_token = token
+                // done()
+                return true
+            })
     })
 
     this.afterAll((done) => {
@@ -62,7 +64,7 @@ describe('/v1/orgs', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -78,7 +80,7 @@ describe('/v1/orgs', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "fail")
                     done()
                 })
@@ -91,7 +93,7 @@ describe('/v1/orgs', function () {
                 .send({ name: "API Test Organization-POST /orgs", phone_number: faker.phone.phoneNumber("+4474########") })
                 .expect(201)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('name')
@@ -120,7 +122,7 @@ describe('/v1/orgs', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.be.instanceOf(Array)
                     let response = res.body.data
@@ -140,7 +142,7 @@ describe('/v1/orgs', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', "success")
                     chai.expect(res.body.data).to.have.property('id', created_org)
                     chai.expect(res.body.data).to.have.property('name')
@@ -174,7 +176,7 @@ describe('/v1/orgs', function () {
                 })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     let response = res.body.data
                     chai.expect(response).to.have.property('id', created_org)
@@ -196,7 +198,7 @@ describe('/v1/orgs', function () {
                 })
                 .expect(400)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -214,7 +216,7 @@ describe('/v1/orgs', function () {
                 })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { return done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     let response = res.body.data
                     chai.expect(response).to.have.property('id', created_org)

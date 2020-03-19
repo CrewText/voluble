@@ -115,9 +115,11 @@ if (process.env.NODE_ENV != "production") {
 }
 
 function onServerListening() {
-  logger.info("Server listening on " + port)
+
 }
+
 export async function initServer() {
+
 
   logger.debug("Initializing DB")
   await db.initialize_database();
@@ -126,12 +128,19 @@ export async function initServer() {
   logger.info("Initing all plugins");
   await PluginManager.initAllPlugins();
 
-  svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost", onServerListening) : app.listen(port, onServerListening);
-  return svr;
+  svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
+  let p = new Promise<Server>((res, rej) => {
+    svr.once('listening', () => {
+      logger.info("Server listening on " + port)
+      res(svr)
+    })
+  })
+  return p
 }
 
 export async function shutdownServer() {
   QueueManager.shutdownQueues()
+
   let p = new Promise((resolve, reject) => {
     if (svr) {
       svr.close((err) => {

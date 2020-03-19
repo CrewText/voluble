@@ -1,30 +1,37 @@
-import * as Sequelize from "sequelize";
-import { Category as CategoryAttributes, Org as OrgAttributes, Contact as ContactAttributes } from 'voluble-common';
-import { ContactInstance } from "./contact";
-import { OrgInstance } from "./organization";
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize } from 'sequelize';
+import { Category as CategoryAttributes } from 'voluble-common';
+import { Contact } from "./contact";
+import { Organization } from "./organization";
 
-export interface CategoryInstance extends Sequelize.Instance<CategoryAttributes>, CategoryAttributes {
-    getOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>
-    setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>
-    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>
+export class Category extends Model implements CategoryAttributes {
+    public id!: string
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
+    public name: string
 
-    getContacts: Sequelize.HasManyGetAssociationsMixin<ContactInstance>
-    setContacts: Sequelize.HasManySetAssociationsMixin<ContactInstance, ContactInstance['id']>,
-    addContact: Sequelize.HasManyAddAssociationMixin<ContactInstance, ContactInstance['id']>,
-    addContacts: Sequelize.HasManyAddAssociationsMixin<ContactInstance, ContactInstance['id']>,
-    createContact: Sequelize.HasManyCreateAssociationMixin<ContactAttributes, ContactInstance>,
-    countContacts: Sequelize.HasManyCountAssociationsMixin
-    hasContact: Sequelize.HasManyHasAssociationMixin<ContactInstance, ContactInstance['id']>,
-    hasContacts: Sequelize.HasManyHasAssociationsMixin<ContactInstance, ContactInstance['id']>,
-    removeContact: Sequelize.HasManyRemoveAssociationMixin<ContactAttributes, ContactInstance['id']>,
-    removeContacts: Sequelize.HasManyRemoveAssociationsMixin<ContactInstance, ContactInstance['id']>
-}
+    public getOrganization!: BelongsToGetAssociationMixin<Organization>
+    public setOrganization!: BelongsToSetAssociationMixin<Organization, Organization['id']>
+    public createOrganization!: BelongsToCreateAssociationMixin<Organization>
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Category = sequelize.define('Category', {
-        id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
-        name: { type: DataTypes.STRING, allowNull: false }
-    })
+    public getContacts!: HasManyGetAssociationsMixin<Contact>
+    public setContacts!: HasManySetAssociationsMixin<Contact, Contact['id']>
+    public addContact!: HasManyAddAssociationMixin<Contact, Contact['id']>
+    public addContacts!: HasManyAddAssociationsMixin<Contact, Contact['id']>
+    public createContact!: HasManyCreateAssociationMixin<Contact>
+    public countContacts!: HasManyCountAssociationsMixin
+    public hasContact!: HasManyHasAssociationMixin<Contact, Contact['id']>
+    public hasContacts!: HasManyHasAssociationsMixin<Contact, Contact['id']>
+    public removeContact!: HasManyRemoveAssociationMixin<Contact, Contact['id']>
+    public removeContacts!: HasManyRemoveAssociationsMixin<Contact, Contact['id']>
 
-    return Category
+    public static initModel(sequelize: Sequelize) {
+        return Category.init({
+            id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+            name: { type: DataTypes.STRING, allowNull: false }
+        },
+            {
+                sequelize: sequelize,
+                tableName: "categories"
+            })
+    }
 }

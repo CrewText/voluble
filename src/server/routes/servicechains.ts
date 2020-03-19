@@ -5,15 +5,16 @@ import * as winston from 'winston';
 import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
 import { InvalidParameterValueError } from '../../voluble-errors';
-import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 import { ResourceNotFoundError } from '../../voluble-errors'
+import { OrgManager } from "../../org-manager";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicechainsRoute' })
 
 const router = express.Router();
 
-router.get('/:org_id/servicechains/', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
+router.get('/:org_id/servicechains/', checkJwt, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
 
   try {
     let resp: ServicechainManager.ResponseServicechain[] = []
@@ -24,17 +25,17 @@ router.get('/:org_id/servicechains/', checkJwt, checkJwtErr, checkScopesMiddlewa
 
     res.status(200).jsend.success(resp)
   } catch (e) {
-    res.status(500).jsend.error(e)
+    res.status(500).jsend.error(e.message)
   }
 })
 
 
 router.post('/:org_id/servicechains/', checkJwt,
-  checkJwtErr,
+
   checkScopesMiddleware([scopes.ServicechainAdd, scopes.VolubleAdmin]), async function (req, res, next) {
 
     try {
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkHasOrgAccess(req['user'], req.params.org_id)
       if (!req.body.services) { throw new InvalidParameterValueError(`Parameter 'services' must be supplied`) }
       if (!(req.body.services instanceof Array)) { throw new InvalidParameterValueError(`Parameter 'services' must be an Array`) }
 
@@ -51,7 +52,11 @@ router.post('/:org_id/servicechains/', checkJwt,
       let sc_name = req.body.name
 
       // Create a new Servicechain
-      let sc = await ServicechainManager.createNewServicechain(sc_name, req.params.org_id)
+      // let sc = await ServicechainManager.createNewServicechain(sc_name)
+      let org = await OrgManager.getOrganizationById(req.params.org_id)
+      let sc = await org.createServicechain({
+        name: sc_name
+      })
 
       // And add all of the Services to it
       for (const svc_prio_pair of services_to_add) {
@@ -68,8 +73,7 @@ router.post('/:org_id/servicechains/', checkJwt,
         })
       }
 
-      await sc.save()
-
+      await (await sc.save()).reload()
       let resp = await ServicechainManager.getFullServicechain(sc.id)
       res.status(201).jsend.success(resp)
     } catch (e) {
@@ -80,7 +84,7 @@ router.post('/:org_id/servicechains/', checkJwt,
         res.status(500).jsend.error("Internal error: Failed to create new Servicechain")
       }
       else if (e instanceof PluginManager.ServiceNotFoundError) {
-        res.status(400).jsend.fail(e)
+        res.status(400).jsend.fail(e.message)
       }
       else {
         logger.error(e)
@@ -89,7 +93,7 @@ router.post('/:org_id/servicechains/', checkJwt,
     }
   })
 
-router.get('/:org_id/servicechains/:sc_id', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
+router.get('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
 
   try {
     let full_sc = await ServicechainManager.getFullServicechain(req.params.sc_id)
@@ -99,14 +103,14 @@ router.get('/:org_id/servicechains/:sc_id', checkJwt, checkJwtErr, checkScopesMi
       res.status(400).jsend.fail(`Servicechain with ID ${req.params.sc_id} not found`)
     }
     else {
-      res.status(500).jsend.error(e)
+      res.status(500).jsend.error(e.message)
     }
   }
 })
 
 
 router.put('/:org_id/servicechains/:id', checkJwt,
-  checkJwtErr,
+
   checkScopesMiddleware([scopes.ServicechainEdit]),
   setupUserOrganizationMiddleware,
   checkHasOrgAccessMiddleware,
@@ -154,16 +158,16 @@ router.put('/:org_id/servicechains/:id', checkJwt,
 
     catch (e) {
       if (e instanceof ResourceNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail(e)
+        res.status(400).jsend.fail(e.message)
       } else {
         logger.error(e)
-        res.status(500).jsend.error(e)
+        res.status(500).jsend.error(e.message)
       }
     }
 
   })
 
-router.delete('/:org_id/servicechains/:sc_id', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ServicechainDelete]), function (req, res, next) {
+router.delete('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainDelete]), function (req, res, next) {
   return ServicechainManager.deleteServicechain(req.params.sc_id)
     .then(function (row) {
       res.jsend.success(row)

@@ -2,6 +2,7 @@ import * as Promise from "bluebird";
 import * as request from 'request';
 import * as winston from 'winston';
 import * as db from '../models';
+import { User } from "../models/user";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UserMgr' })
 
@@ -42,8 +43,12 @@ export namespace UserManager {
             })
     }
 
-    export function getUserById(id: string): Promise<db.UserInstance> {
+    export function getUserById(id: string): Promise<User> {
         return db.models.User.findByPk(id)
+    }
+
+    export function createUser(id: string) {
+        return db.models.User.create({ id: id })
     }
 
     export function setUserScopes(user_id: string, desired_scopes: string[]): Promise<void> {

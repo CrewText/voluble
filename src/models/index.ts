@@ -1,101 +1,86 @@
-import * as Promise from 'bluebird';
-import * as fs from "fs";
-import * as path from "path";
 import * as Sequelize from "sequelize";
-import { Blast as BlastAttributes, Contact as ContactAttributes, Category as CategoryAttributes, Message as MessageAttributes, Org as OrgAttributes, Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes, User as UserAttributes } from 'voluble-common';
-import * as Blast from './blast';
-import * as Contact from './contact';
-import * as Category from './category'
-import * as Message from './message';
-import * as Organization from './organization';
-import * as Service from './service';
-import * as Servicechain from './servicechain';
-import * as ServiceInSC from './servicesInServicechain';
-import * as User from './user';
-const basename = path.basename(__filename);
-const winston = require('winston')
+import { Blast } from "./blast";
+import { Category } from './category';
+import { Contact } from './contact';
+import { Message } from './message';
+import { Organization } from './organization';
+import { Service } from './service';
+import { Servicechain } from './servicechain';
+import { ServicesInSC } from "./servicesInServicechain";
+import { User } from './user';
 
-export type ContactInstance = Contact.ContactInstance
-export type CategoryInstance = Category.CategoryInstance
-export type MessageInstance = Message.MessageInstance
-export type ServiceInstance = Service.ServiceInstance
-export type ServicechainInstance = Servicechain.ServicechainInstance
-export type ServicesInSCInstance = ServiceInSC.ServicesInSCInstance
-export type BlastInstance = Blast.BlastInstance
-export type OrganizationInstance = Organization.OrgInstance
-export type UserInstance = User.UserInstance
-
-export interface DbConnection {
-    Contact: Sequelize.Model<Contact.ContactInstance, ContactAttributes>,
-    Category: Sequelize.Model<Category.CategoryInstance, CategoryAttributes>,
-    Message: Sequelize.Model<Message.MessageInstance, MessageAttributes>,
-    Service: Sequelize.Model<Service.ServiceInstance, ServiceAttributes>,
-    Servicechain: Sequelize.Model<Servicechain.ServicechainInstance, ServicechainAttributes>,
-    ServicesInSC: Sequelize.Model<ServiceInSC.ServicesInSCInstance, ServicesInSCAttributes>,
-    Blast: Sequelize.Model<Blast.BlastInstance, BlastAttributes>,
-    User: Sequelize.Model<User.UserInstance, UserAttributes>
-    Organization: Sequelize.Model<Organization.OrgInstance, OrgAttributes>
-    [key: string]: any
+export let models = {
+    Contact: Contact,
+    Category: Category,
+    Message: Message,
+    Service: Service,
+    Servicechain: Servicechain,
+    ServicesInSC: ServicesInSC,
+    Blast: Blast,
+    User: User,
+    Organization: Organization,
+    sequelize: Sequelize
+    // [key: string]: any
 }
 
-
-//@ts-ignore
-export var models: DbConnection = {}
 let db_url = process.env.NODE_ENV == "test" ? "mysql://root@localhost/voluble_test" : process.env.CLEARDB_DATABASE_URL
+if (!db_url) {
+    // The ENV var has not been correctly set
+    throw new Error("ClearDB Database URL is null! Exiting...")
+}
 
-export var sequelize = new Sequelize(db_url, { dialect: 'mysql', logging: false })
+let sequelize = new Sequelize.Sequelize(db_url, { dialect: 'mysql', logging: false })
 
-fs
-    .readdirSync(__dirname)
-    .filter(file => {
-        return (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js');
-    })
-    .forEach(file => {
-        var model = sequelize.import(path.join(__dirname, file));
-        models[model["name"]] = model;
-    });
 
-Object.keys(models).forEach(modelName => {
-    if (models[modelName].associate) {
-        models[modelName].associate(models);
-    }
-});
+User.initModel(sequelize)
+Category.initModel(sequelize)
+Servicechain.initModel(sequelize)
+Service.initModel(sequelize)
+Contact.initModel(sequelize)
+Message.initModel(sequelize)
+ServicesInSC.initModel(sequelize)
+Organization.initModel(sequelize)
+Blast.initModel(sequelize)
 
-models.Organization.hasMany(models.User)
-models.User.belongsTo(models.Organization)
+User.belongsTo(Organization, { foreignKey: 'organization' })
+Organization.hasMany(User, { foreignKey: 'organization', as: 'users' })
 
-models.Organization.hasMany(models.Contact)
-models.Contact.belongsTo(models.Organization)
+Contact.belongsTo(Organization, { foreignKey: 'organization' })
+Organization.hasMany(Contact, { foreignKey: 'organization', as: 'contacts' })
 
-models.Message.belongsTo(models.Contact, { foreignKey: "contact" })
-models.Contact.hasMany(models.Message, { foreignKey: "contact" })
+Contact.belongsTo(Category, { foreignKey: 'category' })
+Category.hasMany(Contact, { foreignKey: 'category', as: 'contacts' })
 
-models.Contact.belongsTo(models.Category)
-models.Category.hasMany(models.Contact)
+Contact.belongsTo(Servicechain, { foreignKey: 'servicechain' })
+Servicechain.hasOne(Contact, { foreignKey: 'servicechain' })
 
-models.Category.belongsTo(models.Organization)
-models.Organization.hasMany(models.Category)
+Message.belongsTo(Contact, { foreignKey: "contact" })
+Contact.hasMany(Message, { foreignKey: "contact", as: 'messages' })
 
-models.Service.belongsToMany(models.Servicechain, { through: models.ServicesInSC, foreignKey: 'service' })
-models.Servicechain.belongsToMany(models.Service, { through: models.ServicesInSC, foreignKey: 'servicechain', as: 'services' })
+Message.belongsTo(User, { foreignKey: 'user' })
+User.hasMany(Message, { foreignKey: 'user', as: 'messages' })
 
-models.Organization.hasMany(models.Servicechain)
-models.Servicechain.belongsTo(models.Organization)
+Message.belongsTo(Servicechain, { foreignKey: 'servicechain' })
+Servicechain.hasOne(Message, { foreignKey: 'servicechain' })
 
-models.Servicechain.hasOne(models.Contact)
-models.Contact.belongsTo(models.Servicechain)
+Category.belongsTo(Organization, { foreignKey: 'organization' })
+Organization.hasMany(Category, { foreignKey: 'organization', as: 'categories' })
 
-models.Servicechain.hasOne(models.Message)
-models.Message.belongsTo(models.Servicechain)
+Service.belongsToMany(Servicechain, { through: ServicesInSC, foreignKey: 'service' })
+// ServicechainModel.hasMany(ServiceModel, { foreignKey: 'servicechain' })//, as: 'services' })
+Servicechain.belongsToMany(Service, { through: ServicesInSC, foreignKey: 'servicechain' })//, as: 'services' })
 
-models.Blast.hasMany(models.Message)
-models.Sequelize = Sequelize;
+Servicechain.belongsTo(Organization, { foreignKey: 'organization' })
+Organization.hasMany(Servicechain, { foreignKey: 'organization', as: 'servicechains' })
+
+Blast.hasMany(Message, { foreignKey: 'blast', as: 'messages' })
+// models.Sequelize = Sequelize;
 
 
 /**
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
  */
-export function initialize_database(): Promise<any> {
+export function initialize_database() {
     process.env.NODE_ENV == "test" ? console.warn(`Dropping DB? YES, resetting DB because NODE_ENV is 'test'`) : console.info(`Dropping DB? NO, because NODE_ENV is ${process.env.NODE_ENV}`)
     return sequelize.sync({ force: process.env.NODE_ENV == "test" ? true : false })
 }

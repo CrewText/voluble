@@ -31,11 +31,13 @@ describe('/v1/services', function () {
     this.beforeAll(async function () {
         this.timeout(5000)
 
-        return new Promise(async (res, rej) => {
-            server_app = await server.initServer()
-            auth_token = await getAccessToken()
-            res()
-        })
+        return Promise.all([server.initServer(), getAccessToken()])
+            .then(([server, token]) => {
+                server_app = server
+                auth_token = token
+                // done()
+                return true
+            })
     })
 
     this.afterAll((done) => {
@@ -61,7 +63,7 @@ describe('/v1/services', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     let response = res.body.data
                     chai.expect(response).to.be.instanceof(Array)
@@ -96,7 +98,7 @@ describe('/v1/services', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data).to.have.property('name')
@@ -114,7 +116,7 @@ describe('/v1/services', function () {
                 .send({ data: 'some data here' })
                 .expect(404)
                 .end((err, res) => {
-                    if (err) { done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'fail')
                     done()
                 })
@@ -130,7 +132,7 @@ describe('/v1/services', function () {
                 .send({ data: 'some data here' })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { done(err) }
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('status', 'success')
                     done()
                 })

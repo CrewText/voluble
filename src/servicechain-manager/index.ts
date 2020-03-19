@@ -1,7 +1,10 @@
-import { Servicechain, ServicesInSC } from 'voluble-common'
+import { Servicechain as ServicechainAttrs, ServicesInSC as ServicesInSCAttrs } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager/'
 import * as db from '../models'
+import { Service } from '../models/service'
+import { Servicechain } from '../models/servicechain'
+import { ServicesInSC } from '../models/servicesInServicechain'
 import { ResourceNotFoundError } from '../voluble-errors'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'SCMgr' })
@@ -20,8 +23,8 @@ export namespace ServicechainManager {
 
     /* This is what is returned when constructing a full Servicechain with associated Service IDs.
     Note, it does NOT represent a Sequelize object. */
-    export interface ResponseServicechain extends Servicechain {
-        services: ServicesInSC[]
+    export interface ResponseServicechain extends ServicechainAttrs {
+        services: ServicesInSCAttrs[]
     }
 
     // export class ResourceNotFoundError extends Error { }
@@ -31,7 +34,7 @@ export namespace ServicechainManager {
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
-    export function getServicesInServicechain(servicechain_id: string): Promise<db.ServicesInSCInstance[]> {
+    export function getServicesInServicechain(servicechain_id: string): Promise<ServicesInSC[]> {
         return db.models.ServicesInSC.findAll({
             where: {
                 servicechainId: servicechain_id
@@ -40,7 +43,7 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServicechainFromContactId(contact_id: string): Promise<db.ServicechainInstance | null> {
+    export function getServicechainFromContactId(contact_id: string): Promise<Servicechain | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
                 return db.models.Contact.findByPk(cont_id)
@@ -50,15 +53,15 @@ export namespace ServicechainManager {
             })
     }
 
-    export function getAllServicechains(): Promise<db.ServicechainInstance[]> {
+    export function getAllServicechains(): Promise<Servicechain[]> {
         return db.models.Servicechain.findAll()
     }
 
-    export function getServicechainById(id: string): Promise<db.ServicechainInstance | null> {
+    export function getServicechainById(id: string): Promise<Servicechain | null> {
         return db.models.Servicechain.findByPk(id)
     }
 
-    export async function getServiceInServicechainByPriority(sc_id: string, priority: number): Promise<db.ServiceInstance> {
+    export async function getServiceInServicechainByPriority(sc_id: string, priority: number): Promise<Service> {
 
         let sc = await db.models.Servicechain.findByPk(sc_id)
 
@@ -87,15 +90,14 @@ export namespace ServicechainManager {
      * Creates a new Servicechain from the name and service IDs provided. Returns a Promise for the Sequelize object representing the new Servicechain.
      * @param {string} name The name of the new Servicechain
      */
-    export function createNewServicechain(name: string, org_id: string): Promise<db.ServicechainInstance> {
+    export function createNewServicechain(name: string): Promise<Servicechain> {
         // First, create the new SC itself
         return db.models.Servicechain.create({
-            OrganizationId: org_id,
             name: name
         })
     }
 
-    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): Promise<db.ServicesInSCInstance> {
+    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): Promise<ServicesInSC> {
         return db.models.ServicesInSC.create({
             servicechain: sc_id,
             service: service_id,
@@ -104,36 +106,32 @@ export namespace ServicechainManager {
     }
 
     export async function getFullServicechain(sc_id: string) {
-
-        return db.models.Servicechain.findByPk(sc_id, {
-            include: [
-                {
-                    model: db.models.Service,
-                    as: 'services'
-                }
-            ]
-        })
-            .then((sc) => {
+        return db.models.Servicechain.findByPk(sc_id
+        )
+            .then(async (sc) => {
                 if (!sc) {
                     throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`)
                 }
-                let services_in_sc_list: ServicesInSC[] = []
+                let svcs = await sc.getServices()
 
-                // @ts-ignore
-                sc.services.forEach(svc => {
-                    services_in_sc_list.push({
+                let svcs_list: ServicesInSCAttrs[] = svcs.map((svc) => {
+                    return {
                         id: svc.ServicesInSC.id,
                         service: svc.id,
-                        priority: svc.ServicesInSC.id,
-                        servicechain: sc.id
-                    })
+                        priority: svc.ServicesInSC.priority,
+                        servicechain: sc.id,
+                        createdAt: svc.ServicesInSC.createdAt,
+                        updatedAt: svc.ServicesInSC.updatedAt
+                    }
                 })
 
                 let resp: ResponseServicechain = {
                     id: sc.id,
                     name: sc.name,
-                    OrganizationId: sc.OrganizationId,
-                    services: services_in_sc_list
+                    OrganizationId: (await sc.getOrganization()).id,
+                    services: svcs_list,
+                    updatedAt: sc.updatedAt,
+                    createdAt: sc.createdAt
                 }
                 return resp
             })

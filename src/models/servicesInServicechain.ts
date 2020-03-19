@@ -1,18 +1,27 @@
-import * as Sequelize from "sequelize";
 import { ServicesInSC as ServicesInSCAttributes } from 'voluble-common';
+import { Sequelize, Model, DataTypes } from 'sequelize';
 
-export interface ServicesInSCInstance extends Sequelize.Instance<ServicesInSCAttributes>, ServicesInSCAttributes {
-}
+export class ServicesInSC extends Model implements ServicesInSCAttributes {
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
+    public id!: string
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var ServicesInSC = sequelize.define('ServicesInSC', {
-        id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
+    public service!: string
+    public servicechain!: string
+    public priority!: number
+
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+            id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+                defaultValue: DataTypes.UUIDV4
+            },
+            priority: DataTypes.INTEGER
         },
-        priority: DataTypes.INTEGER
-    })
-
-    return ServicesInSC
+            {
+                sequelize: sequelize,
+                tableName: "servicesinscs"
+            })
+    }
 }

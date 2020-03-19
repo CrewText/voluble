@@ -2,6 +2,8 @@ import { MessageDirections, MessageStates } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager'
 import * as db from '../models'
+import { Message } from '../models/message'
+import { Service } from '../models/service'
 import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
@@ -26,7 +28,7 @@ export namespace MessageManager {
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
     export async function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", message_state: MessageStates,
-        servicechain_id?: string, is_reply_to?: string, user?: string): Promise<db.MessageInstance> {
+        servicechain_id?: string, is_reply_to?: string, user?: string): Promise<Message> {
         let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
 
         let msg = db.models.Message.build({
@@ -54,7 +56,7 @@ export namespace MessageManager {
      * @param {db.models.Sequelize.Message} msg A Message object representing the message to send.
      * @returns {db.models.Sequelize.message} The Sequelize message that has been sent.
      */
-    export function sendMessage(msg: db.MessageInstance): db.MessageInstance {
+    export function sendMessage(msg: Message): Message {
         try {
             QueueManager.addMessageToSendRequest(msg)
         }
@@ -65,7 +67,7 @@ export namespace MessageManager {
         return msg
     }
 
-    export async function doMessageSend(msg: db.MessageInstance): Promise<db.MessageInstance> {
+    export async function doMessageSend(msg: Message): Promise<Message> {
         // First, acquire the first service in the servicechain
 
         let sc = await ServicechainManager.getServicechainById(msg.ServicechainId)
@@ -109,7 +111,7 @@ export namespace MessageManager {
         }
     }
 
-    async function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance): Promise<boolean> {
+    async function sendMessageWithService(msg: Message, svc: Service): Promise<boolean> {
         return PluginManager.getPluginById(svc.id)
             .then(function (plugin) {
                 if (plugin) {
@@ -136,7 +138,7 @@ export namespace MessageManager {
             })
     }
 
-    export function updateMessageState(msg_id: string, msg_state: string): Promise<db.MessageInstance> {
+    export function updateMessageState(msg_id: string, msg_state: string): Promise<Message> {
         logger.info("Updating message state", { 'message': msg_id, 'state': MessageStates[msg_state] })
         return getMessageFromId(msg_id)
             .then(function (msg) {
@@ -159,19 +161,19 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export async function getHundredMessageIds(offset: number = 0, organization?: string): Promise<Array<db.MessageInstance>> {
+    export async function getMessages(offset: number = 0, limit: number = 100, organization?: string): Promise<Array<Message>> {
         // Get all messages where the Contact is in the given Org.
         // If there isn't an Org, all messages where the contact's Org != null (which should be all of them)
         console.log("Getting messages for Org " + organization)
         return db.models.Message.findAll({
             offset: offset,
-            limit: 100,
+            limit: limit,
             order: [['createdAt', 'DESC']],
             include: [
                 {
                     model: db.models.Contact,
                     where: {
-                        'OrganizationId': organization ? organization : { [db.sequelize.Op.ne]: null }
+                        'OrganizationId': organization ? organization : { [db.models.sequelize.Op.ne]: null }
                     }
                 }
             ]
@@ -183,11 +185,11 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export async function getMessageFromId(id: string): Promise<db.MessageInstance | null> {
+    export async function getMessageFromId(id: string): Promise<Message | null> {
         return db.models.Message.findByPk(id)
     }
 
-    export async function getMessagesForContact(contact_id: string, offset: number = 0): Promise<db.MessageInstance[] | null> {
+    export async function getMessagesForContact(contact_id: string, offset: number = 0, limit: number = 0): Promise<Message[] | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (verified_contact_id) {
                 return db.models.Message.findAll({
@@ -195,7 +197,7 @@ export namespace MessageManager {
                         'contact': verified_contact_id
                     },
                     order: [['createdAt', 'DESC']],
-                    limit: 100,
+                    limit: limit,
                     offset: offset
                 })
             })

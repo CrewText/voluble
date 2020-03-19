@@ -1,13 +1,13 @@
 import * as redis from 'redis'
 import * as rsmq from 'rsmq'
-import * as rsmqWorker from 'rsmq-worker'
+// import * as rsmqWorker from 'rsmq-worker'
 import { MessageStates } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
-import { MessageInstance } from '../models'
+import { Message } from '../models/message'
 import { PluginManager } from '../plugin-manager'
-import { QueueManager } from '../queue-manager'
+import { QueueManager, RMQWorker } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
 
@@ -52,11 +52,11 @@ function createRedisClient() {
 let client = createRedisClient()
 logger.debug("Main: conn ID " + client.connection_id)
 let rsmq_client = new rsmq({ client: client })
-let worker_msg_send = new rsmqWorker("message-send", { rsmq: rsmq_client })
-let worker_msg_recv = new rsmqWorker("message-recv", { rsmq: rsmq_client })
+let worker_msg_send = new RMQWorker("message-send", rsmq_client)
+let worker_msg_recv = new RMQWorker("message-recv", rsmq_client)
 
-worker_msg_send.on("message", async function (message, next, message_id) {
-    let parsed_msg: MessageInstance = JSON.parse(message)
+worker_msg_send.on("message", async function (message: string, next: () => void, message_id: string) {
+    let parsed_msg: Message = JSON.parse(message)
     logger.debug(`Main: Worker has collected message ${parsed_msg.id} for sending`)
     QueueManager.addMessageStateUpdateRequest(parsed_msg.id, "MSG_SENDING")
     logger.debug(`Main: Attempting message send`, { 'message': parsed_msg.id })

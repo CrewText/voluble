@@ -8,34 +8,31 @@ import { OrgManager } from "../../org-manager";
 import { ServicechainManager } from '../../servicechain-manager';
 import { getE164PhoneNumber } from "../../utilities";
 import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble-errors';
-import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
+import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
+import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
+import { Contact } from "../../models/contact";
+import { checkExtendsModel } from "../helpers/check_extends_model";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactsRoute' })
 const router = express.Router();
 
 /**
  * Handles the route `GET /contacts`.
- * Lists the first 100 of the contacts available to the user, with a given offset
+ * List the available contacts to the user, within the boundaries provided by 'offset' and 'limit'.
  */
 router.get('/:org_id/contacts', checkJwt,
-  checkJwtErr,
+
   checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
+  checkLimit(0, 100),
+  checkOffset(0),
   async function (req, res, next) {
     try {
-      // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-      let offset: number = req.query.offset ? validator.default.toInt(req.query.offset) : 0
-      let limit: number = req.query.limit ? validator.default.toInt(req.query.limit) : 100
-      if (isNaN(offset) || offset < 0) {
-        throw new InvalidParameterValueError(`Value supplied for parameter 'offset' is invalid: ${offset}`)
-      }
+      let offset: number = req.query.offset ? validator.default.toInt(String(req.query.offset)) : 0
+      let limit: number = req.query.limit ? validator.default.toInt(String(req.query.limit)) : 100
 
-      if (isNaN(limit) || limit < 1 || limit > 500) {
-        throw new InvalidParameterValueError(`Value supplied for parameter 'limit' is invalid (must be 0 < limit < 501): ${limit}`)
-      }
-
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
       let contacts = await ContactManager.getContacts(offset, limit, req.params.org_id)
       res.status(200).jsend.success(contacts)
@@ -46,7 +43,7 @@ router.get('/:org_id/contacts', checkJwt,
         res.status(400).jsend.fail(`Parameter 'name' was not provided`)
       } else {
         logger.error(e)
-        res.status(500).jsend.error(e)
+        res.status(500).jsend.error(e.message)
       }
     }
   })
@@ -55,7 +52,7 @@ router.get('/:org_id/contacts', checkJwt,
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]), checkJwt, function (req, res, next) {
+router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]), checkJwt, function (req, res, next) {
   ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
@@ -68,10 +65,7 @@ router.get('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr, checkScopesMi
     .catch(function (e) {
       if (e instanceof ResourceNotFoundError) {
         res.status(404).jsend.fail(e.message)
-      } else { throw e }
-    })
-    .catch(function (e: any) {
-      res.status(500).jsend.error(e.message)
+      } else { res.status(500).jsend.error(e.message) }
     })
 
 })
@@ -82,25 +76,26 @@ router.get('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr, checkScopesMi
  * 
  * 
  */
-router.post('/:org_id/contacts', checkJwt, checkJwtErr,
+router.post('/:org_id/contacts', checkJwt,
   checkScopesMiddleware([scopes.ContactAdd, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
   async function (req, res, next) {
 
     try {
-      let contact_title = req.body["title"]
-      let contact_fname = req.body["first_name"]
-      let contact_sname = req.body["surname"]
-      let contact_email = req.body["email_address"]
-      let contact_phone = req.body["phone_number"]
-      let contact_sc = req.body["ServicechainId"]
-      let contact_cat = req.body["CategoryId"]
-      let contact_org = req.params.org_id
+      let contact_title: string = req.body["title"]
+      let contact_fname: string = req.body["first_name"]
+      let contact_sname: string = req.body["surname"]
+      let contact_email: string = req.body["email_address"]
+      let contact_phone: string = req.body["phone_number"]
+      let contact_sc: string = req.body["servicechain"]
+      let contact_cat: string = req.body["category"]
+      let contact_org: string = req.params.org_id
 
-      checkHasOrgAccess(req.user, contact_org)
+      checkExtendsModel(req.body, Contact)
+      checkHasOrgAccess(req['user'], contact_org)
 
       if (!contact_title || !contact_fname || !contact_sname || !contact_phone || !contact_sc) {
-        throw new InvalidParameterValueError("First name, surname, title, phone number, Organization, or Servicechain not supplied.")
+        throw new InvalidParameterValueError("First name, surname, title, phone number, or Servicechain not supplied.")
       }
 
       if (contact_email && (!(typeof contact_email == "string") || !validator.default.isEmail(contact_email, { require_tld: true }))) {
@@ -115,23 +110,31 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
         throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
       }
 
-      if (contact_cat && (!await CategoryManager.getCategoryById(contact_cat))) {
-        throw new InvalidParameterValueError(`Supplied Category not found: ${contact_cat}`)
-      }
+      /** Get all of the promises in motion, then we can await the results
+       * as and when we need them, when they're already likely to be resolved */
 
-      if (! await ServicechainManager.getServicechainById(contact_sc)) {
-        throw new ResourceNotFoundError(`Specified Servicechain ID ${contact_sc} does not exist`)
-      }
+      let org_p = OrgManager.getOrganizationById(contact_org)
+      let cat_p = CategoryManager.getCategoryById(contact_cat)
+      let sc_p = ServicechainManager.getServicechainById(contact_sc)
 
-      let requested_org = await OrgManager.getOrganizationById(contact_org)
+      let requested_org = await org_p
+
       if (!requested_org) {
         throw new ResourceNotFoundError(`Organization with ID ${contact_org} not found`)
       }
 
+      if (contact_cat && (!await cat_p)) {
+        throw new InvalidParameterValueError(`Supplied Category not found: ${contact_cat}`)
+      }
+
+      if (!await sc_p) {
+        throw new ResourceNotFoundError(`Specified Servicechain ID ${contact_sc} does not exist`)
+      }
+
       let created_contact = await requested_org.createContact({
         title: contact_title,
-        ServicechainId: contact_sc,
-        CategoryId: contact_cat,
+        servicechain: contact_sc,
+        category: contact_cat,
         first_name: contact_fname,
         surname: contact_sname,
         email_address: contact_email,
@@ -158,16 +161,16 @@ router.post('/:org_id/contacts', checkJwt, checkJwtErr,
  * Handles the route `PUT /contacts/{id}`.
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
-router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
+router.put('/:org_id/contacts/:contact_id', checkJwt,
   checkScopesMiddleware([scopes.ContactEdit, scopes.VolubleAdmin]), async function (req, res, next) {
     try {
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
       let contact = await ContactManager.getContactWithId(req.params.contact_id)
       if (!contact) { throw new ResourceNotFoundError(`Contact not found: ${req.params.contact_id}`) }
 
-      if (Object.keys(req.body).indexOf('CategoryId') > -1) {
-        if (req.body.CategoryId != null) {
+      if (Object.keys(req.body).indexOf('category') > -1) {
+        if (req.body.category != null) {
           let cat = await CategoryManager.getCategoryById(req.body.CategoryId)
 
           if (!cat) { throw new InvalidParameterValueError(`Category does not exist: ${req.body.CategoryId}`) }
@@ -177,7 +180,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
         }
       }
 
-      if (Object.keys(req.body).indexOf('ServicechainId') > -1) {
+      if (Object.keys(req.body).indexOf('servicechain') > -1) {
         let sc = await ServicechainManager.getServicechainById(req.body.ServicechainId)
         if (!sc) { throw new InvalidParameterValueError(`Servicechain does not exist: ${req.body.ServicechainId}`) }
         await contact.setServicechain(sc)
@@ -185,7 +188,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
 
       ["title", "first_name", "surname"].forEach(trait => {
         if (Object.keys(req.body).indexOf(trait) > -1) {
-          contact.set(trait, req.body[trait])
+          contact.set(<keyof Contact>trait, req.body[trait])
         }
       });
 
@@ -219,7 +222,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
         res.status(400).jsend.fail({ name: e.name, message: e.message })
       } else {
         logger.error(e.message)
-        res.status(500).jsend.error({ name: e.name, message: e.message })
+        res.status(500).jsend.error(e.message)
       }
     }
   })
@@ -231,7 +234,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt, checkJwtErr,
  */
 router.delete('/:org_id/contacts/:contact_id',
   checkJwt,
-  checkJwtErr,
+
   setupUserOrganizationMiddleware,
   checkHasOrgAccessMiddleware,
   checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
@@ -256,12 +259,14 @@ router.delete('/:org_id/contacts/:contact_id',
   })
 
 router.get('/:org_id/contacts/:contact_id/messages', checkJwt,
-  checkJwtErr,
+
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
+  checkLimit(0, 100),
+  checkOffset(0),
   function (req, res, next) {
     let contact_id = req.params.contact_id
-    MessageManager.getMessagesForContact(contact_id)
+    MessageManager.getMessagesForContact(contact_id, req.query.limit, req.query.offset)
       .then(function (messages) {
         res.status(200).jsend.success({ messages })
       })
