@@ -23,7 +23,8 @@ export let models = {
     // [key: string]: any
 }
 
-let db_url = process.env.NODE_ENV == "test" ? "mysql://root@localhost/voluble_test" : process.env.CLEARDB_DATABASE_URL
+let db_url = (process.env.PATH.includes("/app/.heroku") || process.env.CIRRUS_CI) ? process.env.CLEARDB_DATABASE_URL : "mysql://root@localhost/voluble_test"
+
 if (!db_url) {
     // The ENV var has not been correctly set
     throw new Error("ClearDB Database URL is null! Exiting...")
