@@ -3,7 +3,7 @@ container:
 
 test_task:
   global_clis_script:
-    - npm install -G typescript mocha
+    - npm install -g typescript mocha
 
   node_modules_cache:
     folder: node_modules
