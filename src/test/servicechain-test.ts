@@ -1,11 +1,11 @@
-if (!process.env.PATH || process.env.PATH.lastIndexOf("/app/.heroku") == -1) {
+if (process.env.PATH.includes("/app/.heroku") || process.env.CIRRUS_CI) {
+    console.info("Running on Heroku/CI, using local config vars")
+} else {
     console.info("Importing .env config vars")
     const config = require('dotenv').config()
     if (config.error) {
         throw config.error
     }
-} else {
-    console.info("Running on Heroku, using local config vars")
 }
 
 process.env.NODE_ENV = "test"
