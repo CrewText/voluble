@@ -13,9 +13,11 @@ env:
   PLUGIN_DIR: "bin/plugins"
   REDISTOGO_URL: ENCRYPTED[c4e9f4c3638091c2bd6ceae48251a6584de1bf2a4db62cf90005f35a24e70123bd405e289d86a1171704b055403735ab]
   NODE_ENV: "development"
+  PORT: 5000
 
 container:
   image: node:latest
+  port: 5000
 
 test_task:
   global_clis_script:
