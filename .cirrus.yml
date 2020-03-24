@@ -2,6 +2,9 @@ container:
   image: node:latest
 
 test_task:
+  global_clis_script:
+    - npm install -G typescript mocha
+
   node_modules_cache:
     folder: node_modules
     fingerprint_script: cat package-lock.json
