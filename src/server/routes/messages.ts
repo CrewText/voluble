@@ -5,9 +5,9 @@ import * as winston from 'winston';
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
-import { InvalidParameterValueError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceOutOfUserScopeError, ResourceNotFoundError } from '../../voluble-errors';
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccess, setupUserOrganizationMiddleware } from '../security/scopes';
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { Message } from "../../models/message";
 import { checkExtendsModel } from "../helpers/check_extends_model";
@@ -42,29 +42,25 @@ let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'M
  * 
  */
 router.get('/:org_id/messages/', checkJwt,
-
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
   checkLimit(0, 100),
   checkOffset(0),
   async function (req, res, next) {
-
     try {
-
       checkHasOrgAccess(req['user'], req.params.org_id)
-
-      let msg_ids = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id)
-
-      res.status(200).jsend.success(msg_ids)
+      let messages = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id)
+      let serialized = req.app.locals.serializer('message', messages)
+      res.status(200).json(serialized)
     }
-
     catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail(e.message)
+        res.status(400).json(serialized_err)
       } else if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
       } else {
-        res.status(500).jsend.error(e.message)
+        res.status(500).json(serialized_err)
       }
     }
 
@@ -83,15 +79,18 @@ router.get('/:org_id/messages/:message_id', checkJwt,
 
       let msg = await MessageManager.getMessageFromId(req.params.message_id)
       if (msg) {
-        res.status(200).jsend.success(msg)
+        res.status(200).json(await req.app.locals.serializer.serializeAsync('message', msg))
       } else {
-        res.status(404).jsend.fail(`Resource with ID ${req.params.message_id} not found`)
+        throw new ResourceNotFoundError(`Resource with ID ${req.params.message_id} not found`)
       }
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
+      } else if (e instanceof ResourceNotFoundError) {
+        res.status(404).json(serialized_err)
       } else {
-        res.status(500).jsend.error(e.message)
+        res.status(500).json(serialized_err)
       }
     }
 
@@ -107,12 +106,6 @@ router.post('/:org_id/messages/', checkJwt,
   async function (req, res, next) {
     try {
       checkExtendsModel(req.body, Message)
-      //   if (!req.body.contact) {
-      //     throw new InvalidParameterValueError(`Invalid value for parameter 'contact': ${req.body.contact}`)
-      //   }
-      //   if (!req.body.body) {
-      //     throw new InvalidParameterValueError(`Invalid value for parameter 'body': ${req.body.body}`)
-      //   }
       checkHasOrgAccess(req['user'], req.params.org_id)
 
       let contact = await ContactManager.getContactWithId(req.body.contact)
@@ -128,18 +121,19 @@ router.post('/:org_id/messages/', checkJwt,
 
       msg = MessageManager.sendMessage(msg)
 
-      res.status(200).jsend.success(msg)
+      let serialized = await req.app.locals.serializer.serializeAsync('message', msg)
+      res.status(200).json(serialized)
 
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
-        logger.warn(e)
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
       } else if (e instanceof InvalidParameterValueError) {
+        res.status(400).json(serialized_err)
         logger.warn(e)
-        res.status(400).jsend.fail(e.message)
       } else {
+        res.status(500).json(serialized_err)
         logger.error(e)
-        res.status(500).jsend.error(`An internal error has occurred: ${e.name}`)
       }
     }
   })

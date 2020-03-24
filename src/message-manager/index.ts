@@ -33,7 +33,7 @@ export namespace MessageManager {
 
         let msg = db.models.Message.build({
             body: body,
-            ServicechainId: servicechain_id,
+            servicechain: servicechain_id,
             contact: contact_id,
             user: user,
             is_reply_to: is_reply_to,
@@ -70,7 +70,7 @@ export namespace MessageManager {
     export async function doMessageSend(msg: Message): Promise<Message> {
         // First, acquire the first service in the servicechain
 
-        let sc = await ServicechainManager.getServicechainById(msg.ServicechainId)
+        let sc = await ServicechainManager.getServicechainById(msg.servicechain)
         let svc_count = await sc.countServices()
         if (!svc_count) {
             QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
@@ -81,10 +81,10 @@ export namespace MessageManager {
         logger.debug(`Beginning message send attempt loop`, { msg: msg.id, sc: sc.id, svc_count: svc_count })
 
         for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
-            logger.debug(`Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.ServicechainId}`)
+            logger.debug(`Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.servicechain}`)
 
             try {
-                let svc = await ServicechainManager.getServiceInServicechainByPriority(msg.ServicechainId, current_svc_prio)
+                let svc = await ServicechainManager.getServiceInServicechainByPriority(msg.servicechain, current_svc_prio)
                 logger.debug(`Found service; Attempting message send`, { msg: msg.id, sc: sc.id, svc: svc.directory_name, priority: current_svc_prio })
                 is_sent = await sendMessageWithService(msg, svc)
             } catch (e) {
@@ -105,9 +105,9 @@ export namespace MessageManager {
             QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
             return msg
         } else {
-            logger.info(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
+            logger.info(`Ran out of services for servicechain ${msg.servicechain}, message failed`)
             QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
-            return Promise.reject(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
+            return Promise.reject(`Ran out of services for servicechain ${msg.servicechain}, message failed`)
         }
     }
 

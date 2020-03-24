@@ -1,11 +1,12 @@
 import * as cors from 'cors';
 import * as express from "express";
 import { Server } from 'http';
-import * as jsend from 'jsend';
 import * as winston from 'winston';
 import * as db from '../models';
 import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
+import { serializeTypes } from './serialize-types';
+let JSONAPISerializer = require("json-api-serializer");
 
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -20,12 +21,8 @@ logger.add(new winston.transports.Console())
 
 const http = require('https');
 
-logger.info("Loading plugin manager")
-
 logger.info("Loading queue manager")
 QueueManager.init_queues()
-
-logger.info("Connecting to database")
 
 logger.info("Loading routes")
 const routes_index = require('./routes')
@@ -41,7 +38,6 @@ const routes_service_endpoint_generic = require('./routes/service_endpoint')
 
 logger.info("Starting Express server")
 const app = express();
-app.use(jsend.middleware)
 
 let svr: Server;
 
@@ -114,13 +110,11 @@ if (process.env.NODE_ENV != "production") {
   app.use(forceSSL)
 }
 
-function onServerListening() {
-
-}
+logger.info('Serializing models')
+app.locals.serializer = new JSONAPISerializer({ jsonapiObject: false })
+serializeTypes(app.locals.serializer)
 
 export async function initServer() {
-
-
   logger.debug("Initializing DB")
   await db.initialize_database();
 

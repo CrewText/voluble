@@ -1,10 +1,8 @@
-import { Request, Response, NextFunction } from "express";
-
-const jwt = require('express-jwt');
-const jwksRsa = require('jwks-rsa');
+import Axios from 'axios';
+import { NextFunction, Request, Response } from "express";
+import { errors, JWKS, JWT } from 'jose';
+import { AuthorizationFailedError } from '../../voluble-errors';
 const jwtAuthz = require('express-jwt-authz');
-import { JWT, JWKS, errors } from 'jose'
-import Axios from 'axios'
 
 export function checkJwt(req: Request, res: Response, next: NextFunction) {
     let auth_header_token: string
@@ -12,7 +10,8 @@ export function checkJwt(req: Request, res: Response, next: NextFunction) {
         auth_header_token = req.headers['authorization'].split(" ")[1].trim()
     }
     catch (e) {
-        res.status(401).jsend.fail('Authorization token not provided')
+        let serialized_err = req.app.locals.serializer.serializeError(new AuthorizationFailedError('Authorization token not provided'))
+        res.status(401).json(serialized_err)
         return
     }
 
@@ -31,12 +30,16 @@ export function checkJwt(req: Request, res: Response, next: NextFunction) {
             next()
         })
         .catch((err) => {
+
             if (err instanceof errors.JWTExpired) {
-                res.status(401).jsend.fail("Authorization token expired")
+                let serialized_err = req.app.locals.serializer.serializeError(new AuthorizationFailedError("Authorization token expired"))
+                res.status(401).json(serialized_err)
             } else if (err instanceof errors.JWTMalformed) {
-                res.status(401).jsend.fail('Authorization token malformed')
+                let serialized_err = req.app.locals.serializer.serializeError(new AuthorizationFailedError("Authorization token malformed"))
+                res.status(401).json(serialized_err)
             } else {
-                res.status(401).jsend.fail(err.message)
+                let serialized_err = req.app.locals.serializer.serializeError(err)
+                res.status(401).json(serialized_err)
             }
         })
 }

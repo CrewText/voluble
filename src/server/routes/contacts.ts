@@ -7,10 +7,10 @@ import { MessageManager } from '../../message-manager';
 import { OrgManager } from "../../org-manager";
 import { ServicechainManager } from '../../servicechain-manager';
 import { getE164PhoneNumber } from "../../utilities";
-import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 import { Contact } from "../../models/contact";
 import { checkExtendsModel } from "../helpers/check_extends_model";
 
@@ -35,15 +35,17 @@ router.get('/:org_id/contacts', checkJwt,
       checkHasOrgAccess(req['user'], req.params.org_id)
 
       let contacts = await ContactManager.getContacts(offset, limit, req.params.org_id)
-      res.status(200).jsend.success(contacts)
+      let serialized = await req.app.locals.serializer.serializeAsync('contact', contacts)
+      res.status(200).json(serialized)
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
+        res.status(403).json(serialized_err)
       } else if (e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail(`Parameter 'name' was not provided`)
+        res.status(400).json(serialized_err)
       } else {
+        res.status(500).json(serialized_err)
         logger.error(e)
-        res.status(500).jsend.error(e.message)
       }
     }
   })
@@ -59,15 +61,20 @@ router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([sco
     })
     .then(function (user) {
       if (user) {
-        res.status(200).jsend.success(user)
+        return req.app.locals.serializer.serializeAsync('contact', user)
       } else { throw new ResourceNotFoundError(`User with ID ${req.params.contact_id} is not found!`) }
     })
-    .catch(function (e) {
-      if (e instanceof ResourceNotFoundError) {
-        res.status(404).jsend.fail(e.message)
-      } else { res.status(500).jsend.error(e.message) }
+    .then(serialized => {
+      res.status(200).json(serialized)
     })
-
+    .catch(function (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
+      if (e instanceof ResourceNotFoundError) {
+        res.status(404).json(serialized_err)
+      } else {
+        res.status(500).json(serialized_err)
+      }
+    })
 })
 
 /**
@@ -99,7 +106,6 @@ router.post('/:org_id/contacts', checkJwt,
       }
 
       if (contact_email && (!(typeof contact_email == "string") || !validator.default.isEmail(contact_email, { require_tld: true }))) {
-        //console.log(validator.isEmail(contact_email, { require_tld: true }))
         throw new InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
       }
 
@@ -141,16 +147,18 @@ router.post('/:org_id/contacts', checkJwt,
         phone_number: e164_phone_num
       })
 
-      res.status(201).jsend.success(await created_contact.reload())
+      let serialized = await req.app.locals.serializer.serializeAsync('contact', await created_contact.reload())
+      res.status(201).json(serialized)
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceNotFoundError || e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail(e.message)
+        res.status(400).json(serialized_err)
       } else if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
       }
       else {
+        res.status(500).json(serialized_err)
         logger.error(e.name, e.message)
-        res.status(500).jsend.error(e.message)
       }
     }
 
@@ -213,16 +221,19 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
 
       await contact.save()
 
-      res.status(200).jsend.success(await contact.reload())
+      let serialized = await req.app.locals.serializer.serializeAsync('contact', await contact.reload())
+      res.status(200).json(serialized)
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail({ name: e.name, message: e.message })
+        res.status(403).json(serialized_err)
       }
       else if (e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail({ name: e.name, message: e.message })
+        res.status(400).json(serialized_err)
       } else {
+
+        res.status(500).json(serialized_err)
         logger.error(e.message)
-        res.status(500).jsend.error(e.message)
       }
     }
   })
@@ -251,10 +262,11 @@ router.delete('/:org_id/contacts/:contact_id',
           .then(function () { return true })
       })
       .then(function (resp) {
-        res.status(resp ? 200 : 404).jsend.success(true)
+        res.status(resp ? 204 : 404).json({})
       })
-      .catch(function (error: any) {
-        res.status(500).jsend.error(error.message)
+      .catch(function (e: any) {
+        let serialized_err = req.app.locals.serializer.serializeError(e)
+        res.status(500).json(serialized_err)
       })
   })
 
@@ -268,13 +280,17 @@ router.get('/:org_id/contacts/:contact_id/messages', checkJwt,
     let contact_id = req.params.contact_id
     MessageManager.getMessagesForContact(contact_id, req.query.limit, req.query.offset)
       .then(function (messages) {
-        res.status(200).jsend.success({ messages })
+        return req.app.locals.serializer.serializeAsync('message')
       })
-      .catch(function (err) {
-        if (err instanceof ResourceNotFoundError) {
-          res.status(404).jsend.fail({ "id": "No contact exists with this ID." })
+      .then(serialized => {
+        res.status(200).json(serialized)
+      })
+      .catch(function (e) {
+        let serialized_err = req.app.locals.serializer.serializeError(e)
+        if (e instanceof ResourceNotFoundError) {
+          res.status(404).json(serialized_err)
         } else {
-          res.status(500).jsend.error(err)
+          res.status(500).json(serialized_err)
         }
       })
   })

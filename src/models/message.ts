@@ -11,7 +11,7 @@ export class Message extends Model implements MessageAttributes {
     public id!: string
 
     public body!: string
-    public ServicechainId: string
+    public servicechain: string
     public contact!: string
     public direction!: MessageDirections
     public message_state!: MessageStates

@@ -4,13 +4,12 @@ import * as winston from 'winston';
 import { CategoryManager } from "../../contact-manager";
 import { Category } from "../../models/category";
 import { OrgManager } from "../../org-manager";
-import { InvalidParameterValueError, ResourceNotFoundError } from "../../voluble-errors";
+import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from "../../voluble-errors";
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt, checkScopesMiddleware } from "../security/jwt";
-import { checkHasOrgAccess, ResourceOutOfUserScopeError, setupUserOrganizationMiddleware } from "../security/scopes";
+import { checkHasOrgAccess, setupUserOrganizationMiddleware } from "../security/scopes";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CategoriesRoute' })
-
 const router = express.Router();
 
 router.get('/:org_id/categories', checkJwt,
@@ -24,16 +23,17 @@ router.get('/:org_id/categories', checkJwt,
             if (!org) {
                 throw new ResourceNotFoundError(`Organization not found: ${req.params.org_id}`)
             }
-            let cats = await org.getCategories({
-            })
-            res.status(200).jsend.success(cats)
+            let cats = await org.getCategories()
+            let data = await res.app.locals.serializer.serializeAsync('category', cats)
+            res.status(200).json(data)
         }
         catch (e) {
+            let serialized_err = res.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(401).jsend.fail(e.message)
+                res.status(401).json(serialized_err)
             } else {
                 logger.error(e.message)
-                res.status(500).jsend.error(e.message)
+                res.status(500).json(serialized_err)
             }
 
         }
@@ -53,16 +53,18 @@ router.post('/:org_id/categories', checkJwt,
                 name: req.body.name
             })
 
-            res.status(201).jsend.success(new_cat)
+            req.app.locals.serializer.serializeAsync('category', new_cat)
+                .then(serialized_data => { res.status(201).json(serialized_data) })
         } catch (e) {
+            let serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(401).jsend.fail(e.message)
+                res.status(401).json(serialized_err)
             } else if (e instanceof InvalidParameterValueError) {
-                res.status(400).jsend.fail(e.message)
+                res.status(400).json(serialized_err)
             }
             else {
-                logger.error(e.message)
-                res.status(500).jsend.error(e.message)
+                logger.error(e)
+                res.status(500).json(serialized_err)
             }
         }
     })
@@ -75,18 +77,19 @@ router.get('/:org_id/categories/:cat_id',
             if (!cat) {
                 throw new ResourceNotFoundError(`Category ${req.params.cat_id} not found`)
             }
-            let cat_org = await cat.getOrganization()
-            checkHasOrgAccess(req['user'], cat_org.id)
+            checkHasOrgAccess(req['user'], req.params.org)
 
-            res.status(200).jsend.success(cat)
+            let resp = await req.app.locals.serializer.serializeAsync('category', cat)
+            res.status(200).json(resp)
         } catch (e) {
+            let serialized_err = await req.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceNotFoundError) {
-                res.status(404).jsend.fail(e.message)
+                res.status(404).json(serialized_err)
             } else if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
+                res.status(403).json(serialized_err)
             } else {
                 logger.error(e.message)
-                res.status(500).jsend.error(e.message)
+                res.status(500).json(serialized_err)
             }
         }
     })
@@ -103,21 +106,26 @@ router.put('/:org_id/categories/:cat_id', checkJwt,
             checkHasOrgAccess(req['user'], req.params.org_id)
 
             if (!req.body.name) {
-                return res.status(400).jsend.fail(`Parameter 'name' was not provided`)
+                throw new InvalidParameterValueError(`Parameter 'name' was not provided`)
             }
 
             cat.name = req.body.name
             await cat.save()
             cat = await cat.reload()
-            res.status(200).jsend.success(cat)
+            req.app.locals.serializer.serializeAsync('category', cat)
+                .then(serialized_data => { res.status(200).json(serialized_data) })
 
         } catch (e) {
+            let serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceNotFoundError) {
-                res.status(404).jsend.fail(e.message)
+                res.status(404).json(serialized_err)
             } else if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
-            } else {
-                res.status(500).jsend.error(e.message)
+                res.status(403).json(serialized_err)
+            } else if (e instanceof InvalidParameterValueError) {
+                res.status(400).json(serialized_err)
+            }
+            else {
+                res.status(500).json(serialized_err)
             }
         }
     })
@@ -128,7 +136,7 @@ router.delete('/:org_id/categories/:cat_id',
         try {
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
             if (!cat) {
-                res.status(404).jsend.success(true)
+                res.status(404).json({})
                 return
             }
 
@@ -136,15 +144,16 @@ router.delete('/:org_id/categories/:cat_id',
             checkHasOrgAccess(req['user'], cat_org.id)
 
             await cat.destroy()
-            res.status(200).jsend.success(true)
+            res.status(204).json({})
 
         } catch (e) {
+            let serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceNotFoundError) {
-                res.status(404).jsend.fail(e.message)
+                res.status(404).json(serialized_err)
             } else if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(403).jsend.fail("User does not have the necessary scopes to access this resource")
+                res.status(403).json(serialized_err)
             } else {
-                res.status(500).jsend.error(e.message)
+                res.status(500).json(serialized_err)
             }
         }
     })

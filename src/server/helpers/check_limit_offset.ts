@@ -18,14 +18,14 @@ function checkRequestLimit(req: Request, res: Response, next: NextFunction, min:
         next()
     }
     catch (e) {
+        let serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof InvalidParameterValueError) {
-            return res.status(400).jsend.fail(e.message)
+            return res.status(400).json(serialized_err)
         } else {
+            res.status(500).json(serialized_err)
             logger.error(e)
-            return res.status(500).jsend.fail(e.message)
         }
     }
-    // next()
 }
 
 function checkRequestOffset(req: Request, res: Response, next: NextFunction, min: number) {
@@ -40,11 +40,12 @@ function checkRequestOffset(req: Request, res: Response, next: NextFunction, min
 
         next()
     } catch (e) {
+        let serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof InvalidParameterValueError) {
-            return res.status(400).jsend.fail(e.message)
+            return res.status(400).json(serialized_err)
         } else {
+            res.status(500).json(serialized_err)
             logger.error(e)
-            return res.status(500).jsend.fail(e.message)
         }
     }
 }

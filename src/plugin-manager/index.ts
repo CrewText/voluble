@@ -4,7 +4,7 @@ import * as winston from 'winston'
 import * as db from '../models'
 import { Service } from '../models/service'
 import { voluble_plugin } from '../plugins/plugin_base'
-import { ResourceOutOfUserScopeError } from '../server/security/scopes'
+import { ResourceOutOfUserScopeError } from '../voluble-errors'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'PluginMgr' })
 

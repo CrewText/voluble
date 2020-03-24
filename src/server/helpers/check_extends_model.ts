@@ -13,7 +13,6 @@ export function checkExtendsModel<T extends typeof Model>(request_obj: any, mode
         if (!(Object.keys(allowed_params).includes(element))) {
             throw new InvalidParameterValueError(`Parameter '${element}' does not exist on object '${model.options.name.singular}'`)
         }
-
     });
 
     Object.keys(allowed_params).forEach(param => {

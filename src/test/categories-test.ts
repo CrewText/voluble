@@ -14,11 +14,10 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import { Server } from 'http'
+import { AddressInfo } from 'net'
 import * as supertest from 'supertest'
 import * as server from '../server/server-main'
-import { getAccessToken } from './test-utils'
-import * as axios from 'axios'
-import { AddressInfo } from 'net'
+import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiRelatedResource, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship } from './test-utils'
 
 chai.should()
 chai.use(chaiAsPromised)
@@ -92,8 +91,8 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .send({})
                 .expect(401)
                 .end((err, res) => {
-                    if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    if (err) { console.error(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -108,7 +107,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -123,12 +122,15 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(201)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status')
-                    chai.expect(res.body.status).to.equal("success")
+
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
 
                     let data: any = res.body.data
-                    chai.expect(data).to.have.property('name', cat_name)
-                    chai.expect(data).to.have.property('organization', test_org_id)
+                    satisfiesJsonApiResource(data, 'category')
+                    chai.expect(data.attributes).to.have.property('name')
+                    satisfiesJsonApiResourceRelationship(data, { 'organization': { related: `/orgs/${test_org_id}` } })
+                    satisfiesJsonApiRelatedResource(data, 'organization', 'organization', test_org_id)
                     created_cat_id = data.id
                     done()
                 })
@@ -143,7 +145,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -155,16 +157,21 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
+                    if (err) { console.error(err); console.log(res.error); return done(err) }
+
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
 
                     let data: any = res.body.data
                     chai.expect(data).to.be.instanceOf(Array)
+                    chai.expect(data).to.have.lengthOf(1)
 
-                    data.forEach(cat => {
-                        chai.expect(cat).to.have.property('id')
-                        chai.expect(cat).to.have.property('name')
-                        chai.expect(cat).to.have.property('organization')
+                    data.forEach((cat: any) => {
+                        satisfiesJsonApiResource(cat, 'category')
+                        chai.expect(cat.attributes).to.have.property('name')
+
+                        satisfiesJsonApiResourceRelationship(cat, { 'organization': { related: `/orgs/${test_org_id}` } })
+                        satisfiesJsonApiRelatedResource(cat, 'organization', 'organization', test_org_id)
                     });
 
                     done();
@@ -180,7 +187,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -193,12 +200,17 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(200)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
+
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
 
                     let data: any = res.body.data
-                    chai.expect(data).to.have.property('id', created_cat_id)
-                    chai.expect(data).to.have.property('name')
-                    chai.expect(data).to.have.property('organization', test_org_id)
+
+                    satisfiesJsonApiResource(data, 'category', created_cat_id)
+                    chai.expect(data.attributes).to.have.property('name')
+                    satisfiesJsonApiResourceRelationship(data, { 'organization': { related: `/orgs/${test_org_id}` } })
+                    satisfiesJsonApiRelatedResource(data, 'organization', 'organization', test_org_id)
+
                     done()
                 })
         })
@@ -213,7 +225,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -229,12 +241,13 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
 
-                    chai.expect(res.body).to.have.property('status', 'success')
-                    let data: any = res.body.data
-                    chai.expect(data).to.have.property('id', created_cat_id)
-                    chai.expect(data).to.have.property('name', "API Test Category Name")
-                    chai.expect(data).to.have.property('organization', test_org_id)
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
 
+                    let data: any = res.body.data
+                    satisfiesJsonApiResource(data, 'category', created_cat_id)
+                    satisfiesJsonApiResourceRelationship(data, { 'organization': { related: `/orgs/${test_org_id}` } })
+                    satisfiesJsonApiRelatedResource(data, 'organization', 'organization', test_org_id)
                     done()
                 })
         })
@@ -248,7 +261,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -259,11 +272,10 @@ describe('/v1/orgs/<org-id>/categories', function () {
             supertest(server_app)
                 .delete(`/v1/orgs/${test_org_id}/categories/${created_cat_id}`)
                 .auth(auth_token, { type: "bearer" })
-                .expect(200)
+                .expect(204)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-
-                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body).to.be.empty
                     done()
                 })
         })
@@ -277,8 +289,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .expect(404)
                 .end((err, res) => {
                     if (err) { console.error(err); return done(err) }
-
-                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body).to.be.empty
                     done()
                 })
         })

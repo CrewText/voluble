@@ -1,9 +1,7 @@
 import { scopes } from "voluble-common";
 import { UserManager } from "../../user-manager";
-import { ResourceNotFoundError } from '../../voluble-errors';
+import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { Request, Response, NextFunction } from "express";
-
-export class ResourceOutOfUserScopeError extends Error { }
 
 export function setupUserOrganizationMiddleware(req: Request, res: Response, next: NextFunction) {
     let sub_id = req['user'].sub
@@ -13,13 +11,21 @@ export function setupUserOrganizationMiddleware(req: Request, res: Response, nex
         UserManager.getUserById(sub_id)
             .then(function (user) {
                 if (!user) {
-                    res.status(401).jsend.fail(new ResourceNotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
+                    throw new ResourceNotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`)
                 }
                 return user.getOrganization()
             })
             .then(function (org) {
                 req['user'].organization = org.id
                 return next()
+            })
+            .catch(e => {
+                let serialized_data = req.app.locals.serializer.serializeError(e)
+                if (e instanceof ResourceNotFoundError) {
+                    res.status(401).json(serialized_data)
+                } else {
+                    res.status(500).json(serialized_data)
+                }
             })
     }
 }
@@ -30,7 +36,8 @@ export function checkHasOrgAccessMiddleware(req, res, next) {
         next()
     }
     catch (e) {
-        res.status(403).jsend.fail("User does not have access to this resource")
+        let serialized_data = req.app.locals.serializer.serializeError(e)
+        res.status(403).json(serialized_data)
     }
 }
 

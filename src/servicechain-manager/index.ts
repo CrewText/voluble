@@ -128,7 +128,7 @@ export namespace ServicechainManager {
                 let resp: ResponseServicechain = {
                     id: sc.id,
                     name: sc.name,
-                    OrganizationId: (await sc.getOrganization()).id,
+                    organization: (await sc.getOrganization()).id,
                     services: svcs_list,
                     updatedAt: sc.updatedAt,
                     createdAt: sc.createdAt
@@ -150,6 +150,5 @@ export namespace ServicechainManager {
                     return Promise.resolve(destroyedRowsCount)
                 }
             })
-        // TODO: Update SC DELETE route handler to catch this and drop error to ensure idempotence
     }
 }

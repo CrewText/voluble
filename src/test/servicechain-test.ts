@@ -16,7 +16,7 @@ import * as faker from 'faker'
 import * as supertest from 'supertest'
 import { Service } from 'voluble-common'
 import * as server from '../server/server-main'
-import { getAccessToken } from './test-utils'
+import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship, satisfiesJsonApiRelatedResource } from './test-utils'
 
 chai.should()
 chai.use(chaiAsPromised)
@@ -53,10 +53,10 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             .expect(201)
             .end((err, res) => {
                 if (err) { console.log(err); console.log(res.error); return done(err) }
-                chai.expect(res.body).to.have.property('status', "success")
+                chai.expect(res.body).to.have.property('data')
                 chai.expect(res.body.data).to.have.property('id')
-                chai.expect(res.body.data).to.have.property('name')
-                chai.expect(res.body.data).to.have.property('phone_number')
+                chai.expect(res.body.data.attributes).to.have.property('name')
+                chai.expect(res.body.data.attributes).to.have.property('phone_number')
                 test_org_id = res.body.data.id
                 done()
             })
@@ -70,14 +70,14 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             .expect(200)
             .end((err, res) => {
                 if (err) { console.log(err); console.log(res.error); return done(err) }
-                chai.expect(res.body).to.have.property('status', 'success')
+                chai.expect(res.body).to.have.property('data')
                 let response = res.body.data
                 chai.expect(response).to.be.instanceof(Array)
 
                 response.forEach(service => {
                     chai.expect(service).to.have.property('id')
-                    chai.expect(service).to.have.property('name')
-                    chai.expect(service).to.have.property('directory_name')
+                    chai.expect(service.attributes).to.have.property('name')
+                    chai.expect(service.attributes).to.have.property('directory_name')
                 });
                 test_services = response
                 done()
@@ -93,7 +93,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.log(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -113,7 +113,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -130,7 +130,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -148,7 +148,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -166,7 +166,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -193,14 +193,14 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                         console.error(res.body)
                         return done(err)
                     }
-                    chai.expect(res.body).to.have.property('status', 'success')
-                    let response = res.body.data
-                    chai.expect(response).to.have.property('id')
-                    chai.expect(response).to.have.property('name', "API Test Servicechain")
-                    chai.expect(response).to.have.property('services')
-                    chai.expect(response).to.have.property('OrganizationId', test_org_id)
+                    chai.expect(res.body).to.have.property('data')
 
-                    response.services.forEach(svc => {
+                    let response = res.body.data
+                    satisfiesJsonApiResource(response, 'servicechain')
+                    satisfiesJsonApiResourceRelationship(response, { 'organization': { 'related': `/orgs/${test_org_id}` } })
+                    satisfiesJsonApiRelatedResource(response, 'organization', 'organization', test_org_id)
+
+                    response.attributes.services.forEach(svc => {
                         chai.expect(svc).to.have.property('id')
                         chai.expect(svc).to.have.property('service')
                         chai.expect(svc).to.have.property('servicechain')
@@ -220,7 +220,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.log(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -233,25 +233,24 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(200)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
+                    chai.expect(res.body).to.have.property('data')
                     let response = res.body.data
                     chai.expect(response).to.be.instanceOf(Array)
+                    chai.expect(response).to.have.lengthOf(1)
 
                     response.forEach(sc => {
-                        chai.expect(sc).to.have.property('id')
-                        chai.expect(sc).to.have.property('name')
-                        chai.expect(sc).to.have.property('services')
-                        chai.expect(sc).to.have.property('OrganizationId', test_org_id)
+                        satisfiesJsonApiResource(sc, 'servicechain')
+                        satisfiesJsonApiResourceRelationship(sc, { 'organization': { 'related': `/orgs/${test_org_id}` } })
+                        satisfiesJsonApiRelatedResource(sc, 'organization', 'organization', test_org_id)
 
-                        chai.expect(sc.services).to.be.instanceOf(Array)
-
-                        sc.services.forEach(svc => {
+                        sc.attributes.services.forEach(svc => {
                             chai.expect(svc).to.have.property('id')
                             chai.expect(svc).to.have.property('service')
+                            chai.expect(svc).to.have.property('servicechain', created_servicechain_id)
                             chai.expect(svc).to.have.property('priority')
-                            chai.expect(svc).to.have.property('servicechain')
                         });
                     });
+
                     done()
                 })
         })
@@ -266,7 +265,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.log(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -286,16 +285,17 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(200)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
-                    let response = res.body.data
-                    chai.expect(response).to.have.property('id', created_servicechain_id)
-                    chai.expect(response).to.have.property('name')
-                    chai.expect(response).to.have.property('services')
 
-                    chai.expect(response.services).to.be.instanceOf(Array)
-                    response.services.forEach(svc => {
+                    chai.expect(res.body).to.have.property('data')
+                    let response = res.body.data
+                    satisfiesJsonApiResource(response, 'servicechain', created_servicechain_id)
+                    satisfiesJsonApiResourceRelationship(response, { 'organization': { 'related': `/orgs/${test_org_id}` } })
+                    satisfiesJsonApiRelatedResource(response, 'organization', 'organization', test_org_id)
+
+                    response.attributes.services.forEach(svc => {
                         chai.expect(svc).to.have.property('id')
                         chai.expect(svc).to.have.property('service')
+                        chai.expect(svc).to.have.property('servicechain', created_servicechain_id)
                         chai.expect(svc).to.have.property('priority')
                     });
                     done()
@@ -317,7 +317,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -337,7 +337,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -357,7 +357,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(400)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -372,7 +372,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.log(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -382,8 +382,9 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             supertest(server_app)
                 .delete(`/v1/orgs/${test_org_id}/servicechains/${created_servicechain_id}`)
                 .auth(auth_token, { type: "bearer" })
-                .expect(200)
+                .expect(204)
                 .end((err, res) => {
+                    chai.expect(res.body).to.be.empty
                     done()
                 })
         })
@@ -395,6 +396,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(404)
                 .end((err, res) => {
+                    chai.expect(res.body).to.be.empty
                     done()
                 })
         })

@@ -30,13 +30,14 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
             return QueueManager.addMessageReceivedRequest(req.body, service.id)
 
         }).then(() => {
-            res.status(200).jsend.success(request_service_dir)
+            res.status(200).json({})
         })
         .catch((e) => {
+            let serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof PluginDoesNotExistError) {
-                res.status(404).jsend.fail(e.message)
+                res.status(404).json(serialized_err)
             } else {
-                res.status(500).jsend.error(e.message)
+                res.status(500).json(serialized_err)
             }
         })
 });

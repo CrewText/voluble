@@ -15,6 +15,8 @@ export class Contact extends Model implements ContactAttributes {
     public surname!: string
     public email_address!: string
     public phone_number!: string
+    public category!: string
+    public servicechain!: string
 
     public getServicechain!: BelongsToGetAssociationMixin<Servicechain>
     public setServicechain!: BelongsToSetAssociationMixin<Servicechain, Servicechain['id']>
