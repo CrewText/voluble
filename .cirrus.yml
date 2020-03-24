@@ -11,5 +11,5 @@ test_task:
     - tsc -v;
     - tsc
 
-  test_task:
+  test_script:
     - npm test
