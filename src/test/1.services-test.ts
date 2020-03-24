@@ -14,9 +14,8 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import * as supertest from 'supertest'
-import { Service } from 'voluble-common'
 import * as server from '../server/server-main'
-import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship } from './test-utils'
+import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource } from './test-utils'
 
 chai.should()
 chai.use(chaiAsPromised)

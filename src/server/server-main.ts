@@ -116,20 +116,21 @@ serializeTypes(app.locals.serializer)
 
 export async function initServer() {
   logger.debug("Initializing DB")
-  await db.initialize_database();
-
-  // Set up plugin manager
-  logger.info("Initing all plugins");
-  await PluginManager.initAllPlugins();
-
-  svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
-  let p = new Promise<Server>((res, rej) => {
-    svr.once('listening', () => {
-      logger.info("Server listening on " + port)
-      res(svr)
+  return db.initialize_database()
+    .then(() => {
+      // Set up plugin manager
+      logger.info("Initing all plugins");
+      return PluginManager.initAllPlugins();
     })
-  })
-  return p
+    .then(() => {
+      svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
+      return new Promise<Server>((res, rej) => {
+        svr.once('listening', () => {
+          logger.info("Server listening on " + port)
+          res(svr)
+        })
+      })
+    })
 }
 
 export async function shutdownServer() {
