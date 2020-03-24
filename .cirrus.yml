@@ -29,3 +29,5 @@ test_task:
   build_script:
     - tsc -v;
     - tsc
+
+  test_script: npm test
