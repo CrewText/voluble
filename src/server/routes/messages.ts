@@ -1,18 +1,16 @@
 import * as express from "express";
-import validator from 'validator';
 import { MessageStates, scopes } from "voluble-common";
 import * as winston from 'winston';
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
+import { Message } from "../../models/message";
 import { ServicechainManager } from '../../servicechain-manager';
-import { InvalidParameterValueError, ResourceOutOfUserScopeError, ResourceNotFoundError, NotEnoughCreditsError } from '../../voluble-errors';
+import { InvalidParameterValueError, NotEnoughCreditsError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
+import { checkExtendsModel } from "../helpers/check_extends_model";
+import { checkHasCredits } from "../helpers/check_has_credits";
+import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, setupUserOrganizationMiddleware } from '../security/scopes';
-import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
-import { Message } from "../../models/message";
-import { checkExtendsModel } from "../helpers/check_extends_model";
-import { OrgManager } from "../../org-manager";
-import { checkHasCredits } from "../helpers/check_has_credits";
 
 const router = express.Router();
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })

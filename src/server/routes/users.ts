@@ -3,7 +3,7 @@ import { scopes } from "voluble-common";
 import * as winston from 'winston';
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
-import { ResourceNotFoundError, UserAlreadyInOrgError, UserNotInOrgError, InvalidParameterValueError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceNotFoundError, UserNotInOrgError } from '../../voluble-errors';
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 

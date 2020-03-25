@@ -1,6 +1,7 @@
 import * as express from "express";
 import { random } from 'faker';
-import { scopes, PlanTypes } from "voluble-common";
+import validator from "validator";
+import { PlanTypes, scopes } from "voluble-common";
 import * as winston from 'winston';
 import { Organization } from "../../models/organization";
 import { OrgManager } from "../../org-manager";
@@ -9,9 +10,7 @@ import { getE164PhoneNumber } from '../../utilities';
 import { AuthorizationFailedError, InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError, UserAlreadyInOrgError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware, hasScope } from '../security/scopes';
-import { isNumber } from "util";
-import validator from "validator";
+import { checkHasOrgAccessMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
 const router = express.Router();
