@@ -31,7 +31,6 @@ describe('/v1/orgs/<org-id>/categories', function () {
     // Setup auth_token
     this.beforeAll(async function () {
         console.log('Getting auth token')
-        this.timeout(5000)
 
         return Promise.all([server.initServer(), getAccessToken()])
             .then(([server, token]) => {

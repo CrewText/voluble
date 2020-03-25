@@ -27,7 +27,6 @@ describe('/v1/orgs', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
-        this.timeout(5000)
 
         return Promise.all([server.initServer(), getAccessToken()])
             .then(([server, token]) => {

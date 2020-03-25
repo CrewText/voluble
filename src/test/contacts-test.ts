@@ -28,7 +28,6 @@ describe('/v1/orgs/<org-id>/contacts', function () {
     // Setup auth_token
     this.beforeAll(async function () {
         console.log(`Setting up server and access token`)
-        this.timeout(5000)
 
         return Promise.all([server.initServer(), getAccessToken()])
             .then(([server, token]) => {
