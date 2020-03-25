@@ -93,11 +93,12 @@ export async function initServer() {
     app.use(xmlParser({ explicitArray: false }))
     app.use(express.static(path.join(__dirname, 'public')));
 
-    console.log("Using cors")
+    logger.debug("Using cors")
     app.use(cors())
 
     app.options('*', cors()) // include before other routes
 
+    logger.debug('Setting up routes')
     app.use('/v1/', routes_index);
     //app.use('/users', routes_users);
     app.use('/v1/services', routes_services)
@@ -108,25 +109,25 @@ export async function initServer() {
     app.use('/v1/orgs', routes_messages)
     app.use('/v1/orgs', routes_blasts)
     app.use('/v1/orgs', routes_servicechains)
-    return
+    res()
   })
     .then(() => {
       logger.debug("Initializing DB")
       return db.initialize_database()
     })
     .then(() => {
-      logger.info('Serializing models')
+      logger.debug('Serializing models')
       app.locals.serializer = new JSONAPISerializer({ jsonapiObject: false })
       serializeTypes(app.locals.serializer)
       return
     })
     .then(() => {
       // Set up plugin manager
-      logger.info("Initing all plugins");
+      logger.debug("Initing all plugins");
       return PluginManager.initAllPlugins();
     })
     .then(() => {
-      logger.info("Loading queue manager")
+      logger.debug("Loading queue manager")
       QueueManager.init_queues()
       return
     })
