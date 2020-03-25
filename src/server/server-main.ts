@@ -21,8 +21,7 @@ logger.add(new winston.transports.Console())
 
 const http = require('https');
 
-logger.info("Loading queue manager")
-QueueManager.init_queues()
+
 
 logger.info("Loading routes")
 const routes_index = require('./routes')
@@ -41,57 +40,29 @@ const app = express();
 
 let svr: Server;
 
-function onError(error: any) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
+// function onError(error: any) {
+//   if (error.syscall !== 'listen') {
+//     throw error;
+//   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+//   var bind = typeof port === 'string'
+//     ? 'Pipe ' + port
+//     : 'Port ' + port;
 
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-var port = parseInt(process.env.PORT, 10) || 5000
-app.set('port', port);
-
-// uncomment after placing your favicon in /public
-//app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(xmlParser({ explicitArray: false }))
-app.use(express.static(path.join(__dirname, 'public')));
-
-//let corsWhitelist = [/localhost/, /lvh\.me/, /127\.0\.0\.1/, /voluble-poc\.herokuapp\.com$/]
-console.log("Using cors")
-app.use(cors())
-
-app.options('*', cors()) // include before other routes
-
-app.use('/v1/', routes_index);
-//app.use('/users', routes_users);
-app.use('/v1/services', routes_services)
-app.use('/v1/services', routes_service_endpoint_generic)
-app.use('/v1/orgs', routes_orgs)
-app.use('/v1/orgs', routes_contacts)
-app.use('/v1/orgs', routes_categories)
-app.use('/v1/orgs', routes_messages)
-app.use('/v1/orgs', routes_blasts)
-app.use('/v1/orgs', routes_servicechains)
+//   // handle specific listen errors with friendly messages
+//   switch (error.code) {
+//     case 'EACCES':
+//       console.error(bind + ' requires elevated privileges');
+//       process.exit(1);
+//       break;
+//     case 'EADDRINUSE':
+//       console.error(bind + ' is already in use');
+//       process.exit(1);
+//       break;
+//     default:
+//       throw error;
+//   }
+// }
 
 function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.headers['x-forwarded-proto'] !== 'https') {
@@ -110,17 +81,53 @@ if (process.env.NODE_ENV != "production") {
   app.use(forceSSL)
 }
 
-logger.info('Serializing models')
-app.locals.serializer = new JSONAPISerializer({ jsonapiObject: false })
-serializeTypes(app.locals.serializer)
-
 export async function initServer() {
-  logger.debug("Initializing DB")
-  return db.initialize_database()
+  var port = parseInt(process.env.PORT, 10) || 5000
+  return new Promise((res, rej) => {
+    app.set('port', port);
+
+    // uncomment after placing your favicon in /public
+    //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+    app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(xmlParser({ explicitArray: false }))
+    app.use(express.static(path.join(__dirname, 'public')));
+
+    console.log("Using cors")
+    app.use(cors())
+
+    app.options('*', cors()) // include before other routes
+
+    app.use('/v1/', routes_index);
+    //app.use('/users', routes_users);
+    app.use('/v1/services', routes_services)
+    app.use('/v1/services', routes_service_endpoint_generic)
+    app.use('/v1/orgs', routes_orgs)
+    app.use('/v1/orgs', routes_contacts)
+    app.use('/v1/orgs', routes_categories)
+    app.use('/v1/orgs', routes_messages)
+    app.use('/v1/orgs', routes_blasts)
+    app.use('/v1/orgs', routes_servicechains)
+  })
+    .then(() => {
+      logger.debug("Initializing DB")
+      return db.initialize_database()
+    })
+    .then(() => {
+      logger.info('Serializing models')
+      app.locals.serializer = new JSONAPISerializer({ jsonapiObject: false })
+      serializeTypes(app.locals.serializer)
+      return
+    })
     .then(() => {
       // Set up plugin manager
       logger.info("Initing all plugins");
       return PluginManager.initAllPlugins();
+    })
+    .then(() => {
+      logger.info("Loading queue manager")
+      QueueManager.init_queues()
+      return
     })
     .then(() => {
       svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);

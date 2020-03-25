@@ -61,6 +61,7 @@ export class RMQWorker extends EventEmitter {
 
 export namespace QueueManager {
     let queue_list = ["message-send", "message-state-update", "message-recv"]
+    let worker_send_msg_update: RMQWorker
 
     export interface MessageReceivedRequest {
         request_data: any,
@@ -80,7 +81,7 @@ export namespace QueueManager {
     export function init_queues(): void {
         createQueues()
 
-        let worker_send_msg_update = new RMQWorker("message-state-update", rsmq)
+        worker_send_msg_update = new RMQWorker("message-state-update", rsmq)
 
         // let worker_send_msg_update = new rsmqWorker("message-state-update", { redis: client })
         worker_send_msg_update.on("message", function (message, next, message_id) {
@@ -101,6 +102,7 @@ export namespace QueueManager {
     }
 
     export function shutdownQueues() {
+        if (worker_send_msg_update) { worker_send_msg_update.stop() }
         rsmq.quit()
         client.end(process.env.NODE_ENV != "production")
     }
