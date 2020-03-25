@@ -10,6 +10,8 @@ import { PluginManager } from '../plugin-manager'
 import { QueueManager, RMQWorker } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
+import { OrgManager } from '../org-manager'
+import { UserManager } from '../user-manager'
 
 let logger = winston.loggers.add(process.mainModule.filename, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
@@ -63,6 +65,15 @@ worker_msg_send.on("message", async function (message: string, next: () => void,
     try {
         let msg = await MessageManager.getMessageFromId(parsed_msg_id)
         await MessageManager.doMessageSend(msg)
+            .then(msg => {
+                return msg.getUser()
+                    .then(user => {
+                        return user.getOrganization()
+                    })
+                    .then(org => {
+                        return org.decrement('credits')
+                    })
+            })
     } catch (e) {
         logger.error(e)
     } finally {
