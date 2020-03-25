@@ -56,12 +56,13 @@ let worker_msg_send = new RMQWorker("message-send", rsmq_client)
 let worker_msg_recv = new RMQWorker("message-recv", rsmq_client)
 
 worker_msg_send.on("message", async function (message: string, next: () => void, message_id: string) {
-    let parsed_msg: Message = JSON.parse(message)
-    logger.debug(`Main: Worker has collected message ${parsed_msg.id} for sending`)
-    QueueManager.addMessageStateUpdateRequest(parsed_msg.id, "MSG_SENDING")
-    logger.debug(`Main: Attempting message send`, { 'message': parsed_msg.id })
+    let parsed_msg_id: string = message
+    logger.debug(`Main: Worker has collected message ${parsed_msg_id} for sending`)
+    QueueManager.addMessageStateUpdateRequest(parsed_msg_id, "MSG_SENDING")
+    logger.debug(`Main: Attempting message send`, { 'message': parsed_msg_id })
     try {
-        await MessageManager.doMessageSend(parsed_msg)
+        let msg = await MessageManager.getMessageFromId(parsed_msg_id)
+        await MessageManager.doMessageSend(msg)
     } catch (e) {
         logger.error(e)
     } finally {

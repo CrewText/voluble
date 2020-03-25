@@ -111,7 +111,7 @@ export namespace QueueManager {
         logger.debug("Sending message with ID " + message.id)
         rsmq.sendMessage({
             qname: "message-send",
-            message: JSON.stringify(message)
+            message: message.id
         }, function (err, resp) {
             if (resp) {
                 logger.info("Added send request for message " + message.id)
