@@ -1,11 +1,11 @@
-if (!process.env.PATH || process.env.PATH.lastIndexOf("/app/.heroku") == -1) {
+if (process.env.PATH.includes("/app/.heroku") || process.env.CIRRUS_CI) {
+    console.info("Running on Heroku/CI, using local config vars")
+} else {
     console.info("Importing .env config vars")
     const config = require('dotenv').config()
     if (config.error) {
         throw config.error
     }
-} else {
-    console.info("Running on Heroku, using local config vars")
 }
 
 process.env.NODE_ENV = "test"
@@ -14,28 +14,28 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import * as supertest from 'supertest'
-import { Service } from 'voluble-common'
 import * as server from '../server/server-main'
-import { getAccessToken } from './test-utils'
+import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource } from './test-utils'
 
 chai.should()
 chai.use(chaiAsPromised)
 let auth_token: string
 let server_app;
 
-let available_services: Service[]
-
+let available_services: any[]
 describe('/v1/services', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
-        this.timeout(5000)
+        this.timeout(10000)
 
-        return new Promise(async (res, rej) => {
-            server_app = await server.initServer()
-            auth_token = await getAccessToken()
-            res()
-        })
+        return Promise.all([server.initServer(), getAccessToken()])
+            .then(([server, token]) => {
+                server_app = server
+                auth_token = token
+                // done()
+                return true
+            })
     })
 
     this.afterAll((done) => {
@@ -50,7 +50,7 @@ describe('/v1/services', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.log(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -61,17 +61,17 @@ describe('/v1/services', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
+
                     let response = res.body.data
                     chai.expect(response).to.be.instanceof(Array)
 
                     response.forEach(service => {
-                        chai.expect(service).to.have.property('id')
-                        chai.expect(service).to.have.property('name')
-                        chai.expect(service).to.have.property('directory_name')
+                        satisfiesJsonApiResource(service, 'service')
                     });
-                    available_services = <Service[]>response
+                    available_services = response
                     done()
                 })
         })
@@ -84,7 +84,7 @@ describe('/v1/services', function () {
                 .expect(401)
                 .end((err, res) => {
                     if (err) { console.log(err); return done(err) }
-                    chai.expect(res.body).to.have.property('status', "fail")
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -96,11 +96,12 @@ describe('/v1/services', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
-                    chai.expect(res.body.data).to.have.property('id')
-                    chai.expect(res.body.data).to.have.property('name')
-                    chai.expect(res.body.data).to.have.property('directory_name')
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
+
+                    satisfiesJsonApiResource(res.body.data, 'service', available_services[0].id)
+
                     done()
                 })
         })
@@ -114,8 +115,8 @@ describe('/v1/services', function () {
                 .send({ data: 'some data here' })
                 .expect(404)
                 .end((err, res) => {
-                    if (err) { done(err) }
-                    chai.expect(res.body).to.have.property('status', 'fail')
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
                     done()
                 })
         })
@@ -124,14 +125,13 @@ describe('/v1/services', function () {
     describe('POST /v1/services/<svc_id>/', function () {
         it("should successfully touch a plugin endpoint", function (done) {
             if (!available_services) { this.skip() }
-
             supertest(server_app)
-                .post(`/v1/services/${available_services[0].directory_name}/endpoint`)
+                .post(`/v1/services/${available_services[0].attributes.directory_name}/endpoint`)
                 .send({ data: 'some data here' })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { done(err) }
-                    chai.expect(res.body).to.have.property('status', 'success')
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.be.empty
                     done()
                 })
         })

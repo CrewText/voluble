@@ -1,29 +1,36 @@
-import * as Sequelize from "sequelize"
-import { MessageInstance } from './message'
-import { Message as MessageAttributes, Blast as BlastAttributes } from 'voluble-common'
+import { HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, DataTypes, Sequelize } from "sequelize"
+import { Blast as BlastAttributes } from 'voluble-common'
+import { Message } from './message'
 
-export interface BlastInstance extends Sequelize.Instance<BlastAttributes>, BlastAttributes {
-    getMessages: Sequelize.HasManyGetAssociationsMixin<MessageInstance>
-    setMessages: Sequelize.HasManySetAssociationsMixin<MessageInstance, MessageInstance['id']>,
-    addMessage: Sequelize.HasManyAddAssociationMixin<MessageInstance, MessageInstance['id']>,
-    addMessages: Sequelize.HasManyAddAssociationsMixin<MessageInstance, MessageInstance['id']>,
-    createMessage: Sequelize.HasManyCreateAssociationMixin<MessageAttributes, MessageInstance>,
-    countMessages: Sequelize.HasManyCountAssociationsMixin
-    hasMessage: Sequelize.HasManyHasAssociationMixin<MessageInstance, MessageInstance['id']>,
-    hasMessages: Sequelize.HasManyHasAssociationsMixin<MessageInstance, MessageInstance['id']>,
-    removeMessage: Sequelize.HasManyRemoveAssociationMixin<MessageAttributes, MessageInstance['id']>,
-    removeMessages: Sequelize.HasManyRemoveAssociationsMixin<MessageInstance, MessageInstance['id']>
-}
+export class Blast extends Model implements BlastAttributes {
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
+    public id!: string
+    public name!: string
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Blast = sequelize.define('Blast', {
-        id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
+    public getMessages!: HasManyGetAssociationsMixin<Message>
+    public setMessages!: HasManySetAssociationsMixin<Message, Message['id']>
+    public addMessage!: HasManyAddAssociationMixin<Message, Message['id']>
+    public addMessages!: HasManyAddAssociationsMixin<Message, Message['id']>
+    public createMessage!: HasManyCreateAssociationMixin<Message>
+    public countMessages!: HasManyCountAssociationsMixin
+    public hasMessage!: HasManyHasAssociationMixin<Message, Message['id']>
+    public hasMessages!: HasManyHasAssociationsMixin<Message, Message['id']>
+    public removeMessage!: HasManyRemoveAssociationMixin<Message, Message['id']>
+    public removeMessages!: HasManyRemoveAssociationsMixin<Message, Message['id']>
+
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+            id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+                defaultValue: DataTypes.UUIDV4
+            },
+            name: DataTypes.STRING
         },
-        name: DataTypes.STRING
-    })
-
-    return Blast
+            {
+                sequelize: sequelize,
+                tableName: "blasts"
+            })
+    }
 }

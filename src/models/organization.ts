@@ -1,72 +1,84 @@
-import * as Sequelize from "sequelize";
-import { Category as CategoryAttributes, Contact as ContactAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes, User as UserAttributes } from 'voluble-common';
+import { DataTypes, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize, Association } from 'sequelize';
+import { Org as OrgAttributes } from 'voluble-common';
 import { getE164PhoneNumber } from '../utilities';
-import { CategoryInstance } from "./category";
-import { ContactInstance } from "./contact";
-import { ServicechainInstance } from "./servicechain";
-import { UserInstance } from "./user";
+import { Category } from "./category";
+import { Contact } from "./contact";
+import { Servicechain } from "./servicechain";
+import { User } from "./user";
 
-export interface OrgInstance extends Sequelize.Instance<OrgAttributes>, OrgAttributes {
-    getUsers: Sequelize.HasManyGetAssociationsMixin<UserInstance>
-    setUsers: Sequelize.HasManySetAssociationsMixin<UserInstance, UserInstance['id']>,
-    addUser: Sequelize.HasManyAddAssociationMixin<UserInstance, UserInstance['id']>,
-    addUsers: Sequelize.HasManyAddAssociationsMixin<UserInstance, UserInstance['id']>,
-    createUser: Sequelize.HasManyCreateAssociationMixin<UserAttributes, UserInstance>,
-    countUsers: Sequelize.HasManyCountAssociationsMixin
-    hasUser: Sequelize.HasManyHasAssociationMixin<UserInstance, UserInstance['id']>,
-    hasUsers: Sequelize.HasManyHasAssociationsMixin<UserInstance, UserInstance['id']>,
-    removeUser: Sequelize.HasManyRemoveAssociationMixin<UserAttributes, UserInstance['id']>,
-    removeUsers: Sequelize.HasManyRemoveAssociationsMixin<UserInstance, UserInstance['id']>
+export class Organization extends Model implements OrgAttributes {
+    public id!: string
+    public name!: string
+    public phone_number!: string
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
 
-    getContacts: Sequelize.HasManyGetAssociationsMixin<ContactInstance>
-    setContacts: Sequelize.HasManySetAssociationsMixin<ContactInstance, ContactInstance['id']>,
-    addContact: Sequelize.HasManyAddAssociationMixin<ContactInstance, ContactInstance['id']>,
-    addContacts: Sequelize.HasManyAddAssociationsMixin<ContactInstance, ContactInstance['id']>,
-    createContact: Sequelize.HasManyCreateAssociationMixin<ContactAttributes, ContactInstance>,
-    countContacts: Sequelize.HasManyCountAssociationsMixin
-    hasContact: Sequelize.HasManyHasAssociationMixin<ContactInstance, ContactInstance['id']>,
-    hasContacts: Sequelize.HasManyHasAssociationsMixin<ContactInstance, ContactInstance['id']>,
-    removeContact: Sequelize.HasManyRemoveAssociationMixin<ContactAttributes, ContactInstance['id']>,
-    removeContacts: Sequelize.HasManyRemoveAssociationsMixin<ContactInstance, ContactInstance['id']>
+    // public static associations: {
+    //     users: Association<OrganizationModel, UserModel>
+    // }
 
-    getServicechains: Sequelize.HasManyGetAssociationsMixin<ServicechainInstance>
-    setServicechains: Sequelize.HasManySetAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
-    addServicechain: Sequelize.HasManyAddAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
-    addServicechains: Sequelize.HasManyAddAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
-    createServicechain: Sequelize.HasManyCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,
-    countServicechains: Sequelize.HasManyCountAssociationsMixin
-    hasServicechain: Sequelize.HasManyHasAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
-    hasServicechains: Sequelize.HasManyHasAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>,
-    removeServicechain: Sequelize.HasManyRemoveAssociationMixin<ServicechainAttributes, ServicechainInstance['id']>,
-    removeServicechains: Sequelize.HasManyRemoveAssociationsMixin<ServicechainInstance, ServicechainInstance['id']>
+    public getUsers!: HasManyGetAssociationsMixin<User>
+    public setUsers!: HasManySetAssociationsMixin<User, User['id']>
+    public addUser!: HasManyAddAssociationMixin<User, User['id']>
+    public addUsers!: HasManyAddAssociationsMixin<User, User['id']>
+    public createUser!: HasManyCreateAssociationMixin<User>
+    public countUsers!: HasManyCountAssociationsMixin
+    public hasUser!: HasManyHasAssociationMixin<User, User['id']>
+    public hasUsers!: HasManyHasAssociationsMixin<User, User['id']>
+    public removeUser!: HasManyRemoveAssociationMixin<User, User['id']>
+    public removeUsers!: HasManyRemoveAssociationsMixin<User, User['id']>
 
-    getCategories: Sequelize.HasManyGetAssociationsMixin<CategoryInstance>
-    setCategories: Sequelize.HasManySetAssociationsMixin<CategoryInstance, CategoryInstance['id']>,
-    addCategory: Sequelize.HasManyAddAssociationMixin<CategoryInstance, CategoryInstance['id']>,
-    addCategories: Sequelize.HasManyAddAssociationsMixin<CategoryInstance, CategoryInstance['id']>,
-    createCategory: Sequelize.HasManyCreateAssociationMixin<CategoryAttributes, CategoryInstance>,
-    countCategories: Sequelize.HasManyCountAssociationsMixin
-    hasCategory: Sequelize.HasManyHasAssociationMixin<CategoryInstance, CategoryInstance['id']>,
-    hasCategories: Sequelize.HasManyHasAssociationsMixin<CategoryInstance, CategoryInstance['id']>,
-    removeCategory: Sequelize.HasManyRemoveAssociationMixin<CategoryAttributes, CategoryInstance['id']>,
-    removeCategories: Sequelize.HasManyRemoveAssociationsMixin<CategoryInstance, CategoryInstance['id']>
+    public getContacts!: HasManyGetAssociationsMixin<Contact>
+    public setContacts!: HasManySetAssociationsMixin<Contact, Contact['id']>
+    public addContact!: HasManyAddAssociationMixin<Contact, Contact['id']>
+    public addContacts!: HasManyAddAssociationsMixin<Contact, Contact['id']>
+    public createContact: HasManyCreateAssociationMixin<Contact>
+    public countContacts!: HasManyCountAssociationsMixin
+    public hasContact!: HasManyHasAssociationMixin<Contact, Contact['id']>
+    public hasContacts!: HasManyHasAssociationsMixin<Contact, Contact['id']>
+    public removeContact!: HasManyRemoveAssociationMixin<Contact, Contact['id']>
+    public removeContacts!: HasManyRemoveAssociationsMixin<Contact, Contact['id']>
 
-}
+    public getServicechains!: HasManyGetAssociationsMixin<Servicechain>
+    public setServicechains!: HasManySetAssociationsMixin<Servicechain, Servicechain['id']>
+    public addServicechain!: HasManyAddAssociationMixin<Servicechain, Servicechain['id']>
+    public addServicechains!: HasManyAddAssociationsMixin<Servicechain, Servicechain['id']>
+    public createServicechain!: HasManyCreateAssociationMixin<Servicechain>
+    public countServicechains!: HasManyCountAssociationsMixin
+    public hasServicechain!: HasManyHasAssociationMixin<Servicechain, Servicechain['id']>
+    public hasServicechains!: HasManyHasAssociationsMixin<Servicechain, Servicechain['id']>
+    public removeServicechain!: HasManyRemoveAssociationMixin<Servicechain, Servicechain['id']>
+    public removeServicechains!: HasManyRemoveAssociationsMixin<Servicechain, Servicechain['id']>
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Organization = sequelize.define('Organization', {
-        id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
-        },
-        name: DataTypes.STRING,
-        phone_number: {
-            type: DataTypes.STRING, allowNull: false, validate: {
-                isPhoneNumber(value) { return getE164PhoneNumber(value) }
+    public getCategories!: HasManyGetAssociationsMixin<Category>
+    public setCategories!: HasManySetAssociationsMixin<Category, Category['id']>
+    public addCategory!: HasManyAddAssociationMixin<Category, Category['id']>
+    public addCategories!: HasManyAddAssociationsMixin<Category, Category['id']>
+    public createCategory!: HasManyCreateAssociationMixin<Category>
+    public countCategories!: HasManyCountAssociationsMixin
+    public hasCategory!: HasManyHasAssociationMixin<Category, Category['id']>
+    public hasCategories!: HasManyHasAssociationsMixin<Category, Category['id']>
+    public removeCategory!: HasManyRemoveAssociationMixin<Category, Category['id']>
+    public removeCategories!: HasManyRemoveAssociationsMixin<Category, Category['id']>
+
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+            id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+                defaultValue: DataTypes.UUIDV4
+            },
+            name: DataTypes.STRING,
+            phone_number: {
+                type: DataTypes.STRING, allowNull: false, validate: {
+                    isPhoneNumber(value: string) { return getE164PhoneNumber(value) }
+                }
             }
-        }
-    })
+        },
+            {
+                sequelize,
+                tableName: "organizations"
+            })
+    }
 
-    return Organization
 }

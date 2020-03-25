@@ -1,35 +1,43 @@
+import { scopes } from "voluble-common";
 import { UserManager } from "../../user-manager";
-const errs = require('common-errors')
-import { scopes } from "voluble-common"
+import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
+import { Request, Response, NextFunction } from "express";
 
-export class ResourceOutOfUserScopeError extends Error { }
-
-export function setupUserOrganizationMiddleware(req, res, next) {
-    let sub_id = req.user.sub
+export function setupUserOrganizationMiddleware(req: Request, res: Response, next: NextFunction) {
+    let sub_id = req['user'].sub
     if (sub_id == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
-        next() // test client, let it do everything
+        return next() // test client, let it do everything
     } else {
-        UserManager.getUserFromAuth0Id(sub_id)
+        UserManager.getUserById(sub_id)
             .then(function (user) {
                 if (!user) {
-                    res.status(400).jsend.fail(new errs.NotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`))
+                    throw new ResourceNotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`)
                 }
                 return user.getOrganization()
             })
             .then(function (org) {
-                req.user.organization = org.id
-                next()
+                req['user'].organization = org.id
+                return next()
+            })
+            .catch(e => {
+                let serialized_data = req.app.locals.serializer.serializeError(e)
+                if (e instanceof ResourceNotFoundError) {
+                    res.status(401).json(serialized_data)
+                } else {
+                    res.status(500).json(serialized_data)
+                }
             })
     }
 }
 
 export function checkHasOrgAccessMiddleware(req, res, next) {
     try {
-        checkHasOrgAccess(req.user, req.params.org_id)
+        checkHasOrgAccess(req['user'], req.params.org_id)
         next()
     }
     catch (e) {
-        res.status(403).jsend.fail("User does not have access to this resource")
+        let serialized_data = req.app.locals.serializer.serializeError(e)
+        res.status(403).json(serialized_data)
     }
 }
 

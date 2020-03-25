@@ -1,17 +1,19 @@
-import * as BBPromise from "bluebird";
 import * as express from "express";
-import { scopes } from "voluble-common";
+import validator from 'validator';
+import { MessageStates, scopes } from "voluble-common";
+import * as winston from 'winston';
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
-import { checkJwt, checkJwtErr, checkScopesMiddleware } from '../security/jwt';
-import { setupUserOrganizationMiddleware, checkHasOrgAccess, ResourceOutOfUserScopeError } from '../security/scopes';
-import { MessageStates } from 'voluble-common'
-import validator from 'validator'
-import { InvalidParameterValueError } from '../../voluble-errors'
-const router = express.Router();
-const winston = require('winston')
+import { InvalidParameterValueError, ResourceOutOfUserScopeError, ResourceNotFoundError } from '../../voluble-errors';
+import { checkJwt, checkScopesMiddleware } from '../security/jwt';
+import { checkHasOrgAccess, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
+import { Message } from "../../models/message";
+import { checkExtendsModel } from "../helpers/check_extends_model";
 
+const router = express.Router();
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
@@ -40,30 +42,25 @@ const winston = require('winston')
  * 
  */
 router.get('/:org_id/messages/', checkJwt,
-  checkJwtErr,
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
+  checkLimit(0, 100),
+  checkOffset(0),
   async function (req, res, next) {
-
     try {
-      // If the GET param 'offset' is supplied, use it. Otherwise, use 0.
-      let offset = (req.query.offset == undefined ? 0 : req.query.offset)
-      if (!validator.isInt(offset)) { throw new InvalidParameterValueError(`Supplied parameter value for 'offset' is not an integer`) }
-
-      checkHasOrgAccess(req.user, req.params.org_id)
-
-      let msg_ids = await MessageManager.getHundredMessageIds(offset, req.params.org_id)
-
-      res.status(200).jsend.success(msg_ids)
+      checkHasOrgAccess(req['user'], req.params.org_id)
+      let messages = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id)
+      let serialized = req.app.locals.serializer('message', messages)
+      res.status(200).json(serialized)
     }
-
     catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail(e.message)
+        res.status(400).json(serialized_err)
       } else if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
       } else {
-        res.status(500).jsend.error(e.message)
+        res.status(500).json(serialized_err)
       }
     }
 
@@ -74,23 +71,26 @@ router.get('/:org_id/messages/', checkJwt,
  * Lists all of the details about the contact with the specified ID.
  */
 router.get('/:org_id/messages/:message_id', checkJwt,
-  checkJwtErr, checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
+  checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware, async function (req: any, res: any, _next) {
 
     try {
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
       let msg = await MessageManager.getMessageFromId(req.params.message_id)
       if (msg) {
-        res.status(200).jsend.success(msg)
+        res.status(200).json(await req.app.locals.serializer.serializeAsync('message', msg))
       } else {
-        res.status(404).jsend.fail(`Resource with ID ${req.params.message_id} not found`)
+        throw new ResourceNotFoundError(`Resource with ID ${req.params.message_id} not found`)
       }
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
+      } else if (e instanceof ResourceNotFoundError) {
+        res.status(404).json(serialized_err)
       } else {
-        res.status(500).jsend.error(e.message)
+        res.status(500).json(serialized_err)
       }
     }
 
@@ -101,39 +101,39 @@ router.get('/:org_id/messages/:message_id', checkJwt,
  * Handles the route POST /messages
  * Creates a new message, adds it to the database and attempts to send it.
  */
-router.post('/:org_id/messages/', checkJwt, checkJwtErr,
+router.post('/:org_id/messages/', checkJwt,
   checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
   async function (req, res, next) {
     try {
-      if (!req.body.contact_id) {
-        throw new InvalidParameterValueError(`Invalid value for parameter 'contact_id': ${req.body.contact_id}`)
-      }
-      if (!req.body.msg_body) {
-        throw new InvalidParameterValueError(`Invalid value for parameter 'msg_body': ${req.body.msg_body}`)
-      }
-      checkHasOrgAccess(req.user, req.params.org_id)
+      checkExtendsModel(req.body, Message)
+      checkHasOrgAccess(req['user'], req.params.org_id)
 
-      let contact = await ContactManager.getContactWithId(req.body.contact_id)
-      let sc = req.body.servicechain_id ? await ServicechainManager.getServicechainById(req.body.servicechain_id) : await contact.getServicechain()
+      let contact = await ContactManager.getContactWithId(req.body.contact)
+      let sc = req.body.ServicechainId ? await ServicechainManager.getServicechainById(req.body.ServicechainId) : await contact.getServicechain()
 
-      let msg = await MessageManager.createMessage(req.body.msg_body,
-        req.body.contact_id,
+      let msg = await MessageManager.createMessage(req.body.body,
+        req.body.contact,
         req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
         MessageStates.MSG_PENDING,
         sc.id || null,
-        req.body.is_reply_to || null)
+        req.body.is_reply_to || null,
+        req['user'].sub || null)
 
       msg = MessageManager.sendMessage(msg)
 
-      res.status(200).jsend.success(msg)
+      let serialized = await req.app.locals.serializer.serializeAsync('message', msg)
+      res.status(200).json(serialized)
 
     } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
-        res.status(403).jsend.fail(e.message)
+        res.status(403).json(serialized_err)
       } else if (e instanceof InvalidParameterValueError) {
-        res.status(400).jsend.fail(e.message)
+        res.status(400).json(serialized_err)
+        logger.warn(e)
       } else {
-        res.status(500).jsend.error(e.message)
+        res.status(500).json(serialized_err)
+        logger.error(e)
       }
     }
   })

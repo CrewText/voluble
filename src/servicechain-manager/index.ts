@@ -1,9 +1,13 @@
-const winston = require('winston')
-import * as BBPromise from "bluebird"
-let errs = require('common-errors')
-import * as db from '../models'
+import { Servicechain as ServicechainAttrs, ServicesInSC as ServicesInSCAttrs } from 'voluble-common'
+import * as winston from 'winston'
 import { ContactManager } from '../contact-manager/'
-import { Servicechain, ServicesInSC } from 'voluble-common'
+import * as db from '../models'
+import { Service } from '../models/service'
+import { Servicechain } from '../models/servicechain'
+import { ServicesInSC } from '../models/servicesInServicechain'
+import { ResourceNotFoundError } from '../voluble-errors'
+
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'SCMgr' })
 
 /**
  * The ServicechainManager handles all operations that relate to Servicechains and ServiceInServicechains, which includes
@@ -19,19 +23,18 @@ export namespace ServicechainManager {
 
     /* This is what is returned when constructing a full Servicechain with associated Service IDs.
     Note, it does NOT represent a Sequelize object. */
-    export interface ResponseServicechain extends Servicechain {
-        services: ServicesInSC[]
+    export interface ResponseServicechain extends ServicechainAttrs {
+        services: ServicesInSCAttrs[]
     }
 
-    export class ServicechainNotFoundError extends Error { }
-
-    export const EmptyServicechainError = errs.helpers.generateClass('EmptyServicechainError')
+    // export class ResourceNotFoundError extends Error { }
+    export class EmptyServicechainError extends Error { }
 
     /**
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
      */
-    export function getServicesInServicechain(servicechain_id: string): BBPromise<db.ServicesInSCInstance[]> {
+    export function getServicesInServicechain(servicechain_id: string): Promise<ServicesInSC[]> {
         return db.models.ServicesInSC.findAll({
             where: {
                 servicechainId: servicechain_id
@@ -40,84 +43,61 @@ export namespace ServicechainManager {
         })
     }
 
-    export function getServicechainFromContactId(contact_id: string): BBPromise<db.ServicechainInstance | null> {
+    export function getServicechainFromContactId(contact_id: string): Promise<Servicechain | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (cont_id) {
-                return db.models.Contact.findById(cont_id)
+                return db.models.Contact.findByPk(cont_id)
             })
             .then(function (contact) {
                 return contact.getServicechain()
             })
     }
 
-    export function getAllServicechains(): BBPromise<db.ServicechainInstance[]> {
+    export function getAllServicechains(): Promise<Servicechain[]> {
         return db.models.Servicechain.findAll()
     }
 
-    export function getServicechainById(id: string): BBPromise<db.ServicechainInstance | null> {
-        return db.models.Servicechain.findById(id)
+    export function getServicechainById(id: string): Promise<Servicechain | null> {
+        return db.models.Servicechain.findByPk(id)
     }
 
-    export function getServiceInServicechainByPriority(sc_id: string, priority: number): BBPromise<db.ServiceInstance | null> {
+    export async function getServiceInServicechainByPriority(sc_id: string, priority: number): Promise<Service> {
 
-        return db.models.Servicechain.findById(sc_id, {
-            include: [
-                {
-                    model: db.models.Service,
-                    through: {
-                        where: {
-                            priority: priority
-                        }
-                    }
-                }
-            ]
-        }).then(function (sc) {
-            if (sc) {
-                //@ts-ignore
-                if (sc.Services.length) {
-                    //@ts-ignore
-                    let sc_to_ret: db.ServiceInstance = sc.Services[0]
-                    return BBPromise.resolve(sc_to_ret)
-                } else {
-                    return BBPromise.reject(new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`))
-                }
-            } else {
-                return BBPromise.reject(new ServicechainNotFoundError(`Servicechain with ID ${sc_id} does not exist`))
-            }
-        })
+        let sc = await db.models.Servicechain.findByPk(sc_id)
+
+        if (!sc) { throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} does not exist`) }
+
+        let svcs = await sc.getServices()
+
+        if (!svcs) { throw new EmptyServicechainError(`Servicechain does not contain a service with priority ${priority}`) }
+
+        return svcs[0]
     }
 
-    export function getServiceCountInServicechain(sc_id: string): BBPromise<number> {
-        return db.models.Servicechain.findById(sc_id)
-            .then(function (sc) {
-                if (sc) {
-                    return sc.getServices()
-                        .then(function (svcs) {
-                            if (svcs) {
-                                return svcs.length
-                            } else {
-                                throw new EmptyServicechainError(`No plugins found in servicechain ${sc_id}`)
-                            }
-                        })
-                } else {
-                    return BBPromise.reject(new ServicechainNotFoundError(`No servicechain found with ID ${sc_id}`))
-                }
-            })
+    export async function getServiceCountInServicechain(sc_id: string): Promise<number> {
+        let sc = await db.models.Servicechain.findByPk(sc_id)
+        if (sc) {
+            let count = await sc.countServices()
+            if (count) { return count }
+            else { throw new EmptyServicechainError(`No plugins found in servicechain ${sc_id}`) }
+
+        } else {
+            throw new ResourceNotFoundError(`No servicechain found with ID ${sc_id}`)
+        }
     }
 
     /**
      * Creates a new Servicechain from the name and service IDs provided. Returns a Promise for the Sequelize object representing the new Servicechain.
      * @param {string} name The name of the new Servicechain
      */
-    export function createNewServicechain(name: string, org_id: string): BBPromise<db.ServicechainInstance> {
+    export function createNewServicechain(name: string): Promise<Servicechain> {
         // First, create the new SC itself
         return db.models.Servicechain.create({
-            OrganizationId: org_id,
             name: name
         })
     }
 
-    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): BBPromise<db.ServicesInSCInstance> {
+    export function addServiceToServicechain(sc_id: string, service_id: string, priority: number): Promise<ServicesInSC> {
         return db.models.ServicesInSC.create({
             servicechain: sc_id,
             service: service_id,
@@ -126,36 +106,32 @@ export namespace ServicechainManager {
     }
 
     export async function getFullServicechain(sc_id: string) {
-
-        return db.models.Servicechain.findByPk(sc_id, {
-            include: [
-                {
-                    model: db.models.Service,
-                    as: 'services'
-                }
-            ]
-        })
-            .then((sc) => {
+        return db.models.Servicechain.findByPk(sc_id
+        )
+            .then(async (sc) => {
                 if (!sc) {
-                    throw new ServicechainNotFoundError(`Servicechain with ID ${sc_id} not found`)
+                    throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`)
                 }
-                let services_in_sc_list: ServicesInSC[] = []
+                let svcs = await sc.getServices()
 
-                // @ts-ignore
-                sc.services.forEach(svc => {
-                    services_in_sc_list.push({
+                let svcs_list: ServicesInSCAttrs[] = svcs.map((svc) => {
+                    return {
                         id: svc.ServicesInSC.id,
                         service: svc.id,
-                        priority: svc.ServicesInSC.id,
-                        servicechain: sc.id
-                    })
+                        priority: svc.ServicesInSC.priority,
+                        servicechain: sc.id,
+                        createdAt: svc.ServicesInSC.createdAt,
+                        updatedAt: svc.ServicesInSC.updatedAt
+                    }
                 })
 
                 let resp: ResponseServicechain = {
                     id: sc.id,
                     name: sc.name,
-                    OrganizationId: sc.OrganizationId,
-                    services: services_in_sc_list
+                    organization: (await sc.getOrganization()).id,
+                    services: svcs_list,
+                    updatedAt: sc.updatedAt,
+                    createdAt: sc.createdAt
                 }
                 return resp
             })
@@ -165,15 +141,14 @@ export namespace ServicechainManager {
      * Removes a Servicechain from the database. Returns the ID number of the servicechain removed.
      * @param {Number} id ID number of the Servicechain to remove.
      */
-    export function deleteServicechain(id: string): BBPromise<number> {
+    export function deleteServicechain(id: string): Promise<number> {
         return db.models.Servicechain.destroy({ where: { id: id } })
             .then(function (destroyedRowsCount) {
                 if (!destroyedRowsCount) {
-                    return BBPromise.reject(new errs.NotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+                    return Promise.reject(new ResourceNotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
                 } else {
-                    return BBPromise.resolve(destroyedRowsCount)
+                    return Promise.resolve(destroyedRowsCount)
                 }
             })
-        // TODO: Update SC DELETE route handler to catch this and drop error to ensure idempotence
     }
 }

@@ -1,7 +1,10 @@
 import * as express from "express"
+import * as winston from 'winston'
 import { PluginManager } from '../../plugin-manager'
 import { QueueManager } from '../../queue-manager'
-const winston = require('winston')
+import { PluginDoesNotExistError } from "../../voluble-errors"
+
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServiceEndpointRoute' })
 var router = express.Router();
 
 //router.get('/', function)
@@ -16,18 +19,26 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
 
     let request_service_dir = req.params["plugin_subdir"]
 
-    winston.info("SVC END: incoming req to " + request_service_dir)
+    logger.debug("incoming req to " + request_service_dir)
     PluginManager.getServiceByDirName(request_service_dir)
         .then(function (service) {
             if (!service) {
-                winston.error(`SVC END: Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
-                res.status(404).jsend.fail(`Plugin ${request_service_dir} does not exist`)
-                return
+                throw new PluginDoesNotExistError(`Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
             }
-            winston.debug(`Passing message on to ${service.directory_name}`)
+            logger.debug(`Passing message on to ${service.directory_name}`)
 
-            QueueManager.addMessageReceivedRequest(req.body, service.id)
-            res.status(200).jsend.success(request_service_dir)
+            return QueueManager.addMessageReceivedRequest(req.body, service.id)
+
+        }).then(() => {
+            res.status(200).json({})
+        })
+        .catch((e) => {
+            let serialized_err = req.app.locals.serializer.serializeError(e)
+            if (e instanceof PluginDoesNotExistError) {
+                res.status(404).json(serialized_err)
+            } else {
+                res.status(500).json(serialized_err)
+            }
         })
 });
 

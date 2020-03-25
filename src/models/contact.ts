@@ -1,44 +1,57 @@
-import * as Sequelize from "sequelize";
-import { Contact as ContactAttributes, Message as MessageAttributes, Org as OrgAttributes, Servicechain as ServicechainAttributes, Category as CategoryAttributes } from 'voluble-common';
-import { MessageInstance } from "./message";
-import { OrgInstance } from './organization';
-import { ServicechainInstance } from './servicechain';
-import { CategoryInstance } from "./category";
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize, DataTypes } from 'sequelize';
+import { Contact as ContactAttributes } from 'voluble-common';
+import { Category } from "./category";
+import { Message } from "./message";
+import { Organization } from './organization';
+import { Servicechain } from './servicechain';
 
-export interface ContactInstance extends Sequelize.Instance<ContactAttributes>, ContactAttributes {
+export class Contact extends Model implements ContactAttributes {
+    public id!: string
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
 
-    getServicechain: Sequelize.BelongsToGetAssociationMixin<ServicechainInstance>,
-    setServicechain: Sequelize.BelongsToSetAssociationMixin<ServicechainInstance, ServicechainInstance['id']>,
-    createServicechain: Sequelize.BelongsToCreateAssociationMixin<ServicechainAttributes, ServicechainInstance>,
+    public title!: string
+    public first_name!: string
+    public surname!: string
+    public email_address!: string
+    public phone_number!: string
+    public category!: string
+    public servicechain!: string
 
-    getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
-    setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,
-    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgAttributes, OrgInstance>
+    public getServicechain!: BelongsToGetAssociationMixin<Servicechain>
+    public setServicechain!: BelongsToSetAssociationMixin<Servicechain, Servicechain['id']>
+    public createServicechain!: BelongsToCreateAssociationMixin<Servicechain>
 
-    getCategory: Sequelize.BelongsToGetAssociationMixin<CategoryInstance>,
-    setCategory: Sequelize.BelongsToSetAssociationMixin<CategoryInstance, CategoryInstance['id']>,
-    createCategory: Sequelize.BelongsToCreateAssociationMixin<CategoryAttributes, CategoryInstance>,
+    public getOrganization!: BelongsToGetAssociationMixin<Organization>
+    public setOrganization!: BelongsToSetAssociationMixin<Organization, Organization['id']>
+    public createOrganization!: BelongsToCreateAssociationMixin<Organization>
 
-    getMessages: Sequelize.HasManyGetAssociationsMixin<MessageInstance>
-    setMessages: Sequelize.HasManySetAssociationsMixin<MessageInstance, MessageInstance['id']>,
-    addMessage: Sequelize.HasManyAddAssociationMixin<MessageInstance, MessageInstance['id']>,
-    addMessages: Sequelize.HasManyAddAssociationsMixin<MessageInstance, MessageInstance['id']>,
-    createMessage: Sequelize.HasManyCreateAssociationMixin<MessageAttributes, MessageInstance>,
-    countMessages: Sequelize.HasManyCountAssociationsMixin
-    hasMessage: Sequelize.HasManyHasAssociationMixin<MessageInstance, MessageInstance['id']>,
-    hasMessages: Sequelize.HasManyHasAssociationsMixin<MessageInstance, MessageInstance['id']>,
-    removeMessage: Sequelize.HasManyRemoveAssociationMixin<MessageAttributes, MessageInstance['id']>,
-    removeMessages: Sequelize.HasManyRemoveAssociationsMixin<MessageInstance, MessageInstance['id']>
-}
+    public getCategory!: BelongsToGetAssociationMixin<Category>
+    public setCategory!: BelongsToSetAssociationMixin<Category, Category['id']>
+    public createCategory!: BelongsToCreateAssociationMixin<Category>
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Contact = sequelize.define('Contact', {
-        id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
-        first_name: { type: DataTypes.STRING, allowNull: false },
-        surname: { type: DataTypes.STRING, allowNull: false },
-        email_address: { type: DataTypes.STRING, validate: { isEmail: true } },
-        phone_number: { type: DataTypes.STRING, allowNull: false },
-    })
+    public getMessages!: HasManyGetAssociationsMixin<Message>
+    public setMessages!: HasManySetAssociationsMixin<Message, Message['id']>
+    public addMessage!: HasManyAddAssociationMixin<Message, Message['id']>
+    public addMessages!: HasManyAddAssociationsMixin<Message, Message['id']>
+    public createMessage!: HasManyCreateAssociationMixin<Message>
+    public countMessages!: HasManyCountAssociationsMixin
+    public hasMessage!: HasManyHasAssociationMixin<Message, Message['id']>
+    public hasMessages!: HasManyHasAssociationsMixin<Message, Message['id']>
+    public removeMessage!: HasManyRemoveAssociationMixin<Message, Message['id']>
+    public removeMessages!: HasManyRemoveAssociationsMixin<Message, Message['id']>
 
-    return Contact
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+            id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
+            title: { type: DataTypes.STRING, allowNull: false },
+            first_name: { type: DataTypes.STRING, allowNull: false },
+            surname: { type: DataTypes.STRING, allowNull: false },
+            email_address: { type: DataTypes.STRING, validate: { isEmail: true } },
+            phone_number: { type: DataTypes.STRING, allowNull: false },
+        }, {
+            sequelize: sequelize,
+            tableName: "contacts"
+        })
+    }
 }

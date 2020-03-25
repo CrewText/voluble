@@ -1,9 +1,11 @@
 import * as Promise from "bluebird";
-//import { Auth0Manager } from './auth0-manager'
 import * as request from 'request';
+import * as winston from 'winston';
 import * as db from '../models';
-import winston = require("winston");
-const errs = require('common-errors')
+import { User } from "../models/user";
+
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UserMgr' })
+
 /**
  * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and
  * constructing full user profiles from the information stored in the Voluble database and extra
@@ -41,41 +43,12 @@ export namespace UserManager {
             })
     }
 
-    export function getUserFromAuth0Id(auth0_id: string): Promise<db.UserInstance> {
-        return db.models.User.findOne({
-            where:
-            {
-                auth0_id: auth0_id
-            }
-        })
+    export function getUserById(id: string): Promise<User> {
+        return db.models.User.findByPk(id)
     }
 
-    export function getUserById(id: string): Promise<db.UserInstance> {
-        return db.models.User.findOne({
-            where:
-                { id: id }
-        })
-    }
-
-    export function setUserIdAuth0Claim(user_id: string): Promise<void> {
-        return getMgmtAccessToken()
-            .then(function (token) {
-                return getUserById(user_id)
-                    .then(function (user) {
-                        winston.debug("Setting Auth0 User claim for Voluble ID")
-                        return req_prom(
-                            {
-                                url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.auth0_id}`,
-                                method: 'PATCH',
-                                headers: { 'Authorization': 'Bearer ' + token, "Content-Type": 'application/json' },
-                                body: { 'user_metadata': { 'voluble_id': user.id } },
-                                json: true
-                            })
-                    })
-            })
-            .then(function (resp) {
-                return
-            })
+    export function createUser(id: string) {
+        return db.models.User.create({ id: id })
     }
 
     export function setUserScopes(user_id: string, desired_scopes: string[]): Promise<void> {
@@ -84,7 +57,7 @@ export namespace UserManager {
                 return getUserById(user_id)
                     .then(function (user) {
                         return req_prom({
-                            url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.auth0_id}`,
+                            url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/auth0|${user.id}`,
                             method: 'GET',
                             headers: { 'Authorization': 'Bearer ' + token },
                             json: true
@@ -97,7 +70,7 @@ export namespace UserManager {
                             .then(function (scopes_available) {
                                 scopes_available.push(...desired_scopes)
                                 return req_prom({
-                                    url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/${user.auth0_id}`,
+                                    url: `${process.env["AUTH0_BASE_URL"]}/api/v2/users/${user.id}`,
                                     method: 'PATCH',
                                     headers: { 'Authorization': 'Bearer ' + token },
                                     body: { 'app_metadata': { 'scopes': scopes_available } },

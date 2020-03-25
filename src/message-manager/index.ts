@@ -1,12 +1,15 @@
-const winston = require('winston')
-// import * as Promise from "bluebird"
 import { MessageDirections, MessageStates } from 'voluble-common'
+import * as winston from 'winston'
 import { ContactManager } from '../contact-manager'
 import * as db from '../models'
+import { Message } from '../models/message'
+import { Service } from '../models/service'
 import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
-const errs = require('common-errors')
+import { ResourceNotFoundError } from '../voluble-errors'
+
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessageMgr' })
 
 /**
  * The MessageManager is responsible for handling all Message-related operations, including generating new Messages,
@@ -25,17 +28,26 @@ export namespace MessageManager {
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
     export async function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", message_state: MessageStates,
-        servicechain_id?: string, is_reply_to?: string): Promise<db.MessageInstance> {
+        servicechain_id?: string, is_reply_to?: string, user?: string): Promise<Message> {
         let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
 
         let msg = db.models.Message.build({
             body: body,
-            ServicechainId: servicechain_id,
+            servicechain: servicechain_id,
             contact: contact_id,
+            user: user,
             is_reply_to: is_reply_to,
             direction: direction == "INBOUND" ? MessageDirections.INBOUND : MessageDirections.OUTBOUND,
             message_state: msg_state
         })
+
+        if (msg.body.includes("<title>") || msg.body.includes("<first_name>") || msg.body.includes("<surname>")) {
+            let c = await ContactManager.getContactWithId(contact_id)
+            msg.set('body', msg.body.replace("<title>", c.title))
+            msg.set('body', msg.body.replace("<first_name>", c.first_name))
+            msg.set('body', msg.body.replace("<surname>", c.surname))
+        }
+
         return msg.save()
     }
 
@@ -44,7 +56,7 @@ export namespace MessageManager {
      * @param {db.models.Sequelize.Message} msg A Message object representing the message to send.
      * @returns {db.models.Sequelize.message} The Sequelize message that has been sent.
      */
-    export function sendMessage(msg: db.MessageInstance): db.MessageInstance {
+    export function sendMessage(msg: Message): Message {
         try {
             QueueManager.addMessageToSendRequest(msg)
         }
@@ -55,84 +67,79 @@ export namespace MessageManager {
         return msg
     }
 
-    export async function doMessageSend(msg: db.MessageInstance): Promise<db.MessageInstance> {
+    export async function doMessageSend(msg: Message): Promise<Message> {
         // First, acquire the first service in the servicechain
 
-        return ServicechainManager.getServiceCountInServicechain(msg.ServicechainId)
-            .then(async function (svc_count) {
-                let is_sent = false
+        let sc = await ServicechainManager.getServicechainById(msg.servicechain)
+        let svc_count = await sc.countServices()
+        if (!svc_count) {
+            QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
+        }
 
-                winston.debug(`MM: Beginning message send attempt loop for message ${msg.id}; ${svc_count} plugins in servicechain ${msg.ServicechainId}`)
+        let is_sent = false
 
-                for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
-                    winston.debug(`MM: Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.ServicechainId}`)
+        logger.debug(`Beginning message send attempt loop`, { msg: msg.id, sc: sc.id, svc_count: svc_count })
 
-                    is_sent = await ServicechainManager.getServiceInServicechainByPriority(msg.ServicechainId, current_svc_prio)
-                        .then(function (svc) {
-                            if (svc) {
-                                winston.debug(`MM: Servicechain ${msg.ServicechainId} priority ${current_svc_prio}: ${svc.directory_name}. Attempting message ${msg.id} send...`)
-                                return sendMessageWithService(msg, svc)
-                            } else {
-                                // return Promise.reject(`No service with priority ${svc_priority} in servicechain ${msg.ServicechainId}`)
-                                return false
-                            }
-                        }).catch(ServicechainManager.EmptyServicechainError, function (error) {
-                            errs.log(error, error.message)
-                            is_sent = false
-                            QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
-                            return false
-                        })
-                        .catch(errs.NotFoundError, function (error) {
-                            errs.log(error.message, error)
-                            return false
-                        })
+        for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
+            logger.debug(`Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.servicechain}`)
 
-                    if (!is_sent) {
-                        // Wasn't able to send the message with this service, try the next one
-                        winston.debug(`MM: Failed to send message ${msg.id}, trying next priority plugin...`)
-                    }
-                }
-
-                if (is_sent) {
-                    QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
-                    return Promise.resolve(msg)
+            try {
+                let svc = await ServicechainManager.getServiceInServicechainByPriority(msg.servicechain, current_svc_prio)
+                logger.debug(`Found service; Attempting message send`, { msg: msg.id, sc: sc.id, svc: svc.directory_name, priority: current_svc_prio })
+                is_sent = await sendMessageWithService(msg, svc)
+            } catch (e) {
+                if (e instanceof ResourceNotFoundError) {
+                    logger.warn(e)
                 } else {
-                    winston.info(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
-                    QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
-                    return Promise.reject(`Ran out of services for servicechain ${msg.ServicechainId}, message failed`)
+                    logger.error(e)
                 }
-            })
+            }
+
+            if (!is_sent) {
+                // Wasn't able to send the message with this service, try the next one
+                logger.debug(`Failed to send message ${msg.id}, trying next priority plugin...`)
+            }
+        }
+
+        if (is_sent) {
+            QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
+            return msg
+        } else {
+            logger.info(`Ran out of services for servicechain ${msg.servicechain}, message failed`)
+            QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
+            return Promise.reject(`Ran out of services for servicechain ${msg.servicechain}, message failed`)
+        }
     }
 
-    async function sendMessageWithService(msg: db.MessageInstance, svc: db.ServiceInstance): Promise<boolean> {
+    async function sendMessageWithService(msg: Message, svc: Service): Promise<boolean> {
         return PluginManager.getPluginById(svc.id)
             .then(function (plugin) {
                 if (plugin) {
-                    winston.debug(`MM: Loaded plugin ${plugin.name}`)
+                    logger.debug(`Loaded plugin ${plugin.name}`)
                     return ContactManager.getContactWithId(msg.contact)
                         .then(async function (contact) {
                             if (contact) {
-                                winston.debug(`MM: Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
+                                logger.debug(`Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
                                 try {
                                     return await plugin.send_message(msg, contact)
                                 } catch (e) {
                                     if (e instanceof PluginManager.PluginImportFailedError) {
-                                        errs.log(e.message, e)
+                                        logger.warn(e.message, e)
                                         return Promise.reject(e)
                                     } else { throw e }
                                 }
                             } else {
-                                return Promise.reject(new errs.NotFoundError(`Could not find contact with ID ${msg.contact}`))
+                                return Promise.reject(new ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`))
                             }
                         })
                 } else {
-                    return Promise.reject(new errs.NotFoundError(`Could not find plugin with ID ${svc.id}`))
+                    return Promise.reject(new ResourceNotFoundError(`Could not find plugin with ID ${svc.id}`))
                 }
             })
     }
 
-    export function updateMessageState(msg_id: string, msg_state: string): Promise<db.MessageInstance> {
-        winston.info("MM: Updating message state")
+    export function updateMessageState(msg_id: string, msg_state: string): Promise<Message> {
+        logger.info("Updating message state", { 'message': msg_id, 'state': MessageStates[msg_state] })
         return getMessageFromId(msg_id)
             .then(function (msg) {
                 if (msg) {
@@ -143,8 +150,8 @@ export namespace MessageManager {
                     }
                     return msg.save()
                 } else {
-                    winston.info(`MM: Could not find message with ID ${msg_id}`)
-                    return Promise.reject(new errs.NotFoundError(`Message with ID ${msg_id} was not found`))
+                    logger.warn(`Could not find message with ID ${msg_id}`)
+                    return Promise.reject(new ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
                 }
             })
     }
@@ -154,19 +161,19 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export async function getHundredMessageIds(offset: number = 0, organization?: string): Promise<Array<db.MessageInstance>> {
+    export async function getMessages(offset: number = 0, limit: number = 100, organization?: string): Promise<Array<Message>> {
         // Get all messages where the Contact is in the given Org.
         // If there isn't an Org, all messages where the contact's Org != null (which should be all of them)
         console.log("Getting messages for Org " + organization)
         return db.models.Message.findAll({
             offset: offset,
-            limit: 100,
+            limit: limit,
             order: [['createdAt', 'DESC']],
             include: [
                 {
                     model: db.models.Contact,
                     where: {
-                        'OrganizationId': organization ? organization : { [db.sequelize.Op.ne]: null }
+                        'OrganizationId': organization ? organization : { [db.models.sequelize.Op.ne]: null }
                     }
                 }
             ]
@@ -178,11 +185,11 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export async function getMessageFromId(id: string): Promise<db.MessageInstance | null> {
-        return db.models.Message.findById(id)
+    export async function getMessageFromId(id: string): Promise<Message | null> {
+        return db.models.Message.findByPk(id)
     }
 
-    export async function getMessagesForContact(contact_id: string, offset: number = 0): Promise<db.MessageInstance[] | null> {
+    export async function getMessagesForContact(contact_id: string, offset: number = 0, limit: number = 0): Promise<Message[] | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (verified_contact_id) {
                 return db.models.Message.findAll({
@@ -190,7 +197,7 @@ export namespace MessageManager {
                         'contact': verified_contact_id
                     },
                     order: [['createdAt', 'DESC']],
-                    limit: 100,
+                    limit: limit,
                     offset: offset
                 })
             })

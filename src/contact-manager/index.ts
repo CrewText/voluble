@@ -1,11 +1,11 @@
-const winston = require('winston')
-import * as BBPromise from "bluebird"
-import { ContactInstance } from "../models/contact";
-import { MessageManager } from '../message-manager'
-import * as db from '../models'
-import { OrgManager } from "../org-manager";
-const errs = require('common-errors')
+import * as winston from 'winston';
+import * as db from '../models';
+import { Contact } from "../models/contact";
+import { ResourceNotFoundError } from '../voluble-errors';
+import { Contact as ContactAttrs } from 'voluble-common';
+import { Category } from '../models/category';
 
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactMgr' })
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
  * removing Contacts and finding information about Contacts.
@@ -19,29 +19,18 @@ export namespace ContactManager {
      * @param {string} phone_num The phone number (with leading country code) of the contact
      * @param {string} default_servicechain The ID of the servicechain that the contact should be used by default to send a message to this Contact.
      */
-    export function createContact(first_name: string, surname: string, email: string, phone_num: string, default_servicechain: string, org_id?: string): BBPromise<ContactInstance> {
-        return db.models.Contact.create({
-            first_name: first_name,
-            surname: surname,
-            email_address: email,
-            phone_number: phone_num,
-        })
-            .then((contact) => {
-                if (org_id) {
-                    return contact.setOrganization(org_id)
-                        .then(() => {
-                            return contact
-                        })
-                } else { return contact }
-            })
-            .then((contact) => {
-                if (default_servicechain) {
-                    return contact.setServicechain(default_servicechain)
-                        .then(() => {
-                            return contact
-                        })
-                } else { return contact }
-            })
+    export async function createContact(contact: Contact): Promise<Contact> {
+        let new_contact = await db.models.Contact.create(contact)
+
+        // if (contact.OrganizationId) {
+        //     new_contact.setOrganization(contact.OrganizationId)
+        // }
+
+        // if (default_servicechain) {
+        //     new_contact.setServicechain(default_servicechain)
+        // }
+
+        return await new_contact.reload()
     }
 
     /**
@@ -50,8 +39,8 @@ export namespace ContactManager {
      * @returns {promise} Promise resolving to sequelize confirmation of deleted row
      */
 
-    export function deleteContactFromDB(id: string): BBPromise<number> {
-        return db.models.Contact.destroy({
+    export async function deleteContactFromDB(id: string): Promise<number> {
+        return await db.models.Contact.destroy({
             where: {
                 id: id
             }
@@ -63,21 +52,10 @@ export namespace ContactManager {
      * @param {string} id Contact ID number
      * @returns {promise} Promise resolving to the id of the contact, if it exists.
      */
-    export function checkContactWithIDExists(id: string): BBPromise<string> {
-        return BBPromise.try(function () {
-            /* Do a COUNT of all of the contacts in the DB with this ID. If it doesn't exist (i.e. COUNT = 0,)
-             * throw an error.
-             */
-            return db.models.Contact.count({ where: { id: id } })
-                .then(function (count: number) {
-                    if (!count) {
-                        return BBPromise.reject(errs.NotFoundError(`No contact with ID ${id}`))
-                    } else {
-                        // Contact exists, return the same ID what was provided, for Promise continuity
-                        return BBPromise.resolve(id)
-                    }
-                })
-        })
+    export async function checkContactWithIDExists(id: string): Promise<string> {
+        let count = await db.models.Contact.count({ where: { id: id } })
+        if (count) { return id }
+        else { throw new ResourceNotFoundError(`No contact with ID ${id}`) }
     }
 
     /**
@@ -85,16 +63,16 @@ export namespace ContactManager {
      * @param {Number} offset The amount of values to skip over, before returning the next hundred.
      * @returns {promise} Promise resolving to the most recent hundred  Sequelize rows representing messages.
      */
-    export function getHundredContacts(offset: number, organization: string): BBPromise<ContactInstance[]> {
+    export function getContacts(offset: number, limit: number, organization: string): Promise<Contact[]> {
         return db.models.Contact.findAll({
             offset: offset,
-            limit: 100,
+            limit: limit,
             order: [
                 ['surname', 'ASC'],
                 ['first_name', 'ASC']
             ],
             where: {
-                OrganizationId: organization
+                organization: organization
             }
         })
     }
@@ -104,20 +82,20 @@ export namespace ContactManager {
      * @param {string} id Contact ID number
      * @returns { promise} Promise resolving to a Sequelize row representing the given contact
      */
-    export function getContactWithId(id: string): BBPromise<ContactInstance | null> {
-        return db.models.Contact.findById(id)
+    export function getContactWithId(id: string): Promise<Contact | null> {
+        return db.models.Contact.findByPk(id)
     }
 
-    export function getContactFromEmail(email_address: string): BBPromise<ContactInstance | null> {
-        return db.models.Contact.find({
+    export function getContactFromEmail(email_address: string): Promise<Contact | null> {
+        return db.models.Contact.findOne({
             where: {
                 email_address: email_address
             }
         })
     }
 
-    export function getContactFromPhone(phone_number: string): BBPromise<ContactInstance | null> {
-        return db.models.Contact.find({
+    export function getContactFromPhone(phone_number: string): Promise<Contact | null> {
+        return db.models.Contact.findOne({
             where: {
                 phone_number: phone_number
             }
@@ -130,7 +108,7 @@ export namespace ContactManager {
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */
-    export function updateContactDetailsWithId(id: string, updatedDetails: any): BBPromise<[number, db.ContactInstance[]]> {
+    export function updateContactDetailsWithId(id: string, updatedDetails: any) {//Promise<[number, CategoryModel[]]> {
         return db.models.Contact.update(updatedDetails,
             {
                 where: { id: id }
@@ -141,7 +119,7 @@ export namespace ContactManager {
 export namespace CategoryManager {
     export class CategoryDoesNotExistError extends Error { }
     export async function getCategoriesInOrg(org_id: string) {
-        return db.models.Category.find({
+        return db.models.Category.findOne({
             where:
             {
                 OrganizationId: org_id
@@ -164,7 +142,7 @@ export namespace CategoryManager {
         await cat.destroy()
     }
 
-    export async function getCategoryById(category_id: string): Promise<db.CategoryInstance> {
+    export async function getCategoryById(category_id: string): Promise<Category> {
         return db.models.Category.findByPk(category_id)
     }
 }

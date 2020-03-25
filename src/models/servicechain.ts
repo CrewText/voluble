@@ -1,34 +1,51 @@
-import * as Sequelize from "sequelize";
-import { Service as ServiceAttributes, Servicechain as ServicechainAttributes, ServicesInSC as ServicesInSCAttributes, Org as OrgAttributes } from 'voluble-common';
-import { OrgInstance } from "./organization";
-import { ServiceInstance } from "./service";
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToManyAddAssociationMixin, BelongsToManyAddAssociationsMixin, BelongsToManyCountAssociationsMixin, BelongsToManyCreateAssociationMixin, BelongsToManyGetAssociationsMixin, BelongsToManyHasAssociationMixin, BelongsToManyHasAssociationsMixin, BelongsToManyRemoveAssociationMixin, BelongsToManyRemoveAssociationsMixin, BelongsToManySetAssociationsMixin, BelongsToSetAssociationMixin, DataTypes, Model, Sequelize, HasManyAddAssociationMixin, HasManyGetAssociationsMixin, HasManySetAssociationsMixin, HasMany, HasManyHasAssociationsMixin, HasManyAddAssociationsMixin, HasManyHasAssociationMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin } from 'sequelize';
+import { Servicechain as ServicechainAttributes } from 'voluble-common';
+import { Organization } from "./organization";
+import { Service } from "./service";
 
-export interface ServicechainInstance extends Sequelize.Instance<ServicechainAttributes>, ServicechainAttributes {
-    createService: Sequelize.BelongsToManyCreateAssociationMixin<ServiceAttributes, ServiceInstance, ServicesInSCAttributes>
-    getServices: Sequelize.BelongsToManyGetAssociationsMixin<ServiceInstance>,
-    addService: Sequelize.BelongsToManyAddAssociationMixin<ServiceInstance, ServiceInstance['id'], ServicesInSCAttributes>,
-    addServices: Sequelize.BelongsToManyAddAssociationsMixin<ServiceInstance, ServiceInstance['id'], ServicesInSCAttributes>,
-    countServices: Sequelize.BelongsToManyCountAssociationsMixin,
-    hasService: Sequelize.BelongsToManyHasAssociationMixin<ServiceInstance, ServiceInstance['id']>,
-    hasServices: Sequelize.BelongsToManyHasAssociationsMixin<ServiceInstance, ServiceInstance['id']>,
-    removeService: Sequelize.BelongsToManyRemoveAssociationMixin<ServiceInstance, ServiceInstance['id']>,
-    removeServices: Sequelize.BelongsToManyRemoveAssociationsMixin<ServiceInstance, ServiceInstance['id']>,
-    setServices: Sequelize.BelongsToManySetAssociationsMixin<ServiceInstance, ServiceInstance['id'], ServicesInSCAttributes>
+export class Servicechain extends Model implements ServicechainAttributes {
+    public id!: string
+    public name!: string
+    public readonly createdAt!: Date
+    public readonly updatedAt!: Date
 
-    getOrganization: Sequelize.BelongsToGetAssociationMixin<OrgInstance>,
-    setOrganization: Sequelize.BelongsToSetAssociationMixin<OrgInstance, OrgInstance['id']>,
-    createOrganization: Sequelize.BelongsToCreateAssociationMixin<OrgInstance, OrgAttributes>,
-}
+    public createService!: BelongsToManyCreateAssociationMixin<Service>
+    public getServices!: BelongsToManyGetAssociationsMixin<Service>
+    public addService!: BelongsToManyAddAssociationMixin<Service, Service['id']>
+    public addServices!: BelongsToManyAddAssociationsMixin<Service, Service['id']>
+    public countServices!: BelongsToManyCountAssociationsMixin
+    public hasService!: BelongsToManyHasAssociationMixin<Service, Service['id']>
+    public hasServices!: BelongsToManyHasAssociationsMixin<Service, Service['id']>
+    public removeService!: BelongsToManyRemoveAssociationMixin<Service, Service['id']>
+    public removeServices!: BelongsToManyRemoveAssociationsMixin<Service, Service['id']>
+    public setServices!: BelongsToManySetAssociationsMixin<Service, Service['id']>
+    // public getServices!: HasManyGetAssociationsMixin<ServiceModel>
+    // public setServices!: HasManySetAssociationsMixin<ServiceModel, ServiceModel['id']>
+    // public hasServices!: HasManyHasAssociationsMixin<ServiceModel, ServiceModel['id']>
+    // public addServices!: HasManyAddAssociationsMixin<ServiceModel, ServiceModel['id']>
+    // public getService!: HasManyGetAssociationsMixin<ServiceModel>
+    // public hasService!: HasManyHasAssociationMixin<ServiceModel, ServiceModel['id']>
+    // public addService!: HasManyAddAssociationMixin<ServiceModel, ServiceModel['id']>
+    // public countServices!: HasManyCountAssociationsMixin
+    // public createService!: HasManyCreateAssociationMixin<ServiceModel>
 
-export default function (sequelize: Sequelize.Sequelize, DataTypes: Sequelize.DataTypes) {
-    var Servicechain = sequelize.define('Servicechain', {
-        id: {
-            type: DataTypes.UUID,
-            primaryKey: true,
-            defaultValue: DataTypes.UUIDV4
+    public getOrganization!: BelongsToGetAssociationMixin<Organization>
+    public setOrganization!: BelongsToSetAssociationMixin<Organization, Organization['id']>
+    public createOrganization!: BelongsToCreateAssociationMixin<Organization>
+
+    public static initModel(sequelize: Sequelize) {
+        return this.init({
+            id: {
+                type: DataTypes.UUID,
+                primaryKey: true,
+                defaultValue: DataTypes.UUIDV4
+            },
+            name: DataTypes.STRING
         },
-        name: DataTypes.STRING
-    })
-
-    return Servicechain
+            {
+                sequelize: sequelize,
+                tableName: "servicechains"
+            }
+        )
+    }
 }
