@@ -1,5 +1,5 @@
 import { DataTypes, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize, Association } from 'sequelize';
-import { Org as OrgAttributes } from 'voluble-common';
+import { Org as OrgAttributes, PlanTypes } from 'voluble-common';
 import { getE164PhoneNumber } from '../utilities';
 import { Category } from "./category";
 import { Contact } from "./contact";
@@ -12,6 +12,8 @@ export class Organization extends Model implements OrgAttributes {
     public phone_number!: string
     public readonly createdAt!: Date
     public readonly updatedAt!: Date
+    public credits!: number
+    public plan!: PlanTypes
 
     // public static associations: {
     //     users: Association<OrganizationModel, UserModel>
@@ -73,6 +75,16 @@ export class Organization extends Model implements OrgAttributes {
                 type: DataTypes.STRING, allowNull: false, validate: {
                     isPhoneNumber(value: string) { return getE164PhoneNumber(value) }
                 }
+            },
+            credits: {
+                type: DataTypes.BIGINT, allowNull: true, defaultValue: 0,
+                validate: {
+                    isGtEqZero(val: number) { return val >= 0 }
+                }
+            },
+            plan: {
+                type: DataTypes.ENUM(...Object.values(PlanTypes)),
+                allowNull: false, defaultValue: PlanTypes.PAYG
             }
         },
             {

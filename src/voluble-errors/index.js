@@ -10,6 +10,7 @@ export class InvalidParameterValueError extends Error { }
 export class NotImplementedError extends Error { }
 export class AuthorizationFailedError extends Error { }
 export class ResourceOutOfUserScopeError extends Error { }
+export class NotEnoughCreditsError extends Error { }
 export class InternalError extends Error { }
 
 // let Errors = {

@@ -5,12 +5,14 @@ import * as winston from 'winston';
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { ServicechainManager } from '../../servicechain-manager';
-import { InvalidParameterValueError, ResourceOutOfUserScopeError, ResourceNotFoundError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceOutOfUserScopeError, ResourceNotFoundError, NotEnoughCreditsError } from '../../voluble-errors';
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, setupUserOrganizationMiddleware } from '../security/scopes';
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { Message } from "../../models/message";
 import { checkExtendsModel } from "../helpers/check_extends_model";
+import { OrgManager } from "../../org-manager";
+import { checkHasCredits } from "../helpers/check_has_credits";
 
 const router = express.Router();
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
@@ -102,7 +104,9 @@ router.get('/:org_id/messages/:message_id', checkJwt,
  * Creates a new message, adds it to the database and attempts to send it.
  */
 router.post('/:org_id/messages/', checkJwt,
-  checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
+  checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
+  checkHasCredits(1),
   async function (req, res, next) {
     try {
       checkExtendsModel(req.body, Message)
@@ -117,7 +121,8 @@ router.post('/:org_id/messages/', checkJwt,
         MessageStates.MSG_PENDING,
         sc.id || null,
         req.body.is_reply_to || null,
-        req['user'].sub || null)
+        req['user'].sub || null,
+        1)
 
       msg = MessageManager.sendMessage(msg)
 
@@ -130,7 +135,8 @@ router.post('/:org_id/messages/', checkJwt,
         res.status(403).json(serialized_err)
       } else if (e instanceof InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-        logger.warn(e)
+      } else if (e instanceof NotEnoughCreditsError) {
+        res.status(402).json(serialized_err)
       } else {
         res.status(500).json(serialized_err)
         logger.error(e)

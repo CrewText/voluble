@@ -59,7 +59,7 @@ describe('/v1/orgs', function () {
         it('should fail to create a new Organization when a name is not provided', function (done) {
             supertest(server_app)
                 .post("/v1/orgs")
-                .send({ phone_number: faker.phone.phoneNumber("+447436######") })
+                .send({ phone_number: faker.phone.phoneNumber("+447436######"), plan: "PAYG" })
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
                 .end((err, res) => {
@@ -74,7 +74,7 @@ describe('/v1/orgs', function () {
                 .post("/v1/orgs")
                 .send({
                     name: "My Org Name",
-                    phone_number: "a phone number"
+                    phone_number: "a phone number", plan: "PAYG"
                 })
                 .auth(auth_token, { type: "bearer" })
                 .expect(400)
@@ -89,7 +89,7 @@ describe('/v1/orgs', function () {
             supertest(server_app)
                 .post("/v1/orgs")
                 .auth(auth_token, { type: "bearer" })
-                .send({ name: "API Test Organization-POST /orgs", phone_number: faker.phone.phoneNumber("+4474########") })
+                .send({ name: "API Test Organization-POST /orgs", phone_number: faker.phone.phoneNumber("+4474########"), plan: "PAYG" })
                 .expect(201)
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
@@ -99,6 +99,8 @@ describe('/v1/orgs', function () {
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data.attributes).to.have.property('name')
                     chai.expect(res.body.data.attributes).to.have.property('phone_number')
+                    chai.expect(res.body.data.attributes).to.have.property('credits', 0)
+                    chai.expect(res.body.data.attributes).to.have.property('plan', 'PAYG')
                     created_org = res.body.data.id
                     done()
                 })
@@ -231,6 +233,100 @@ describe('/v1/orgs', function () {
                     chai.expect(res.body.data).to.have.property('id', created_org)
                     chai.expect(res.body.data.attributes).to.have.property('name')
                     chai.expect(res.body.data.attributes).to.have.property('phone_number', new_org_phone)
+                    done()
+                })
+        })
+
+        it("should fail to change the plan type of the organization to a non-existent plan", function (done) {
+            if (!created_org) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    plan: "NOT_A_REAL_PLAN"
+                })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
+                    done()
+                })
+        })
+
+        it("should change the plan type of the organization", function (done) {
+            if (!created_org) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    plan: "PAY_IN_ADVANCE"
+                })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.have.property('data')
+
+                    satisfiesJsonApiResource(res.body.data, 'organization')
+                    chai.expect(res.body.data).to.have.property('id', created_org)
+                    chai.expect(res.body.data.attributes).to.have.property('name')
+                    chai.expect(res.body.data.attributes).to.have.property('plan', "PAY_IN_ADVANCE")
+                    done()
+                })
+        })
+
+        it("should fail to update the credits count of the organization to a non-numeric value", function (done) {
+            if (!created_org) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    credits: "cheese"
+                })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
+                    done()
+                })
+        })
+
+        it("should fail to update the credits count of the organization to a negative value", function (done) {
+            if (!created_org) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    credits: -1
+                })
+                .expect(400)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
+                    done()
+                })
+        })
+
+        it("should update the credits count of the organization", function (done) {
+            if (!created_org) { this.skip() }
+
+            supertest(server_app)
+                .put(`/v1/orgs/${created_org}`)
+                .auth(auth_token, { type: "bearer" })
+                .send({
+                    credits: 1000
+                })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.have.property('data')
+
+                    satisfiesJsonApiResource(res.body.data, 'organization')
+                    chai.expect(res.body.data).to.have.property('id', created_org)
+                    chai.expect(res.body.data.attributes).to.have.property('credits', 1000)
                     done()
                 })
         })

@@ -47,6 +47,11 @@ export function checkHasOrgAccess(user: any, requested_org) {
     }
 }
 
-export function hasScope(user: any, scope: string) {
-    return user.scope.split(' '.indexOf(scope) > -1)
+export function hasScope(user: any, scope: string | string[] | scopes[]) {
+    if (!(scope instanceof Array)) { return user.scope.split(' ').includes(scope) }
+    else {
+        return scope.some((requested_scope, idx, arr) => {
+            return user.scope.includes(requested_scope)
+        })
+    }
 }
