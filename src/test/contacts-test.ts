@@ -53,7 +53,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         supertest(server_app)
             .post(`/v1/orgs`)
             .auth(auth_token, { type: "bearer" })
-            .send({ name: "API Test Organization-CONTACTS TEST", phone_number: faker.phone.phoneNumber("+4474########") })
+            .send({ name: "API Test Organization-CONTACTS TEST", phone_number: faker.phone.phoneNumber("+4474########"), plan: "PAYG" })
             .expect(201)
             .end((err, res) => {
                 if (err) { console.log(err); return done(err) }

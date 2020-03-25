@@ -58,20 +58,10 @@ describe('/v1/orgs/<org-id>/categories', function () {
         // this.timeout()
         console.log('Setting up test Org')
 
-        // return axios.default.post(`http://${address}:${port}/v1/orgs`,
-        //     { name: "API Test Organization-CATS TEST", phone_number: faker.phone.phoneNumber("+4474########") },
-        //     { headers: { 'Authorization': `Bearer ${auth_token}` } })
-        //     .then((resp) => {
-        //         chai.expect(resp.status == 201)
-        //         test_org_id = resp.data.id
-        //         return
-        //     })
-
-
         supertest(server_app)
             .post("/v1/orgs")
             .auth(auth_token, { type: "bearer" })
-            .send({ name: "API Test Organization-CATS TEST", phone_number: faker.phone.phoneNumber("+4474########") })
+            .send({ name: "API Test Organization-CATS TEST", phone_number: faker.phone.phoneNumber("+4474########"), plan: "PAYG" })
             .expect(201)
             .end((err, res) => {
                 // console.log("DONE THE TEST THINGS")

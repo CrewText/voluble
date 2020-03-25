@@ -1,6 +1,6 @@
 import * as express from "express";
 import { random } from 'faker';
-import { scopes } from "voluble-common";
+import { scopes, PlanTypes } from "voluble-common";
 import * as winston from 'winston';
 import { Organization } from "../../models/organization";
 import { OrgManager } from "../../org-manager";
@@ -9,7 +9,9 @@ import { getE164PhoneNumber } from '../../utilities';
 import { AuthorizationFailedError, InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError, UserAlreadyInOrgError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware, hasScope } from '../security/scopes';
+import { isNumber } from "util";
+import validator from "validator";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
 const router = express.Router();
@@ -109,6 +111,7 @@ router.post('/', checkJwt, async function (req, res, next) {
 
     let org_name = req.body.name
     let org_phone_number = req.body.phone_number
+    let plan_type = req.body.plan.toUpperCase()
     new Promise((res, rej) => {
         res(checkExtendsModel(req.body, Organization))
     })
@@ -117,7 +120,7 @@ router.post('/', checkJwt, async function (req, res, next) {
             catch { throw new InvalidParameterValueError(`Phone number supplied is invalid: ${org_phone_number}`) }
         })
         .then(e164_phone_num => {
-            return Promise.all([OrgManager.createNewOrganization(org_name, e164_phone_num),
+            return Promise.all([OrgManager.createNewOrganization(org_name, e164_phone_num, plan_type),
             UserManager.createUser(req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients` ? random.uuid() : req['user'].sub)])
         })
         .then(([new_org, new_user]) => {
@@ -148,10 +151,13 @@ router.post('/', checkJwt, async function (req, res, next) {
             let serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
+                logger.debug(e)
             } else if (e instanceof UserAlreadyInOrgError) {
                 res.status(400).json(serialized_err)
+                logger.debug(e)
             } else if (e instanceof AuthorizationFailedError) {
                 res.status(401).json(serialized_err)
+                logger.debug(e)
             }
             else {
                 res.status(500).json(serialized_err)
@@ -253,6 +259,18 @@ router.put('/:org_id',
                     }
 
                     org.set("phone_number", parsed_phone_num)
+                }
+
+                if (new_org_data.plan) {
+                    if (!hasScope(req['user'], [scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin])) { throw new ResourceOutOfUserScopeError(`This user cannot alter parameter 'plan'`) }
+                    if (!(new_org_data.plan in PlanTypes)) { throw new InvalidParameterValueError(`Parameter 'plan' must be one of the following: ${Object.values(PlanTypes)}`) }
+                    org.plan = new_org_data.plan.toUpperCase()
+                }
+
+                if (new_org_data.credits) {
+                    if (!hasScope(req['user'], [scopes.CreditsUpdate, scopes.OrganizationOwner, scopes.VolubleAdmin])) { throw new ResourceOutOfUserScopeError(`This user cannot alter parameter 'credits'`) }
+                    if (typeof new_org_data.credits != "number" || (typeof new_org_data.credits == "string" && validator.isInt(new_org_data.credits)) || new_org_data.credits < 0) { throw new InvalidParameterValueError(`Parameter 'credits' must be a number above zero`) }
+                    org.set("credits", new_org_data.credits)
                 }
                 return org.save()
             })

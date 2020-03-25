@@ -15,6 +15,7 @@ export class Message extends Model implements MessageAttributes {
     public contact!: string
     public direction!: MessageDirections
     public message_state!: MessageStates
+    public cost!: number
 
     public getContact!: BelongsToGetAssociationMixin<Contact>
     public setContact!: BelongsToSetAssociationMixin<Contact, Contact['id']>
@@ -46,7 +47,8 @@ export class Message extends Model implements MessageAttributes {
             user: DataTypes.STRING,
             direction: DataTypes.ENUM(...Object.keys(MessageDirections)),
             sent_time: { type: DataTypes.DATE, defaultValue: fn('NOW') },
-            message_state: DataTypes.ENUM(...Object.keys(MessageStates))
+            message_state: DataTypes.ENUM(...Object.keys(MessageStates)),
+            cost: DataTypes.INTEGER
         }, {
             sequelize: sequelize,
             tableName: "messages"

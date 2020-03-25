@@ -3,6 +3,7 @@ import * as winston from 'winston';
 import * as db from '../models';
 import { Organization } from "../models/organization";
 import { InvalidParameterValueError } from '../voluble-errors';
+import { PlanTypes } from "voluble-common";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgMgr' })
 
@@ -13,7 +14,7 @@ export namespace OrgManager {
      * @param name Name of the organization to create.
      * @returns the new Organization entry, if it is successfully created.
      */
-    export function createNewOrganization(name: string, phone_number: string): Promise<Organization> {
+    export function createNewOrganization(name: string, phone_number: string, plan_type: PlanTypes = PlanTypes.PAYG): Promise<Organization> {
         if (!name) {
             return Promise.reject(new InvalidParameterValueError("An Organization name was not provided."))
         } else if (!phone_number) {
@@ -21,7 +22,7 @@ export namespace OrgManager {
         }
 
         return Organization.create({
-            name: name, phone_number: phone_number
+            name: name, phone_number: phone_number, plan: plan_type
         })
             .catch(db.models.sequelize.ValidationError, (err) => {
                 throw new InvalidParameterValueError(err.message)

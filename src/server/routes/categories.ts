@@ -30,7 +30,7 @@ router.get('/:org_id/categories', checkJwt,
         catch (e) {
             let serialized_err = res.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(401).json(serialized_err)
+                res.status(403).json(serialized_err)
             } else {
                 logger.error(e.message)
                 res.status(500).json(serialized_err)
@@ -58,7 +58,7 @@ router.post('/:org_id/categories', checkJwt,
         } catch (e) {
             let serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceOutOfUserScopeError) {
-                res.status(401).json(serialized_err)
+                res.status(403).json(serialized_err)
             } else if (e instanceof InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
             }
