@@ -1,4 +1,4 @@
-import * as axios from 'axios';
+import Axios, * as axios from 'axios';
 import * as plugin_base from '../plugin_base';
 
 interface IncomingEsendexMessage {
@@ -53,25 +53,18 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
         auth: { username: this.username || "", password: this.password || "" },
         responseType: "json"
       })
-
-      // return request.post("https://api.esendex.com/v1.0/messagedispatcher", {
-      //   auth: {
-      //     username: this.username || "",
-      //     password: this.password || ""
-      //   },
-      //   json: true,
-      //   body: esendex_message
-      // })
-      // })
       .then(function (response) {
         if (response.status >= 400) { throw new EsendexError(response.status, `${response.data.errors[0].code}: ${response.data.errors[0].description}`) }
         return true
       })
       .catch(err => {
-        let error_msg
         if (err instanceof EsendexError) {
           this.logger.error(`Error ${err.statusCode}: ${err.message}`)
-        } else { this.logger.error(err) }
+        } else if (err.response) {
+          this.logger.error(`${err.response.data.error[0].statusCode}: ${err.response.data.errors[0].code}: ${err.response.data.errors[0].description}`)
+        } else {
+          this.logger.error(err)
+        }
         return false
       })
   }

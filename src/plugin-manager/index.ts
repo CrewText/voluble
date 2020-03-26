@@ -43,7 +43,7 @@ export namespace PluginManager {
                 p._plugin_dir = plugin_directory
                 resolve(p)
             } catch (e) {
-                logger.error(e, `Could not import plugin in directory '${svc.directory_name}': ${e.message}`)
+                logger.error(e, `Could not import plugin: ${e.message}`)
                 reject(new PluginImportFailedError(`Failed to import plugin in directory ${svc.directory_name}`))
             }
         })
