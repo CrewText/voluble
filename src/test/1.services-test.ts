@@ -79,6 +79,7 @@ describe('/v1/services', function () {
 
     describe('GET /v1/services/<svc-id>', function () {
         it('should fail if we are not authenticated', function (done) {
+            if (!available_services) { this.skip() }
             supertest(server_app)
                 .get(`/v1/services/${available_services[0].id}`)
                 .expect(401)
