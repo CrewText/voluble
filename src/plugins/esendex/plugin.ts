@@ -16,8 +16,8 @@ interface ReceivedEsendexMessageData {
 
 class EsendexError extends Error {
   public statusCode: number
-  constructor(statusCode: number) {
-    super("Error sending Esendex message")
+  constructor(statusCode: number, esendex_error_message: string) {
+    super(esendex_error_message)
     this.statusCode = statusCode
   }
 }
@@ -64,7 +64,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       // })
       // })
       .then(function (response) {
-        if (response.status >= 400) { throw new EsendexError(response.status) }
+        if (response.status >= 400) { throw new EsendexError(response.status, response.data.errors[0].description) }
         return true
       })
       .catch(reason => {
@@ -96,6 +96,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
               error_msg = "Unknown error"
               break
           }
+          error_msg = `${error_msg} - ${reason.message}`
         } else {
           error_msg = reason.message
         }
