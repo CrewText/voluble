@@ -34,6 +34,7 @@ export class RMQWorker extends EventEmitter {
     }
 
     public start(): void {
+        this.continue_check = true
         while (this.continue_check) {
             this.rsmq.receiveMessageAsync({ qname: this.queue_name })
                 .then((msg) => {
@@ -51,10 +52,7 @@ export class RMQWorker extends EventEmitter {
     private checkQueueExists(queue_name: string) {
         return this.rsmq.listQueuesAsync()
             .then((queues) => {
-                if (queues.includes(queue_name)) {
-                    return true
-                }
-                return false
+                return queues.includes(queue_name)
             })
     }
 }
