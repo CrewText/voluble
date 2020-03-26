@@ -128,8 +128,7 @@ export async function initServer() {
     })
     .then(() => {
       logger.debug("Loading queue manager")
-      QueueManager.init_queues()
-      return
+      return QueueManager.createQueues()
     })
     .then(() => {
       svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
@@ -143,7 +142,7 @@ export async function initServer() {
 }
 
 export async function shutdownServer() {
-  QueueManager.shutdownQueues()
+  // QueueManager.shutdownQueues()
 
   let p = new Promise((resolve, reject) => {
     if (svr) {

@@ -59,7 +59,6 @@ export class RMQWorker extends EventEmitter {
 
 export namespace QueueManager {
     let queue_list = ["message-send", "message-state-update", "message-sent-time-update", "message-sent-service-update", "message-recv"]
-    let worker_send_msg_update: RMQWorker
 
     export interface MessageReceivedRequest {
         request_data: any,
@@ -76,15 +75,6 @@ export namespace QueueManager {
     }
     let rsmq = new RedisSMQ({ client: client })
 
-    export function init_queues(): void {
-        createQueues()
-    }
-
-    export function shutdownQueues() {
-        if (worker_send_msg_update) { worker_send_msg_update.stop() }
-        rsmq.quit()
-        client.end(process.env.NODE_ENV != "production")
-    }
 
     export function addMessageToSendRequest(message: Message) {
         logger.debug("Sending message with ID " + message.id)
@@ -148,28 +138,30 @@ export namespace QueueManager {
 
     }
 
-    function createQueues() {
-        let queues_to_create: string[] = []
-        rsmq.listQueues(function (err, queues_in_redis) {
-            if (err || !queues_in_redis) { logger.error(err) }
-            else {
-                queues_in_redis.forEach(function (queue_in_redis) {
-                    queue_list.forEach(function (q_to_create) {
-                        if (queue_in_redis == q_to_create) {
-                            logger.info("Not creating queue " + q_to_create)
-                        } else {
-                            queues_to_create.push(q_to_create)
-                        }
-                    })
+    export function createQueues() {
+        return rsmq.listQueuesAsync()
+            .then((queues) => {
+                return queue_list.filter((required_q) => {
+                    return !queues.includes(required_q)
                 })
+            })
+            .then(queues_to_create => {
+                if (!queues_to_create) { logger.info('All queues already created'); return }
+                return Promise.all(queues_to_create.map((queue_to_create) => {
+                    return rsmq.createQueueAsync({ qname: queue_to_create })
+                        .catch(e => { return e })
+                }))
+            })
+            .then((vals) => {
+                vals.forEach(val => {
+                    if (val instanceof Error) { throw val }
+                });
+            })
+    }
 
-                queues_to_create.forEach(function (queue_to_create) {
-                    rsmq.createQueue({ qname: queue_to_create }, function (error, resp) {
-                        if (resp) { logger.info("Created queue " + queue_to_create) }
-                    })
-                })
-            }
-        })
+    export function shutdownQueues() {
+        rsmq.quit()
+        client.end(process.env.NODE_ENV != "production")
     }
 
 }
