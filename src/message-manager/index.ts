@@ -28,7 +28,7 @@ export namespace MessageManager {
      * @returns {promise} Promise resolving to the confirmation that the new message has been entered into the database
      */
     export async function createMessage(body: string, contact_id: string, direction: "INBOUND" | "OUTBOUND", message_state: MessageStates,
-        servicechain_id?: string, is_reply_to?: string, user?: string, cost?: number): Promise<Message> {
+        organization: string, servicechain_id?: string, is_reply_to?: string, user?: string, cost?: number): Promise<Message> {
         let msg_state = message_state ? message_state : MessageStates.MSG_PENDING
 
         let msg = db.models.Message.build({
@@ -39,7 +39,8 @@ export namespace MessageManager {
             is_reply_to: is_reply_to,
             direction: direction == "INBOUND" ? MessageDirections.INBOUND : MessageDirections.OUTBOUND,
             message_state: msg_state,
-            cost: cost
+            cost: cost,
+            organization: organization
         })
 
         if (msg.body.includes("<title>") || msg.body.includes("<first_name>") || msg.body.includes("<surname>")) {
