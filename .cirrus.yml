@@ -29,8 +29,8 @@ container:
 test_task:
   global_clis_script:
     - npm install -g typescript mocha
-    - sudo apt update
-    - sudo apt install mysql-client -y
+    - apt update
+    - apt install mysql-client -y
 
   node_modules_cache:
     folder: node_modules
