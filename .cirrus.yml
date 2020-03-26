@@ -6,7 +6,7 @@ env:
   AUTH0_MGMT_CLIENT_SECRET: ENCRYPTED[21ed2fa8098c25532331e2b5a580c4a3939222b37ae2bc6a5bc23287652cf656efd537b80811bc678dafa22a137682cb]
   AUTH0_DOMAIN: "voluble-dev.eu.auth0.com"
   AUTH0_API_ID: "https://voluble-poc.herokuapp.com"
-  CLEARDB_DATABASE_URL: "mysql://voluble_test:volubletest@localhost/voluble_test"
+  CLEARDB_DATABASE_URL: "mysql://voluble_test:volubletest@127.0.0.1/voluble_test"
   ESENDEX_ACCOUNT_REF: ENCRYPTED[1923dae4c399adb1241938870ca0ad18c23ef223499392509a5c180dce85310d3c9c400eff9b73b0c28f1fe34da9fa95]
   ESENDEX_PASSWORD: ENCRYPTED[413453ac5604edf2f6969411da3ab3af118e19a962644b2a46928f8807d50ddbba086029e2b83eb969ffa5192c186142]
   ESENDEX_USERNAME: "trevorbailey@ireland.com"
@@ -43,7 +43,7 @@ test_task:
 
   test_script:
     - mysql -uroot -ppa55w0rd -P3306 -h127.0.0.1 -e "CREATE DATABASE voluble_test;"
-    - mysql -uroot -ppa55w0rd -P3306 -h127.0.0.1 -e "CREATE USER voluble_test@localhost IDENTIFIED BY 'volubletest';"
-    - mysql -uroot -ppa55w0rd -P3306 -h127.0.0.1 -e "GRANT ALL PRIVILEGES ON voluble_test.* TO 'voluble_test'@'localhost';"
+    - mysql -uroot -ppa55w0rd -P3306 -h127.0.0.1 -e "CREATE USER voluble_test@127.0.0.1 IDENTIFIED BY 'volubletest';"
+    - mysql -uroot -ppa55w0rd -P3306 -h127.0.0.1 -e "GRANT ALL PRIVILEGES ON voluble_test.* TO 'voluble_test'@'127.0.0.1';"
     - mysql -uroot -ppa55w0rd -P3306 -h127.0.0.1 -e "FLUSH PRIVILEGES;"
     - npm test
