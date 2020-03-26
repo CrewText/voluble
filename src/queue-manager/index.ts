@@ -33,10 +33,10 @@ export class RMQWorker extends EventEmitter {
             })
     }
 
-    public start(): void {
+    public async start() {
         this.continue_check = true
         while (this.continue_check) {
-            this.rsmq.receiveMessageAsync({ qname: this.queue_name })
+            await this.rsmq.receiveMessageAsync({ qname: this.queue_name })
                 .then((msg) => {
                     if ("id" in msg) {
                         this.emit('message', msg.message, () => { this.rsmq.deleteMessageAsync({ id: msg.id, qname: this.queue_name }) }, msg.id)
