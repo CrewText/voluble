@@ -10,7 +10,7 @@
     "start": "node ./dist/server/index.js",
     "postinstall": "tsc -v ; tsc",
     "test-tap": "mocha dist/test --exit --reporter tap",
-    "test": "mocha dist/test --exit --full-trace --bail --timeout=10000",
+    "test": "mocha dist/test --exit --full-trace --bail --timeout=20000",
     "start-server": "node ./dist/server/index.js",
     "start-worker": "node ./dist/worker/worker-main.js"
   },
