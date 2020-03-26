@@ -51,7 +51,8 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     return axios.default.post("https://api.esendex.com/v1.0/messagedispatcher", esendex_message,
       {
         auth: { username: this.username || "", password: this.password || "" },
-        responseType: "json"
+        responseType: "json",
+        headers: { 'Content-Type': 'application/json' }
       })
       .then(function (response) {
         if (response.status >= 400) { throw new EsendexError(response.status, `${response.data.errors[0].code}: ${response.data.errors[0].description}`) }

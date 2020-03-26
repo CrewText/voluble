@@ -1,7 +1,7 @@
 import * as redis from 'redis'
 import * as rsmq from 'rsmq'
 // import * as rsmqWorker from 'rsmq-worker'
-import { MessageStates } from 'voluble-common'
+import { MessageStates, PlanTypes } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
@@ -67,7 +67,10 @@ worker_msg_send.on("message", async function (message: string, next: () => void,
                         return user.getOrganization()
                     })
                     .then(org => {
-                        return org.decrement('credits', { by: msg.cost })
+                        if (org.plan == PlanTypes.PAY_IN_ADVANCE) {
+                            return org.decrement('credits', { by: msg.cost })
+                        }
+                        else return
                     })
             })
     } catch (e) {
@@ -95,6 +98,7 @@ worker_msg_sent_time.on("message", (message: string, next: () => void, message_i
     let json_msg = JSON.parse(message)
     MessageManager.getMessageFromId(json_msg.message_id)
         .then(msg => {
+            logger.debug(`Collected message-sent-time-update request for message`, { msg: json_msg.message_id, timestamp_ms: json_msg.timestamp })
             msg.sent_time = new Date(json_msg.timestamp)
             return msg.save()
         })
@@ -111,6 +115,7 @@ worker_msg_sent_service.on("message", (message: string, next: () => void, messag
     let json_msg = JSON.parse(message)
     MessageManager.getMessageFromId(json_msg.message_id)
         .then((msg) => {
+            logger.debug(`Collected message-sent-service-update request for message`, { msg: json_msg.message_id, service: json_msg.sent_service })
             msg.sent_service = json_msg.sent_service
             return msg.save()
         })
@@ -183,7 +188,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
 
         let plugin = await PluginManager.getPluginById(incoming_message_request.service_id)
         if (!plugin) { throw new ResourceNotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
-        logger.debug(`MAIN: Worker has received incoming message request for service with ID ${incoming_message_request.service_id}`)
+        logger.debug(`Received incoming message request for service with ID ${incoming_message_request.service_id}`)
 
         let message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
 

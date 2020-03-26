@@ -111,7 +111,8 @@ router.post('/:org_id/messages/', checkJwt,
       checkHasOrgAccess(req['user'], req.params.org_id)
 
       let contact = await ContactManager.getContactWithId(req.body.contact)
-      let sc = req.body.ServicechainId ? await ServicechainManager.getServicechainById(req.body.ServicechainId) : await contact.getServicechain()
+      if (!contact) { throw new ResourceNotFoundError(`Contact with ID ${req.body.contact} not found`) }
+      let sc = req.body.servicechain ? await ServicechainManager.getServicechainById(req.body.servicechain) : await contact.getServicechain()
 
       let msg = await MessageManager.createMessage(req.body.body,
         req.body.contact,
