@@ -109,7 +109,7 @@ export async function initServer() {
     app.use('/v1/orgs', routes_messages)
     app.use('/v1/orgs', routes_blasts)
     app.use('/v1/orgs', routes_servicechains)
-    res()
+    return res()
   })
     .then(() => {
       logger.debug("Initializing DB")
