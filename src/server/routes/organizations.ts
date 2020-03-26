@@ -120,7 +120,7 @@ router.post('/', checkJwt, async function (req, res, next) {
         })
         .then(e164_phone_num => {
             return Promise.all([OrgManager.createNewOrganization(org_name, e164_phone_num, plan_type),
-            UserManager.createUser(req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients` ? random.uuid() : req['user'].sub)])
+            UserManager.createUser(req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients` ? Math.random().toString(36).substring(2, 15) : req['user'].sub)])
         })
         .then(([new_org, new_user]) => {
             logger.debug(`Created new Organization`, { 'org': new_org.id })

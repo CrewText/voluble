@@ -67,7 +67,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
           }
           else { this.logger.error(err.response) }
         } else {
-          this.logger.error(err)
+          this.logger.error(err.toJSON())
         }
         return false
       })
@@ -86,7 +86,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
             (the virtual number of the Esendex account in use)}
         </To>
     </InboundMessage>
-
+   
     which converts to JSON from xmlParser as:
     { inboundmessage:
       { id: 'guid-of-push-notification',
