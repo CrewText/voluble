@@ -1,11 +1,8 @@
+import { EventEmitter } from 'events';
 import * as redis from 'redis';
 import * as RedisSMQ from 'rsmq';
-// import * as rsmqWorker from 'rsmq-worker';
 import * as winston from 'winston';
-import { MessageManager } from "../message-manager";
-import { ResourceNotFoundError } from '../voluble-errors';
 import { Message } from '../models/message';
-import { EventEmitter } from 'events';
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'QueueMgr' })
 

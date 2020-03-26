@@ -1,9 +1,5 @@
-import * as plugin_base from '../plugin_base'
-// import * as rp from 'request-promise'
-// import * as Promise from 'bluebird'
-import * as request from 'request'
-import * as axios from 'axios'
-import winston = require('winston');
+import * as axios from 'axios';
+import * as plugin_base from '../plugin_base';
 
 interface IncomingEsendexMessage {
   inboundmessage: ReceivedEsendexMessageData
@@ -40,8 +36,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
 
   async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
     //this.populate_object_data_tables(message, contact)
-
-    let esendex_message = {
+    const esendex_message = {
       accountreference: this.account_ref,
       messages: [{
         to: contact.phone_number,
@@ -72,7 +67,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
         if (response.status >= 400) { throw new EsendexError(response.status) }
         return true
       })
-      .catch(function (reason: Error) {
+      .catch(reason => {
         let error_msg
         if (reason instanceof EsendexError) {
           switch (reason.statusCode) {
@@ -104,8 +99,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
         } else {
           error_msg = reason.message
         }
-
-        console.info(`ESENDEX: Got error while sending message ${message.id}: ${error_msg}`)
+        this.logger.error(`ESENDEX: Got error while sending message ${message.id}: ${error_msg}`)
         return false
       })
   }
