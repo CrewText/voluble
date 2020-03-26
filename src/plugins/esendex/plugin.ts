@@ -61,7 +61,10 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
         if (err instanceof EsendexError) {
           this.logger.error(`Error ${err.statusCode}: ${err.message}`)
         } else if (err.response) {
-          this.logger.error(`${err.response.data.errors[0].statusCode}: ${err.response.data.errors[0].code}: ${err.response.data.errors[0].description}`)
+          if (err.response.errors) {
+            this.logger.error(`${err.response.data.errors[0].statusCode}: ${err.response.data.errors[0].code}: ${err.response.data.errors[0].description}`)
+          }
+          else { this.logger.error(err.response) }
         } else {
           this.logger.error(err)
         }
