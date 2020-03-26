@@ -1,8 +1,7 @@
-import { EventEmitter } from 'events';
-import * as db from '../models';
 import { Contact } from '../models/contact';
 import { Message } from '../models/message';
 import { NotImplementedError } from '../voluble-errors';
+import * as winston from 'winston'
 export type contactInstance = Contact
 export type messageInstance = Message
 
@@ -33,6 +32,7 @@ export abstract class voluble_plugin implements IVolublePluginBase {
     description: string
     // _eventEmitter = new EventEmitter()
     _plugin_dir = __dirname
+    logger: winston.Logger
 
     public get PLUGIN_HOME(): string {
         return this._plugin_dir
@@ -50,6 +50,8 @@ export abstract class voluble_plugin implements IVolublePluginBase {
         if (!this.description) {
             throw new NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_description' in it's constructor: ${__dirname}`)
         }
+
+        this.logger = winston.loggers.get(process.mainModule.filename).child({ module: `Plugin (${this.name})` })
     }
 
     abstract async send_message(message: Message, contact: Contact): Promise<boolean>
