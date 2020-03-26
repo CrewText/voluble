@@ -64,43 +64,14 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       // })
       // })
       .then(function (response) {
-        if (response.status >= 400) { throw new EsendexError(response.status, response.data.errors[0].description) }
+        if (response.status >= 400) { throw new EsendexError(response.status, `${response.data.errors[0].code}: ${response.data.errors[0].description}`) }
         return true
       })
-      .catch(reason => {
+      .catch(err => {
         let error_msg
-        if (reason instanceof EsendexError) {
-          switch (reason.statusCode) {
-            case 400:
-              error_msg = "400 Bad Request: Invalid/Malformed request body or more than 50,000 messages in request."
-              break
-            case 401:
-              error_msg = "401 Not Authorised: No authentication header provided."
-              break
-            case 402:
-              error_msg = "402 Payment Required: Not enough message credits."
-              break
-            case 403:
-              error_msg = "403 Forbidden: Failed authentication or not authorised to access feature."
-              break
-            case 404:
-              error_msg = "404 Not Found: The specified contact or contact group doesn't exist."
-              break
-            case 406:
-              error_msg = "406 Not Acceptable: Empty message body provided."
-              break
-            case 415:
-              error_msg = "415 Unsupported Media Type: Content type is not supported or unspecified."
-              break
-            default:
-              error_msg = "Unknown error"
-              break
-          }
-          error_msg = `${error_msg} - ${reason.message}`
-        } else {
-          error_msg = reason.message
-        }
-        this.logger.error(`ESENDEX: Got error while sending message ${message.id}: ${error_msg}`)
+        if (err instanceof EsendexError) {
+          this.logger.error(`Error ${err.statusCode}: ${err.message}`)
+        } else { this.logger.error(err) }
         return false
       })
   }
