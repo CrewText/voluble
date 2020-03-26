@@ -5,13 +5,10 @@ import { MessageStates } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
-import { Message } from '../models/message'
 import { PluginManager } from '../plugin-manager'
 import { QueueManager, RMQWorker } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
-import { OrgManager } from '../org-manager'
-import { UserManager } from '../user-manager'
 
 let logger = winston.loggers.add(process.mainModule.filename, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
@@ -22,16 +19,12 @@ logger.add(new winston.transports.Console())
 
 if (process.env.NODE_ENV == "development" || process.env.NODE_ENV == "test") {
     logger.info("Main: Detected dev/test environment")
-    // logger.level = 'debug'
 } else {
     logger.info("Main: Detected prod environment")
-    // logger.level = 'info'
 }
-
 
 class EmptyMessageInfoError extends Error { }
 class InvalidMessageInfoError extends Error { }
-
 
 logger.info("Main: Initializing worker process")
 
@@ -56,6 +49,9 @@ logger.debug("Main: conn ID " + client.connection_id)
 let rsmq_client = new rsmq({ client: client })
 let worker_msg_send = new RMQWorker("message-send", rsmq_client)
 let worker_msg_recv = new RMQWorker("message-recv", rsmq_client)
+let worker_msg_sent_service = new RMQWorker("message-sent-service-update", rsmq_client)
+let worker_msg_sent_time = new RMQWorker("message-sent-time-update", rsmq_client)
+let worker_send_msg_update = new RMQWorker("message-state-update", rsmq_client)
 
 worker_msg_send.on("message", async function (message: string, next: () => void, message_id: string) {
     let parsed_msg_id: string = message
@@ -71,7 +67,7 @@ worker_msg_send.on("message", async function (message: string, next: () => void,
                         return user.getOrganization()
                     })
                     .then(org => {
-                        return org.decrement('credits')
+                        return org.decrement('credits', { by: msg.cost })
                     })
             })
     } catch (e) {
@@ -79,6 +75,52 @@ worker_msg_send.on("message", async function (message: string, next: () => void,
     } finally {
         next()
     }
+}).start()
+
+worker_send_msg_update.on("message", function (message, next, message_id) {
+    let update = JSON.parse(message)
+    logger.debug("Got message update for message " + update.message_id + ": " + update.status)
+    MessageManager.updateMessageState(update.message_id, update.status)
+        .catch(function (error) {
+            if (error instanceof ResourceNotFoundError) {
+                logger.info("Dropping message update request for message with ID " + update.message_id)
+            } else {
+                throw error
+            }
+        })
+        .finally(function () { next() })
+}).start()
+
+worker_msg_sent_time.on("message", (message: string, next: () => void, message_id: string) => {
+    let json_msg = JSON.parse(message)
+    MessageManager.getMessageFromId(json_msg.message_id)
+        .then(msg => {
+            msg.sent_time = new Date(json_msg.timestamp)
+            return msg.save()
+        })
+        .catch(e => {
+            logger.error(e)
+            throw e
+        })
+        .finally(() => {
+            next()
+        })
+}).start()
+
+worker_msg_sent_service.on("message", (message: string, next: () => void, message_id: string) => {
+    let json_msg = JSON.parse(message)
+    MessageManager.getMessageFromId(json_msg.message_id)
+        .then((msg) => {
+            msg.sent_service = json_msg.sent_service
+            return msg.save()
+        })
+        .catch(e => {
+            logger.error(e)
+            throw e
+        })
+        .finally(() => {
+            next()
+        })
 }).start()
 
 /**

@@ -60,7 +60,7 @@ export class RMQWorker extends EventEmitter {
 }
 
 export namespace QueueManager {
-    let queue_list = ["message-send", "message-state-update", "message-recv"]
+    let queue_list = ["message-send", "message-state-update", "message-sent-time-update", "message-sent-service-update", "message-recv"]
     let worker_send_msg_update: RMQWorker
 
     export interface MessageReceivedRequest {
@@ -80,25 +80,6 @@ export namespace QueueManager {
 
     export function init_queues(): void {
         createQueues()
-
-        worker_send_msg_update = new RMQWorker("message-state-update", rsmq)
-
-        // let worker_send_msg_update = new rsmqWorker("message-state-update", { redis: client })
-        worker_send_msg_update.on("message", function (message, next, message_id) {
-            let update = JSON.parse(message)
-            logger.debug("Got message update for message " + update.message_id + ": " + update.status)
-            MessageManager.updateMessageState(update.message_id, update.status)
-                .catch(function (error) {
-                    if (error instanceof ResourceNotFoundError) {
-                        logger.info("Dropping message update request for message with ID " + update.message_id)
-                    } else {
-                        throw error
-                    }
-                })
-                .then(function () { next() })
-        })
-
-        worker_send_msg_update.start()
     }
 
     export function shutdownQueues() {
@@ -138,22 +119,34 @@ export namespace QueueManager {
         })
     }
 
-    export async function addMessageReceivedRequest(request_data: any, service_id: string): Promise<void> {
+    export function addMessageSentTimeUpdateRequest(message_id: string, message_unix_timestamp_ms: number) {
+        let q_msg = { message_id: message_id, timestamp: message_unix_timestamp_ms }
+        rsmq.sendMessage({
+            qname: "message-sent-time-update", message: JSON.stringify(q_msg)
+        }, (err, resp) => {
+            if (resp) { return true }
+            else { logger.error(err); throw err }
+        })
+    }
+
+    export function addMessageSentServiceUpdateRequest(message_id: string, message_sent_service_id: string) {
+        let q_msg = { message_id: message_id, sent_service: message_sent_service_id }
+        rsmq.sendMessage({
+            qname: "message-sent-service-update", message: JSON.stringify(q_msg)
+        }, (err, resp) => {
+            if (resp) { return true }
+            else { logger.error(err); throw err }
+        })
+    }
+
+    export async function addMessageReceivedRequest(request_data: any, service_id: string): Promise<string> {
         let q_msg: MessageReceivedRequest = { request_data: request_data, service_id: service_id }
         logger.debug(`Sending queue message`)
-        return new Promise((res, rej) => {
-            rsmq.sendMessage({
-                qname: "message-recv",
-                message: JSON.stringify(q_msg)
-            }, function (err, resp) {
-                if (resp) {
-                    res()
-                } else {
-                    logger.error(err)
-                    rej(err)
-                }
+        return rsmq.sendMessageAsync({ qname: 'message-recv', message: JSON.stringify(q_msg) })
+            .catch(e => {
+                logger.error(e)
+                throw e
             })
-        })
 
     }
 

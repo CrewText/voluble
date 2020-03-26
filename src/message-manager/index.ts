@@ -83,9 +83,9 @@ export namespace MessageManager {
 
         for (let current_svc_prio = 1; (current_svc_prio < svc_count + 1) && !is_sent; current_svc_prio++) {
             logger.debug(`Attempting to find plugin with priority ${current_svc_prio} in servicechain ${msg.servicechain}`)
-
+            let svc: Service
             try {
-                let svc = await ServicechainManager.getServiceInServicechainByPriority(msg.servicechain, current_svc_prio)
+                svc = await ServicechainManager.getServiceInServicechainByPriority(msg.servicechain, current_svc_prio)
                 logger.debug(`Found service; Attempting message send`, { msg: msg.id, sc: sc.id, svc: svc.directory_name, priority: current_svc_prio })
                 is_sent = await sendMessageWithService(msg, svc)
             } catch (e) {
@@ -96,16 +96,18 @@ export namespace MessageManager {
                 }
             }
 
-            if (!is_sent) {
+            if (is_sent) {
+                QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
+                QueueManager.addMessageSentTimeUpdateRequest(msg.id, Date.now())
+                QueueManager.addMessageSentServiceUpdateRequest(msg.id, svc.id)
+                return msg
+            } else {
                 // Wasn't able to send the message with this service, try the next one
                 logger.debug(`Failed to send message ${msg.id}, trying next priority plugin...`)
             }
         }
 
-        if (is_sent) {
-            QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_DELIVERED_USER)
-            return msg
-        } else {
+        if (!is_sent) {
             logger.info(`Ran out of services for servicechain ${msg.servicechain}, message failed`)
             QueueManager.addMessageStateUpdateRequest(msg.id, MessageStates.MSG_FAILED)
             return Promise.reject(`Ran out of services for servicechain ${msg.servicechain}, message failed`)
@@ -113,29 +115,16 @@ export namespace MessageManager {
     }
 
     async function sendMessageWithService(msg: Message, svc: Service): Promise<boolean> {
-        return PluginManager.getPluginById(svc.id)
-            .then(function (plugin) {
-                if (plugin) {
-                    logger.debug(`Loaded plugin ${plugin.name}`)
-                    return ContactManager.getContactWithId(msg.contact)
-                        .then(async function (contact) {
-                            if (contact) {
-                                logger.debug(`Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
-                                try {
-                                    return await plugin.send_message(msg, contact)
-                                } catch (e) {
-                                    if (e instanceof PluginManager.PluginImportFailedError) {
-                                        logger.warn(e.message, e)
-                                        return Promise.reject(e)
-                                    } else { throw e }
-                                }
-                            } else {
-                                return Promise.reject(new ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`))
-                            }
-                        })
-                } else {
-                    return Promise.reject(new ResourceNotFoundError(`Could not find plugin with ID ${svc.id}`))
-                }
+        return Promise.all([PluginManager.getPluginById(svc.id), ContactManager.getContactWithId(msg.contact)])
+            .then(([plugin, contact]) => {
+                if (!contact) { throw new ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`) }
+                logger.debug(`Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
+
+                return plugin.send_message(msg, contact)
+            })
+            .catch(e => {
+                logger.warn(e)
+                throw e
             })
     }
 

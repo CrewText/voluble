@@ -84,7 +84,7 @@ export class Organization extends Model implements OrgAttributes {
             },
             plan: {
                 type: DataTypes.ENUM(...Object.values(PlanTypes)),
-                allowNull: false, defaultValue: PlanTypes.PAYG
+                allowNull: false, defaultValue: PlanTypes.PAY_IN_ADVANCE
             }
         },
             {

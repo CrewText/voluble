@@ -68,7 +68,7 @@ export function serializeTypes(serializer: any) {
     })
 
     serializer.register('message', {
-        whitelist: ['id', 'body', 'direction', 'message_state', 'cost'],
+        whitelist: ['id', 'body', 'direction', 'message_state', 'sent_time', 'cost'],
         links: {
             self: data => { return `/orgs/${data.organization}/messages/${data.id}` }
         },
@@ -91,6 +91,11 @@ export function serializeTypes(serializer: any) {
             user: {
                 type: 'user',
                 links: data => { return { related: `/orgs/${data.organization}/users/${data.user}` } },
+                schema: 'id-only'
+            },
+            sent_service: {
+                type: 'service',
+                links: data => { return { related: `services/${data.sent_service}` } },
                 schema: 'id-only'
             }
         }

@@ -15,6 +15,8 @@ export class Message extends Model implements MessageAttributes {
     public contact!: string
     public direction!: MessageDirections
     public message_state!: MessageStates
+    public sent_time!: Date
+    public sent_service: string
     public cost!: number
 
     public getContact!: BelongsToGetAssociationMixin<Contact>
@@ -46,7 +48,8 @@ export class Message extends Model implements MessageAttributes {
             is_reply_to: DataTypes.UUID,
             user: DataTypes.STRING,
             direction: DataTypes.ENUM(...Object.keys(MessageDirections)),
-            sent_time: { type: DataTypes.DATE, defaultValue: fn('NOW') },
+            sent_time: { type: DataTypes.DATE, allowNull: true },
+            sent_service: { type: DataTypes.UUID, allowNull: true },
             message_state: DataTypes.ENUM(...Object.keys(MessageStates)),
             cost: DataTypes.INTEGER
         }, {

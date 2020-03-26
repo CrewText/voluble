@@ -4,7 +4,7 @@ import * as winston from 'winston'
 import * as db from '../models'
 import { Service } from '../models/service'
 import { voluble_plugin } from '../plugins/plugin_base'
-import { ResourceOutOfUserScopeError } from '../voluble-errors'
+import { ResourceNotFoundError } from '../voluble-errors'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'PluginMgr' })
 
@@ -32,7 +32,7 @@ export namespace PluginManager {
             let svc = await db.models.Service.findByPk(id)
 
             if (!svc) {
-                reject(new ResourceOutOfUserScopeError(`Plugin with ID ${id} cannot be found`))
+                reject(new ResourceNotFoundError(`Plugin with ID ${id} cannot be found`))
             }
 
             try {
