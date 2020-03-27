@@ -1,5 +1,4 @@
 import * as express from "express";
-import { random } from 'faker';
 import validator from "validator";
 import { PlanTypes, scopes } from "voluble-common";
 import * as winston from 'winston';
