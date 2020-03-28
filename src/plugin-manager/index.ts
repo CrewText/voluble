@@ -158,4 +158,8 @@ export namespace PluginManager {
     export async function getServiceById(id: string): Promise<Service | null> {
         return db.models.Service.findByPk(id)
     }
+
+    export function getServiceCount() {
+        return db.models.Service.count({})
+    }
 }

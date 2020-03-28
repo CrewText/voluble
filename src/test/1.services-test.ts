@@ -35,7 +35,7 @@ describe('/v1/services', function () {
                 auth_token = token
                 // done()
                 return true
-            })
+            }).catch(e => { console.error(e); throw e })
     })
 
     this.afterAll((done) => {
@@ -103,6 +103,35 @@ describe('/v1/services', function () {
 
                     satisfiesJsonApiResource(res.body.data, 'service', available_services[0].id)
 
+                    done()
+                })
+        })
+    })
+
+    describe('GET /v1/services/count', () => {
+        it('should fail if we are not authenticated', function (done) {
+            supertest(server_app)
+                .get(`/v1/services/count`)
+                .expect(401)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
+                    done()
+                })
+        })
+
+        it('should return the count of services available', function (done) {
+            if (!available_services || !auth_token) { this.skip() }
+            supertest(server_app)
+                .get(`/v1/services/count`)
+                .auth(auth_token, { type: 'bearer' })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
+
+                    chai.expect(res.body.data).to.have.property('count', 3)
                     done()
                 })
         })

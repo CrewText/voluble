@@ -5,7 +5,7 @@ import * as winston from 'winston';
 import { OrgManager } from "../../org-manager";
 import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
-import { InvalidParameterValueError, ResourceNotFoundError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
@@ -31,6 +31,34 @@ router.get('/:org_id/servicechains/', checkJwt, checkScopesMiddleware([scopes.Se
   }
 })
 
+router.get('/:org_id/servicechains/count', checkJwt, checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
+  (req, res, next) => {
+    new Promise((res, rej) => {
+      res(checkHasOrgAccess(req['user'], req.params.org_id))
+    })
+      .then(() => {
+        return OrgManager.getOrganizationById(req.params.org_id)
+      })
+      .then(org => {
+        return org.countServicechains()
+      })
+      .then(c => {
+        return res.status(200).json({ data: { count: c } })
+      })
+      .catch(e => {
+        let serialized_err = res.app.locals.serializer.serializeError(e)
+        if (e instanceof ResourceOutOfUserScopeError) {
+          res.status(403).json(serialized_err)
+        }
+        else if (e instanceof ResourceNotFoundError) {
+          res.status(400).json(serialized_err)
+        }
+        else {
+          logger.error(e.message)
+          res.status(500).json(serialized_err)
+        }
+      })
+  })
 
 router.post('/:org_id/servicechains/', checkJwt,
 
@@ -182,26 +210,35 @@ router.put('/:org_id/servicechains/:id', checkJwt,
         let serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof ResourceNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
           res.status(400).json(serialized_err)
-        } else {
+        } else if (e instanceof ResourceOutOfUserScopeError) {
+          res.status(403).json(serialized_err)
+        }
+        else {
           res.status(500).json(serialized_err)
           logger.error(e)
         }
       })
   })
 
-router.delete('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainDelete]), function (req, res, next) {
-  return ServicechainManager.deleteServicechain(req.params.sc_id)
-    .then(function (row) {
-      res.status(204).json({})
-    })
-    .catch(function (e) {
-      if (e instanceof ResourceNotFoundError) { res.status(404).json({}) }
-      else {
-        let serialized_err = req.app.locals.serializer.serializeError(e)
-        res.status(500).json(serialized_err)
-        logger.error(e)
-      }
-    })
-})
+router.delete('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainDelete]),
+  checkHasOrgAccessMiddleware,
+  function (req, res, next) {
+    return ServicechainManager.deleteServicechain(req.params.sc_id)
+      .then(function (row) {
+        res.status(204).json({})
+      })
+      .catch(function (e) {
+        if (e instanceof ResourceNotFoundError) { res.status(404).json({}) }
+        else if (e instanceof ResourceOutOfUserScopeError) {
+          let serialized_err = req.app.locals.serializer.serializeError(e)
+          res.status(403).json(serialized_err)
+        }
+        else {
+          let serialized_err = req.app.locals.serializer.serializeError(e)
+          res.status(500).json(serialized_err)
+          logger.error(e)
+        }
+      })
+  })
 
 module.exports = router;

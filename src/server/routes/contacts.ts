@@ -50,6 +50,35 @@ router.get('/:org_id/contacts', checkJwt,
     }
   })
 
+router.get('/:org_id/contacts/count', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
+  (req, res, next) => {
+    new Promise((res, rej) => {
+      res(checkHasOrgAccess(req['user'], req.params.org_id))
+    })
+      .then(() => {
+        return OrgManager.getOrganizationById(req.params.org_id)
+      })
+      .then(org => {
+        return org.countContacts()
+      })
+      .then(c => {
+        return res.status(200).json({ data: { count: c } })
+      })
+      .catch(e => {
+        let serialized_err = res.app.locals.serializer.serializeError(e)
+        if (e instanceof ResourceOutOfUserScopeError) {
+          res.status(403).json(serialized_err)
+        }
+        else if (e instanceof ResourceNotFoundError) {
+          res.status(400).json(serialized_err)
+        }
+        else {
+          logger.error(e.message)
+          res.status(500).json(serialized_err)
+        }
+      })
+  })
+
 /**
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.

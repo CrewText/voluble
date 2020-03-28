@@ -205,6 +205,36 @@ describe('/v1/orgs/<org-id>/categories', function () {
         })
     })
 
+    describe('GET /v1/orgs/<org_id>/categories/count', () => {
+        it('should fail if we are not authenticated', function (done) {
+            if (!test_org_id) { this.skip() }
+            supertest(server_app)
+                .get(`/v1/orgs/${test_org_id}/categories/count`)
+                .expect(401)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    satisfiesJsonApiError(res.body)
+                    done()
+                })
+        })
+
+        it('should return the count of categories available', function (done) {
+            if (!created_cat_id || !auth_token || !test_org_id) { this.skip() }
+            supertest(server_app)
+                .get(`/v1/orgs/${test_org_id}/categories/count`)
+                .auth(auth_token, { type: 'bearer' })
+                .expect(200)
+                .end((err, res) => {
+                    if (err) { console.log(err); console.log(res.error); return done(err) }
+                    chai.expect(res.body).to.have.property('data')
+                    chai.expect(res.body).not.to.have.property('errors')
+
+                    chai.expect(res.body.data).to.have.property('count', 1)
+                    done()
+                })
+        })
+    })
+
     describe('PUT /v1/orgs/<org-id>/categories/<category-id>', () => {
         it('should fail if we are not authenticated', function (done) {
             if (!test_org_id || !created_cat_id) { this.skip() }

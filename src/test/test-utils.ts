@@ -16,6 +16,10 @@ export async function getAccessToken(): Promise<string> {
             if (!resp.data.access_token) { throw new Error('No access token in Auth0 response') }
             return resp.data.access_token
         })
+        .catch((err) => {
+            if (err.toJSON) { console.error(err.toJSON()) }
+            throw err
+        })
 }
 
 export function satisfiesJsonApiResource(data: any, type_name: string, id?: string) {

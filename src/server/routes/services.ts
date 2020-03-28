@@ -7,7 +7,7 @@ import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicesRoute' })
 const router = express.Router();
 
-router.get('/', checkJwt, checkScopesMiddleware([scopes.ServiceView]), function (req, res, next) {
+router.get('/', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), function (req, res, next) {
   PluginManager.getAllServices()
     .then(function (rows) {
       return req.app.locals.serializer.serializeAsync('service', rows)
@@ -22,7 +22,15 @@ router.get('/', checkJwt, checkScopesMiddleware([scopes.ServiceView]), function 
     })
 })
 
-router.get('/:service_id', checkJwt, checkScopesMiddleware([scopes.ServiceView]), function (req, res, next) {
+router.get('/count', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
+  (req, res, next) => {
+    return PluginManager.getServiceCount()
+      .then(c => {
+        return res.status(200).json({ data: { count: c } })
+      })
+  })
+
+router.get('/:service_id', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), function (req, res, next) {
   return PluginManager.getServiceById(req.params.service_id)
     .then(function (service) {
       if (service) {

@@ -1,4 +1,5 @@
 import * as Sequelize from "sequelize";
+import * as winston from 'winston';
 import { Blast } from "./blast";
 import { Category } from './category';
 import { Contact } from './contact';
@@ -8,6 +9,8 @@ import { Service } from './service';
 import { Servicechain } from './servicechain';
 import { ServicesInSC } from "./servicesInServicechain";
 import { User } from './user';
+
+let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'DB' })
 
 export let models = {
     Contact: Contact,
@@ -30,7 +33,12 @@ if (!db_url) {
     throw new Error("ClearDB Database URL is null! Exiting...")
 }
 
-let sequelize = new Sequelize.Sequelize(db_url, { dialect: 'mysql', logging: false })
+let sequelize = new Sequelize.Sequelize(db_url, {
+    dialect: 'mysql',
+    // logging: process.env.NODE_ENV == "test" ? (sql, timing) => { logger.debug(sql, { timing: timing }) } : false,
+    logging: false,
+    logQueryParameters: false
+})
 
 
 User.initModel(sequelize)
