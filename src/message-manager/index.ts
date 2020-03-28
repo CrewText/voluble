@@ -152,19 +152,23 @@ export namespace MessageManager {
      * @param {Number} offset The amount of messages to skip over, before returning the next 100.
      * @returns {promise} A Promise resolving to the rows returned.
      */
-    export async function getMessages(offset: number = 0, limit: number = 100, organization?: string): Promise<Array<Message>> {
+    export async function getMessages(offset: number = 0, limit: number = 100, organization?: string,
+        startDate: Date = new Date(0), endDate = new Date()): Promise<Array<Message>> {
         // Get all messages where the Contact is in the given Org.
         // If there isn't an Org, all messages where the contact's Org != null (which should be all of them)
-        console.log("Getting messages for Org " + organization)
         return db.models.Message.findAll({
             offset: offset,
             limit: limit,
             order: [['createdAt', 'DESC']],
+            where: {
+                //@ts-ignore
+                'createdAt': { [db.models.sequelize.Op.between]: [startDate, endDate] }
+            },
             include: [
                 {
                     model: db.models.Contact,
                     where: {
-                        'OrganizationId': organization ? organization : { [db.models.sequelize.Op.ne]: null }
+                        'organization': organization ? organization : { [db.models.sequelize.Op.ne]: null }
                     }
                 }
             ]

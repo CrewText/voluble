@@ -11,6 +11,7 @@ import { checkHasCredits } from "../helpers/check_has_credits";
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { checkJwt, checkScopesMiddleware } from '../security/jwt';
 import { checkHasOrgAccess, setupUserOrganizationMiddleware } from '../security/scopes';
+import { OrgManager } from "../../org-manager";
 
 const router = express.Router();
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
@@ -63,7 +64,36 @@ router.get('/:org_id/messages/', checkJwt,
         res.status(500).json(serialized_err)
       }
     }
+  })
 
+router.get('/:org_id/messages/count', checkJwt,
+  checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin, scopes.OrganizationOwner]),
+  setupUserOrganizationMiddleware,
+  (req, res, next) => {
+    new Promise((res, rej) => {
+      res(checkHasOrgAccess(req['user'], req.params.org_id))
+    })
+      .then(() => {
+        return MessageManager.getMessages(0, 100000, req.params.org_id,
+          req.query.start_timestamp ? new Date(req.query.start_timestamp * 1000) : new Date(0),
+          req.query.end_timestamp ? new Date(req.query.end_timestamp * 1000) : new Date())
+      })
+      .then(msgs => {
+        res.status(200).json({ data: { count: msgs.length } })
+      })
+      .catch(e => {
+        let serialized_err = res.app.locals.serializer.serializeError(e)
+        if (e instanceof ResourceOutOfUserScopeError) {
+          res.status(403).json(serialized_err)
+        }
+        else if (e instanceof ResourceNotFoundError) {
+          res.status(400).json(serialized_err)
+        }
+        else {
+          logger.error(e.message)
+          res.status(500).json(serialized_err)
+        }
+      })
   })
 
 /**
