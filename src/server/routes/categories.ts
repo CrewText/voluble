@@ -13,7 +13,7 @@ let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'C
 const router = express.Router();
 
 router.get('/:org_id/categories', checkJwt,
-    checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+    checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
     async (req, res, next) => {
 
@@ -70,7 +70,7 @@ router.get('/:org_id/categories/count', checkJwt, checkScopesMiddleware([scopes.
     })
 
 router.post('/:org_id/categories', checkJwt,
-    checkScopesMiddleware([scopes.ContactAdd, scopes.VolubleAdmin]),
+    checkScopesMiddleware([scopes.CategoryAdd, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, _next) => {
 
         try {
@@ -100,7 +100,7 @@ router.post('/:org_id/categories', checkJwt,
     })
 
 router.get('/:org_id/categories/:cat_id',
-    checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+    checkJwt, checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
@@ -125,7 +125,7 @@ router.get('/:org_id/categories/:cat_id',
     })
 
 router.put('/:org_id/categories/:cat_id', checkJwt,
-    checkScopesMiddleware([scopes.ContactEdit, scopes.VolubleAdmin]),
+    checkScopesMiddleware([scopes.CategoryEdit, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
@@ -161,7 +161,7 @@ router.put('/:org_id/categories/:cat_id', checkJwt,
     })
 
 router.delete('/:org_id/categories/:cat_id',
-    checkJwt, checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]),
+    checkJwt, checkScopesMiddleware([scopes.CategoryDelete, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
