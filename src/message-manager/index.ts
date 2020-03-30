@@ -8,6 +8,7 @@ import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
 import { ResourceNotFoundError } from '../voluble-errors'
+import { OrgManager } from '../org-manager'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessageMgr' })
 
@@ -117,11 +118,11 @@ export namespace MessageManager {
 
     async function sendMessageWithService(msg: Message, svc: Service): Promise<boolean> {
         return Promise.all([PluginManager.getPluginById(svc.id), ContactManager.getContactWithId(msg.contact)])
-            .then(([plugin, contact]) => {
+            .then(async ([plugin, contact]) => {
                 if (!contact) { throw new ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`) }
                 logger.debug(`Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
 
-                return plugin.send_message(msg, contact)
+                return plugin.send_message(msg, contact, await contact.getOrganization())
             })
             .catch(e => {
                 logger.warn(e)

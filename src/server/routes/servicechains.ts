@@ -6,8 +6,8 @@ import { OrgManager } from "../../org-manager";
 import { PluginManager } from '../../plugin-manager/';
 import { ServicechainManager } from '../../servicechain-manager/';
 import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
-import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
+import { checkJwt } from '../security/jwt';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware, checkScopesMiddleware } from "../security/scopes";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicechainsRoute' })
 

@@ -17,7 +17,7 @@ class TelegramPlugin extends plugin_base.voluble_plugin {
         })
     }
 
-    async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
+    async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance, org: plugin_base.orgInstance) {
         //rp.post(this.TELEGRAM_SERVER_ADDR)
         throw new Error(`In plugin ${this.name} - the method 'send_message' has not been implemented!`)
         return new Promise<boolean>((resolve, reject) => {

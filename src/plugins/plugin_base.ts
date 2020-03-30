@@ -1,9 +1,11 @@
+import * as winston from 'winston';
 import { Contact } from '../models/contact';
 import { Message } from '../models/message';
+import { Organization } from '../models/organization';
 import { NotImplementedError } from '../voluble-errors';
-import * as winston from 'winston'
 export type contactInstance = Contact
 export type messageInstance = Message
+export type orgInstance = Organization
 
 export interface InterpretedIncomingMessage {
     message_body: string,
@@ -19,19 +21,20 @@ export interface InterpretedIncomingMessage {
  * that Voluble uses for all plugins to work, such as the EventEmitter.
  */
 
-interface IVolublePluginBase {
-    name: string | undefined
-    description: string | undefined
-    // _eventEmitter: EventEmitter
-    send_message(message: Message, contact: Contact): Promise<boolean> | boolean
-    handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage
-}
+// interface IVolublePluginBase {
+//     name: string | undefined
+//     description: string | undefined
+//     // _eventEmitter: EventEmitter
+//     send_message(message: Message, contact: Contact): Promise<boolean> | boolean
+//     handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage> | InterpretedIncomingMessage
 
-export abstract class voluble_plugin implements IVolublePluginBase {
-    name: string
-    description: string
+// }
+
+export abstract class voluble_plugin {
+    public name: string
+    public description: string
     // _eventEmitter = new EventEmitter()
-    _plugin_dir = __dirname
+    public _plugin_dir = __dirname
     logger: winston.Logger
 
     public get PLUGIN_HOME(): string {
@@ -54,7 +57,7 @@ export abstract class voluble_plugin implements IVolublePluginBase {
         this.logger = winston.loggers.get(process.mainModule.filename).child({ module: `Plugin (${this.name})` })
     }
 
-    abstract async send_message(message: Message, contact: Contact): Promise<boolean>
+    abstract async send_message(message: Message, contact: Contact, organization: Organization): Promise<boolean>
 
     // This could be null, as a Service might not necessarily be notifying the plugin of an inbound message
     abstract async handle_incoming_message(message_data: any): Promise<InterpretedIncomingMessage | null>

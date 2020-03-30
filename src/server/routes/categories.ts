@@ -6,8 +6,8 @@ import { Category } from "../../models/category";
 import { OrgManager } from "../../org-manager";
 import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from "../../voluble-errors";
 import { checkExtendsModel } from "../helpers/check_extends_model";
-import { checkJwt, checkScopesMiddleware } from "../security/jwt";
-import { checkHasOrgAccess, setupUserOrganizationMiddleware } from "../security/scopes";
+import { checkJwt } from "../security/jwt";
+import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CategoriesRoute' })
 const router = express.Router();

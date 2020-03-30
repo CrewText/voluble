@@ -4,15 +4,15 @@ import { scopes } from "voluble-common";
 import * as winston from 'winston';
 import { CategoryManager, ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager';
+import { Contact } from "../../models/contact";
 import { OrgManager } from "../../org-manager";
 import { ServicechainManager } from '../../servicechain-manager';
 import { getE164PhoneNumber } from "../../utilities";
 import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
-import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
-import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
-import { Contact } from "../../models/contact";
 import { checkExtendsModel } from "../helpers/check_extends_model";
+import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
+import { checkJwt } from '../security/jwt';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactsRoute' })
 const router = express.Router();
@@ -94,7 +94,7 @@ router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([sco
       } else { throw new ResourceNotFoundError(`User with ID ${req.params.contact_id} is not found!`) }
     })
     .then(serialized => {
-      res.status(200).json(serialized)
+      return res.status(200).json(serialized)
     })
     .catch(function (e) {
       let serialized_err = req.app.locals.serializer.serializeError(e)

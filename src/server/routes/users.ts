@@ -4,8 +4,8 @@ import * as winston from 'winston';
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { InvalidParameterValueError, ResourceNotFoundError, UserNotInOrgError } from '../../voluble-errors';
-import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkJwt } from '../security/jwt';
+import { checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
 const router = express.Router();

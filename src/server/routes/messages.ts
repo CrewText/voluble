@@ -9,8 +9,8 @@ import { InvalidParameterValueError, NotEnoughCreditsError, ResourceNotFoundErro
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkHasCredits } from "../helpers/check_has_credits";
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
-import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccess, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkJwt } from '../security/jwt';
+import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 import { OrgManager } from "../../org-manager";
 
 const router = express.Router();

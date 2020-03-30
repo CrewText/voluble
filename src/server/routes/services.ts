@@ -2,7 +2,8 @@ import * as express from 'express';
 import { scopes } from "voluble-common";
 import * as winston from 'winston';
 import { PluginManager } from '../../plugin-manager';
-import { checkJwt, checkScopesMiddleware } from '../security/jwt';
+import { checkJwt } from '../security/jwt';
+import { checkScopesMiddleware } from '../security/scopes';
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicesRoute' })
 const router = express.Router();

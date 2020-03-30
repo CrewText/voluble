@@ -8,8 +8,8 @@ import { UserManager } from "../../user-manager";
 import { getE164PhoneNumber } from '../../utilities';
 import { AuthorizationFailedError, InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError, UserAlreadyInOrgError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
-import { checkJwt, checkScopesMiddleware } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkJwt } from '../security/jwt';
+import { checkHasOrgAccessMiddleware, hasScope, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
 const router = express.Router();
@@ -40,7 +40,7 @@ router.get('/',
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
     function (req, res: express.Response, next) {
-        if (req['user'].scope.split(' ').indexOf(scopes.VolubleAdmin) > -1) {
+        if (req['user'].permissions.includes(scopes.VolubleAdmin)) {
             OrgManager.getAllOrganizations()
                 .then(orgs => {
                     return req.app.locals.serializer.serializeAsync('organization', orgs)

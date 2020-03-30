@@ -48,10 +48,22 @@ export function checkHasOrgAccess(user: any, requested_org) {
 }
 
 export function hasScope(user: any, scope: string | string[] | scopes[]) {
-    if (!(scope instanceof Array)) { return user.scope.split(' ').includes(scope) }
+    if (!(scope instanceof Array)) { return user.permissions.includes(scope) }
     else {
         return scope.some((requested_scope, idx, arr) => {
-            return user.scope.includes(requested_scope)
+            return user.permissions.includes(requested_scope)
         })
+    }
+}
+
+export function checkScopesMiddleware(scopes: string[]) {
+    return (req, res, next) => {
+        if (!hasScope(req['user'], scopes)) {
+            let e = new ResourceOutOfUserScopeError(`User does not have permission to perform this action`)
+            let serialized_data = req.app.locals.serializer.serializeError(e)
+            res.status(403).json(serialized_data)
+        } else {
+            next()
+        }
     }
 }

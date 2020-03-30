@@ -34,12 +34,13 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     this.account_ref = process.env.ESENDEX_ACCOUNT_REF
   }
 
-  async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance) {
+  async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance, organization: plugin_base.orgInstance) {
     //this.populate_object_data_tables(message, contact)
     const esendex_message = {
       accountreference: this.account_ref,
       messages: [{
         to: contact.phone_number,
+        from: organization.phone_number,
         body: message.body
       }]
     }

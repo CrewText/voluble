@@ -43,6 +43,3 @@ export function checkJwt(req: Request, res: Response, next: NextFunction) {
             }
         })
 }
-export var checkScopesMiddleware = function (scopes: string[]) {
-    return jwtAuthz(scopes)
-}
