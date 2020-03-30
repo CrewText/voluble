@@ -52,7 +52,7 @@ router.get('/:org_id/contacts', checkJwt,
 
 router.get('/:org_id/contacts/count', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
   (req, res, next) => {
-    new Promise((res, rej) => {
+    return new Promise((res, rej) => {
       res(checkHasOrgAccess(req['user'], req.params.org_id))
     })
       .then(() => {
