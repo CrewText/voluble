@@ -1,3 +1,4 @@
+import { WhereOptions } from 'sequelize/types'
 import { MessageDirections, MessageStates } from 'voluble-common'
 import * as winston from 'winston'
 import { ContactManager } from '../contact-manager'
@@ -8,7 +9,6 @@ import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
 import { ResourceNotFoundError } from '../voluble-errors'
-import { OrgManager } from '../org-manager'
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessageMgr' })
 
@@ -154,16 +154,25 @@ export namespace MessageManager {
      * @returns {promise} A Promise resolving to the rows returned.
      */
     export async function getMessages(offset: number = 0, limit: number = 100, organization?: string,
-        startDate: Date = new Date(0), endDate = new Date()): Promise<Array<Message>> {
+        startDate: Date = new Date(0), endDate = new Date(), contact?: string, direction?: MessageDirections,
+        state?: MessageStates, user?: string): Promise<Array<Message>> {
         // Get all messages where the Contact is in the given Org.
         // If there isn't an Org, all messages where the contact's Org != null (which should be all of them)
+        let whereopts: WhereOptions = {}
+
+        if (direction) { whereopts['direction'] = direction }
+        if (contact) { whereopts['contact'] = contact }
+        if (user) { whereopts['user'] = user }
+        if (state) { whereopts['message_state'] = state }
+
         return db.models.Message.findAll({
             offset: offset,
             limit: limit,
             order: [['createdAt', 'DESC']],
             where: {
-                //@ts-ignore
-                'createdAt': { [db.models.sequelize.Op.between]: [startDate, endDate] }
+                // @ts-ignore
+                'createdAt': { [db.models.sequelize.Op.between]: [startDate, endDate] },
+                ...whereopts
             },
             include: [
                 {

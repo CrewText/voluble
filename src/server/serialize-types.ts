@@ -83,6 +83,11 @@ export function serializeTypes(serializer: any) {
                 links: data => { return { related: `/orgs/${data.organization}/servicechains/${data.servicechain}` } },
                 schema: 'id-only'
             },
+            contact: {
+                type: 'contact',
+                links: data => { return { related: `contacts/${data.contact}` } },
+                schema: 'id-only'
+            },
             category: {
                 type: 'contact',
                 links: data => { return { related: `/orgs/${data.organization}/contacts/${data.contact}` } },

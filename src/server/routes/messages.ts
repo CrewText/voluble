@@ -1,5 +1,5 @@
 import * as express from "express";
-import { MessageStates, scopes } from "voluble-common";
+import { MessageStates, scopes, MessageDirections } from "voluble-common";
 import * as winston from 'winston';
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
@@ -11,8 +11,6 @@ import { checkHasCredits } from "../helpers/check_has_credits";
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
-import { OrgManager } from "../../org-manager";
-
 const router = express.Router();
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
 /**
@@ -50,9 +48,37 @@ router.get('/:org_id/messages/', checkJwt,
   async function (req, res, next) {
     try {
       checkHasOrgAccess(req['user'], req.params.org_id)
-      let messages = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id)
-      let serialized = req.app.locals.serializer('message', messages)
-      res.status(200).json(serialized)
+      let from_date: Date, to_date: Date, direction: MessageDirections, state: MessageStates, contact: string, user: string
+      if (req.query.from_date) {
+        if ((typeof req.query.from_date == "number" && req.query.from_date > -1) || typeof req.query.from_date == "string" && parseInt(req.query.from_date, 10) != NaN) {
+          from_date = new Date((typeof req.query.from_date == "number" ? req.query.from_date : parseInt(req.query.from_date, 10)) * 1000);
+        }
+        else { throw new InvalidParameterValueError(`from_date must be a positive number representing a Unix timestamp in seconds: ${req.query.from_date}`) }
+      }
+      if (req.query.to_date) {
+        if ((typeof req.query.to_date == "number" && req.query.to_date > -1) || typeof req.query.to_date == "string" && parseInt(req.query.to_date, 10) != NaN) {
+          to_date = new Date((typeof req.query.to_date == "number" ? req.query.to_date : parseInt(req.query.to_date, 10)) * 1000);
+        }
+        else { throw new InvalidParameterValueError(`to_date must be a positive number representing a Unix timestamp in seconds: ${req.query.to_date}`) }
+      }
+      if (req.query.direction) {
+        if (req.query.direction in MessageDirections) { direction = req.query.direction }
+        else { throw new InvalidParameterValueError(`direction must be one of the following: ${Object.values(MessageDirections)}`) }
+      }
+      if (req.query.state) {
+        if (req.query.state in MessageStates) { state = req.query.state }
+        else { throw new InvalidParameterValueError(`state must be one of the following: ${Object.values(MessageStates)}`) }
+      }
+      if (req.query.contact) {
+        if (typeof req.query.contact == "string") { contact = req.query.contact }
+      }
+      if (req.query.user) {
+        if (typeof req.query.user == "string") { contact = req.query.user }
+      }
+
+      let messages = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id, from_date, to_date, contact, direction, state, user)
+      let serialized = req.app.locals.serializer.serialize('message', messages)
+      return res.status(200).json(serialized)
     }
     catch (e) {
       let serialized_err = req.app.locals.serializer.serializeError(e)

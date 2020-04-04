@@ -13,25 +13,30 @@ let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'S
 
 const router = express.Router();
 
-router.get('/:org_id/servicechains/', checkJwt, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
+router.get('/:org_id/servicechains/', checkJwt,
+  checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
+  async function (req, res, next) {
 
-  try {
-    let resp: ServicechainManager.ResponseServicechain[] = []
-    let scs = await ServicechainManager.getAllServicechains()
-    for (const sc of scs) {
-      resp.push(await ServicechainManager.getFullServicechain(sc.id))
+    try {
+      checkHasOrgAccess(req['user'], req.params.org_id)
+      let resp: ServicechainManager.ResponseServicechain[] = []
+      let scs = await ServicechainManager.getAllServicechains()
+      for (const sc of scs) {
+        resp.push(await ServicechainManager.getFullServicechain(sc.id))
+      }
+
+      let serialized = await req.app.locals.serializer.serializeAsync('servicechain', resp)
+      res.status(200).json(serialized)
+    } catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
+      res.status(500).json(serialized_err)
+      logger.error(e)
     }
-
-    let serialized = await req.app.locals.serializer.serializeAsync('servicechain', resp)
-    res.status(200).json(serialized)
-  } catch (e) {
-    let serialized_err = req.app.locals.serializer.serializeError(e)
-    res.status(500).json(e)
-    logger.error(e)
-  }
-})
+  })
 
 router.get('/:org_id/servicechains/count', checkJwt, checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
+  setupUserOrganizationMiddleware,
   (req, res, next) => {
     new Promise((res, rej) => {
       res(checkHasOrgAccess(req['user'], req.params.org_id))

@@ -296,6 +296,7 @@ router.delete('/:org_id/contacts/:contact_id',
       .catch(function (e: any) {
         let serialized_err = req.app.locals.serializer.serializeError(e)
         res.status(500).json(serialized_err)
+        logger.error(e)
       })
   })
 

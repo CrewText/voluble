@@ -8,7 +8,7 @@ export function setupUserOrganizationMiddleware(req: Request, res: Response, nex
     if (sub_id == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
         return next() // test client, let it do everything
     } else {
-        UserManager.getUserById(sub_id)
+        return UserManager.getUserById(sub_id)
             .then(function (user) {
                 if (!user) {
                     throw new ResourceNotFoundError(`Auth0 user specified in JWT ${sub_id} does not exist`)
@@ -17,7 +17,8 @@ export function setupUserOrganizationMiddleware(req: Request, res: Response, nex
             })
             .then(function (org) {
                 req['user'].organization = org.id
-                return next()
+                next()
+                return
             })
             .catch(e => {
                 let serialized_data = req.app.locals.serializer.serializeError(e)
@@ -48,7 +49,7 @@ export function checkHasOrgAccess(user: any, requested_org) {
 }
 
 export function hasScope(user: any, scope: string | string[] | scopes[]) {
-    if (!(scope instanceof Array)) { return user.permissions.includes(scope) }
+    if (!(Array.isArray(scope))) { return user.permissions.includes(scope) }
     else {
         return scope.some((requested_scope, idx, arr) => {
             return user.permissions.includes(requested_scope)

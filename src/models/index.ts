@@ -51,10 +51,10 @@ ServicesInSC.initModel(sequelize)
 Organization.initModel(sequelize)
 Blast.initModel(sequelize)
 
-User.belongsTo(Organization, { foreignKey: 'organization' })
+User.belongsTo(Organization, { foreignKey: 'organization', onDelete: 'CASCADE' })
 Organization.hasMany(User, { foreignKey: 'organization', as: 'users' })
 
-Contact.belongsTo(Organization, { foreignKey: 'organization' })
+Contact.belongsTo(Organization, { foreignKey: 'organization', onDelete: 'CASCADE' })
 Organization.hasMany(Contact, { foreignKey: 'organization', as: 'contacts' })
 
 Contact.belongsTo(Category, { foreignKey: 'category' })
@@ -63,23 +63,23 @@ Category.hasMany(Contact, { foreignKey: 'category', as: 'contacts' })
 Contact.belongsTo(Servicechain, { foreignKey: 'servicechain' })
 Servicechain.hasOne(Contact, { foreignKey: 'servicechain' })
 
-Message.belongsTo(Contact, { foreignKey: "contact" })
+Message.belongsTo(Contact, { foreignKey: "contact", onDelete: 'CASCADE' })
 Contact.hasMany(Message, { foreignKey: "contact", as: 'messages' })
 
-Message.belongsTo(User, { foreignKey: 'user' })
+Message.belongsTo(User, { foreignKey: 'user', onDelete: 'CASCADE' })
 User.hasMany(Message, { foreignKey: 'user', as: 'messages' })
 
 Message.belongsTo(Servicechain, { foreignKey: 'servicechain' })
 Servicechain.hasOne(Message, { foreignKey: 'servicechain' })
 
-Category.belongsTo(Organization, { foreignKey: 'organization' })
+Category.belongsTo(Organization, { foreignKey: 'organization', onDelete: 'CASCADE' })
 Organization.hasMany(Category, { foreignKey: 'organization', as: 'categories' })
 
 Service.belongsToMany(Servicechain, { through: ServicesInSC, foreignKey: 'service' })
 // ServicechainModel.hasMany(ServiceModel, { foreignKey: 'servicechain' })//, as: 'services' })
 Servicechain.belongsToMany(Service, { through: ServicesInSC, foreignKey: 'servicechain' })//, as: 'services' })
 
-Servicechain.belongsTo(Organization, { foreignKey: 'organization' })
+Servicechain.belongsTo(Organization, { foreignKey: 'organization', onDelete: 'CASCADE' })
 Organization.hasMany(Servicechain, { foreignKey: 'organization', as: 'servicechains' })
 
 Blast.hasMany(Message, { foreignKey: 'blast', as: 'messages' })

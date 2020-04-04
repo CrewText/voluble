@@ -103,11 +103,11 @@ router.get('/:org_id/categories/:cat_id',
     checkJwt, checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
+            checkHasOrgAccess(req['user'], req.params.org_id)
             let cat = await CategoryManager.getCategoryById(req.params.cat_id)
             if (!cat) {
                 throw new ResourceNotFoundError(`Category ${req.params.cat_id} not found`)
             }
-            checkHasOrgAccess(req['user'], req.params.org)
 
             let resp = await req.app.locals.serializer.serializeAsync('category', cat)
             res.status(200).json(resp)

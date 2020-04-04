@@ -25,7 +25,7 @@ const http = require('https');
 
 logger.info("Loading routes")
 const routes_index = require('./routes')
-//const routes_users = require('./routes/users')
+const routes_users = require('./routes/users')
 const routes_orgs = require('./routes/organizations')
 const routes_contacts = require('./routes/contacts')
 const routes_categories = require('./routes/categories')
@@ -100,7 +100,7 @@ export async function initServer() {
 
     logger.debug('Setting up routes')
     app.use('/v1/', routes_index);
-    //app.use('/users', routes_users);
+    app.use('/v1/users', routes_users);
     app.use('/v1/services', routes_services)
     app.use('/v1/services', routes_service_endpoint_generic)
     app.use('/v1/orgs', routes_orgs)
