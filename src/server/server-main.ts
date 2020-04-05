@@ -114,7 +114,7 @@ export async function initServer() {
     app.use('/v1/orgs', routes_messages)
     app.use('/v1/orgs', routes_blasts)
     app.use('/v1/orgs', routes_servicechains)
-    app.use('/auth0/', routes_auth0_proxy)
+    app.use('/auth0', routes_auth0_proxy)
     return res()
   })
     .then(() => {
