@@ -136,6 +136,7 @@ export namespace QueueManager {
     }
 
     export function createQueues() {
+        logger.debug("Loading queue manager")
         return rsmq.listQueuesAsync()
             .then((queues) => {
                 return queue_list.filter((required_q) => {

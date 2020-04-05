@@ -15,13 +15,13 @@ export function checkJwt(req: Request, res: Response, next: NextFunction) {
         return
     }
 
-    Axios.get(`https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`, { responseType: 'json' })
+    Axios.get(`https://${process.env.AUTH0_VOLUBLE_TENANT}/.well-known/jwks.json`, { responseType: 'json' })
         .then((resp) => {
             let jwks_data = resp.data
             let jwks = JWKS.asKeyStore(jwks_data)
             return JWT.verify(auth_header_token, jwks, {
                 audience: process.env.AUTH0_API_ID,
-                issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+                issuer: `https://${process.env.AUTH0_VOLUBLE_TENANT}/`,
                 algorithms: ['RS256']
             })
         })

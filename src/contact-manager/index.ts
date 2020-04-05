@@ -53,9 +53,11 @@ export namespace ContactManager {
      * @returns {promise} Promise resolving to the id of the contact, if it exists.
      */
     export async function checkContactWithIDExists(id: string): Promise<string> {
-        let count = await db.models.Contact.count({ where: { id: id } })
-        if (count) { return id }
-        else { throw new ResourceNotFoundError(`No contact with ID ${id}`) }
+        return db.models.Contact.count({ where: { id: id } })
+            .then(count => {
+                if (count) { return id }
+                else { throw new ResourceNotFoundError(`No contact with ID ${id}`) }
+            })
     }
 
     /**

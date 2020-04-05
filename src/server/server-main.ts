@@ -34,6 +34,7 @@ const routes_services = require('./routes/services')
 const routes_blasts = require('./routes/blasts')
 const routes_servicechains = require('./routes/servicechains')
 const routes_service_endpoint_generic = require('./routes/service_endpoint')
+const routes_auth0_proxy = require('./routes/auth0-proxy')
 
 logger.info("Starting Express server")
 const app = express();
@@ -76,6 +77,10 @@ function forceSSL(req: express.Request, res: express.Response, next: express.Nex
 // Force SSL
 if (process.env.NODE_ENV != "production") {
   logger.debug("Not forcing SSL")
+
+  app.use((req, res, next) => {
+    logger.debug(`Request to: ${req.path}`); next()
+  })
 } else {
   logger.debug("Forcing SSL redirects")
   app.use(forceSSL)
@@ -109,6 +114,7 @@ export async function initServer() {
     app.use('/v1/orgs', routes_messages)
     app.use('/v1/orgs', routes_blasts)
     app.use('/v1/orgs', routes_servicechains)
+    app.use('/auth0/', routes_auth0_proxy)
     return res()
   })
     .then(() => {
@@ -123,12 +129,7 @@ export async function initServer() {
     })
     .then(() => {
       // Set up plugin manager
-      logger.debug("Initing all plugins");
-      return PluginManager.initAllPlugins();
-    })
-    .then(() => {
-      logger.debug("Loading queue manager")
-      return QueueManager.createQueues()
+      return Promise.all([PluginManager.initAllPlugins(), QueueManager.createQueues()])
     })
     .then(() => {
       svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);

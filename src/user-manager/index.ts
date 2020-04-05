@@ -78,7 +78,6 @@ export namespace UserManager {
                                 })
                             })
                             .then(function (req) {
-                                console.log(req.body)
                                 return
                             })
                     })

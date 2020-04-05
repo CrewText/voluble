@@ -83,8 +83,8 @@ router.get('/:org_id/contacts/count', checkJwt, checkScopesMiddleware([scopes.Co
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]), checkJwt, function (req, res, next) {
-  ContactManager.checkContactWithIDExists(req.params.contact_id)
+router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]), function (req, res, next) {
+  return ContactManager.checkContactWithIDExists(req.params.contact_id)
     .then(function (id) {
       return ContactManager.getContactWithId(id)
     })

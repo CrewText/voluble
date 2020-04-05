@@ -63,7 +63,6 @@ export namespace PluginManager {
  * @param {string} plugin_dir The path to the directory containing the plugins that Voluble should use.
  */
     export async function initAllPlugins() {
-        logger.debug("Attempting to load plugins from " + __plugin_dir)
         logger.info("Loading plugins from" + __plugin_dir)
 
         let plugin_subdir_list = discoverPlugins(__plugin_dir)

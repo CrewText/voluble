@@ -10,7 +10,7 @@ export async function getAccessToken(): Promise<string> {
         client_secret: process.env.AUTH0_TEST_CLIENT_SECRET
     }
 
-    return axios.default.post(`https://${process.env.AUTH0_DOMAIN}/oauth/token`,
+    return axios.default.post(`https://${process.env.AUTH0_VOLUBLE_TENANT}/oauth/token`,
         auth0_req_body, { responseType: "json" })
         .then((resp) => {
             if (!resp.data.access_token) { throw new Error('No access token in Auth0 response') }

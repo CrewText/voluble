@@ -90,6 +90,6 @@ Blast.hasMany(Message, { foreignKey: 'blast', as: 'messages' })
  * Does the initial database and model sync. Made an explicit function to wrap around `sequelize.sync()` so it isn't called by every process that imports it.
  */
 export function initialize_database() {
-    process.env.NODE_ENV == "test" ? console.warn(`Dropping DB? YES, resetting DB because NODE_ENV is 'test'`) : console.info(`Dropping DB? NO, because NODE_ENV is ${process.env.NODE_ENV}`)
+    process.env.NODE_ENV == "test" ? logger.warn(`Dropping DB? YES, resetting DB because NODE_ENV is 'test'`) : logger.info(`Dropping DB? NO, because NODE_ENV is ${process.env.NODE_ENV}`)
     return sequelize.sync({ force: process.env.NODE_ENV == "test", alter: process.env.NODE_ENV == "test" })
 }
