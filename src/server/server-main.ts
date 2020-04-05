@@ -104,7 +104,7 @@ export async function initServer() {
     app.options('*', cors()) // include before other routes
 
     logger.debug('Setting up routes')
-    app.use('/v1/', routes_index);
+    // app.use('/v1/', routes_index);
     app.use('/v1/users', routes_users);
     app.use('/v1/services', routes_services)
     app.use('/v1/services', routes_service_endpoint_generic)
