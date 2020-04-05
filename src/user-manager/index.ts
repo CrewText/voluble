@@ -28,8 +28,8 @@ export namespace UserManager {
             body:
             {
                 grant_type: 'client_credentials',
-                client_id: process.env["AUTH0_MGMT_CLIENT_ID"],
-                client_secret: process.env["AUTH0_MGMT_CLIENT_SECRET"],
+                client_id: process.env["AUTH0_USER_MGMT_CLIENT_ID"],
+                client_secret: process.env["AUTH0_USER_MGMT_CLIENT_SECRET"],
                 audience: `${process.env["AUTH0_BASE_URL"]}/api/v2/`
             },
             json: true
