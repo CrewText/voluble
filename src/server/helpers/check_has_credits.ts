@@ -9,12 +9,18 @@ export function checkHasCredits(credits_required: number) {
         if (sub_id == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
             return next() // test client, let it do everything
         } else {
-            OrgManager.getOrganizationById(req['user'].organization)
+            return OrgManager.getOrganizationById(req['user'].organization)
                 .then(org => {
                     if (org.plan == PlanTypes.PAY_IN_ADVANCE && org.credits >= credits_required) {
                         return next()
                     } else {
                         throw new NotEnoughCreditsError('The Organization does not have enough credits for this operation')
+                    }
+                })
+                .catch(e => {
+                    let serialized_err = req.app.locals.serializer.serializeError(e)
+                    if (e instanceof NotEnoughCreditsError) {
+                        res.status(402).json(serialized_err)
                     }
                 })
         }

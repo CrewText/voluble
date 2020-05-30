@@ -62,11 +62,11 @@ router.get('/:org_id/messages/', checkJwt,
         else { throw new InvalidParameterValueError(`to_date must be a positive number representing a Unix timestamp in seconds: ${req.query.to_date}`) }
       }
       if (req.query.direction) {
-        if (req.query.direction in MessageDirections) { direction = req.query.direction }
+        if (req.query.direction in MessageDirections) { direction = req.query.direction as MessageDirections }
         else { throw new InvalidParameterValueError(`direction must be one of the following: ${Object.values(MessageDirections)}`) }
       }
       if (req.query.state) {
-        if (req.query.state in MessageStates) { state = req.query.state }
+        if (req.query.state in MessageStates) { state = req.query.state as MessageStates }
         else { throw new InvalidParameterValueError(`state must be one of the following: ${Object.values(MessageStates)}`) }
       }
       if (req.query.contact) {
@@ -76,7 +76,7 @@ router.get('/:org_id/messages/', checkJwt,
         if (typeof req.query.user == "string") { contact = req.query.user }
       }
 
-      let messages = await MessageManager.getMessages(req.query.offset, req.query.limit, req.params.org_id, from_date, to_date, contact, direction, state, user)
+      let messages = await MessageManager.getMessages(parseInt(req.query.offset as string), parseInt(req.query.limit as string), req.params.org_id, from_date, to_date, contact, direction, state, user)
       let serialized = req.app.locals.serializer.serialize('message', messages)
       return res.status(200).json(serialized)
     }
@@ -101,8 +101,8 @@ router.get('/:org_id/messages/count', checkJwt,
     })
       .then(() => {
         return MessageManager.getMessages(0, 100000, req.params.org_id,
-          req.query.start_timestamp ? new Date(req.query.start_timestamp * 1000) : new Date(0),
-          req.query.end_timestamp ? new Date(req.query.end_timestamp * 1000) : new Date())
+          req.query.start_timestamp ? new Date(parseInt(req.query.start_timestamp as string) * 1000) : new Date(0),
+          req.query.end_timestamp ? new Date(parseInt(req.query.end_timestamp as string) * 1000) : new Date())
       })
       .then(msgs => {
         res.status(200).json({ data: { count: msgs.length } })
@@ -152,6 +152,33 @@ router.get('/:org_id/messages/:message_id', checkJwt,
 
   })
 
+/**
+ * Returns the message specified and any replies, then checks for all further replies, so as to create
+ * a full thread.
+ */
+router.get('/:org_id/messages/:message_id/replies', checkJwt,
+  checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware, async function (req: any, res: any, _next) {
+
+    try { checkHasOrgAccess(req['user'], req.params.org_id) }
+    catch (e) {
+      let serialized_err = req.app.locals.serializer.serializeError(e)
+      res.status(403).json(serialized_err)
+    }
+
+    MessageManager.getRepliesToMessage(req.params.message_id)
+      .then(msgs => {
+        res.status(200).json(req.app.locals.serializer.serialize('message', msgs))
+      })
+      .catch(e => {
+        let serialized_err = req.app.locals.serializer.serializeError(e)
+        if (e instanceof ResourceNotFoundError) {
+          res.status(404).json(serialized_err)
+        } else {
+          res.status(500).json(serialized_err)
+        }
+      })
+  })
 
 /**
  * Handles the route POST /messages
@@ -191,8 +218,6 @@ router.post('/:org_id/messages/', checkJwt,
         res.status(403).json(serialized_err)
       } else if (e instanceof InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else if (e instanceof NotEnoughCreditsError) {
-        res.status(402).json(serialized_err)
       } else {
         res.status(500).json(serialized_err)
         logger.error(e)

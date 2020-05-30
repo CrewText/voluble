@@ -308,7 +308,7 @@ router.get('/:org_id/contacts/:contact_id/messages', checkJwt,
   checkOffset(0),
   function (req, res, next) {
     let contact_id = req.params.contact_id
-    MessageManager.getMessagesForContact(contact_id, req.query.limit, req.query.offset)
+    MessageManager.getMessagesForContact(contact_id, parseInt(req.query.limit as string), parseInt(req.query.offset as string))
       .then(function (messages) {
         return req.app.locals.serializer.serializeAsync('message')
       })

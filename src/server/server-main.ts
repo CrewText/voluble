@@ -25,6 +25,7 @@ const http = require('https');
 
 logger.info("Loading routes")
 const routes_index = require('./routes')
+const routes_user_self = require('./routes/user_self')
 const routes_users = require('./routes/users')
 const routes_orgs = require('./routes/organizations')
 const routes_contacts = require('./routes/contacts')
@@ -79,7 +80,7 @@ if (process.env.NODE_ENV != "production") {
   logger.debug("Not forcing SSL")
 
   app.use((req, res, next) => {
-    logger.debug(`Request to: ${req.path}`); next()
+    logger.debug(`Request to: ${req.method.toUpperCase()} ${req.path}`); next()
   })
 } else {
   logger.debug("Forcing SSL redirects")
@@ -105,7 +106,7 @@ export async function initServer() {
 
     logger.debug('Setting up routes')
     // app.use('/v1/', routes_index);
-    app.use('/v1/users', routes_users);
+    app.use('/v1/users', routes_user_self);
     app.use('/v1/services', routes_services)
     app.use('/v1/services', routes_service_endpoint_generic)
     app.use('/v1/orgs', routes_orgs)
@@ -114,6 +115,7 @@ export async function initServer() {
     app.use('/v1/orgs', routes_messages)
     app.use('/v1/orgs', routes_blasts)
     app.use('/v1/orgs', routes_servicechains)
+    app.use('/v1/orgs', routes_users)
     app.use('/auth0', routes_auth0_proxy)
     return res()
   })

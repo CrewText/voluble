@@ -3,41 +3,12 @@ import { scopes } from "voluble-common";
 import * as winston from 'winston';
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
-import { InvalidParameterValueError, ResourceNotFoundError, UserNotInOrgError, ResourceOutOfUserScopeError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceNotFoundError, UserNotInOrgError } from "../../voluble-errors";
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
 let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
 const router = express.Router();
-
-/**
- * 
- */
-router.get('/:user_id', checkJwt,
-    (req, res, next) => {
-        new Promise((res, rej) => {
-            if (req.params.user_id != req['user'].sub) {
-                throw new ResourceOutOfUserScopeError(`Users accessing this endpoint may only request information about themself.`)
-            }
-
-            res(UserManager.getUserById(req['user'].sub))
-        })
-            .then(user => {
-                if (!user) { throw new ResourceNotFoundError(`User with ID ${req['user'].sub} not found`) }
-                return req.app.locals.serializer.serializeAsync('user', user)
-            })
-            .then(serialized => res.status(200).json(serialized))
-            .catch(e => {
-                let serialized_err = req.app.locals.serializer.serializeError(e)
-                if (e instanceof ResourceOutOfUserScopeError) { res.status(403).json(serialized_err) }
-                else if (e instanceof ResourceNotFoundError) { res.status(404).json(serialized_err) }
-                else {
-                    res.status(500).json(serialized_err)
-                    logger.error(e)
-                }
-            })
-
-    })
 
 /**
  * @api {get} /orgs/:org_id/users Get a list of Users in the Org
@@ -266,11 +237,8 @@ router.delete('/:org_id/users/:user_id',
             .then(function () {
                 res.status(204).json({})
             })
-            .catch(ResourceNotFoundError, function (err) {
-                // Return success to ensure idempotence
-                res.status(404).json({})
-            })
             .catch(function (e) {
+                if (e instanceof ResourceNotFoundError) { res.status(404).json({}); return }
                 let serialized_err = req.app.locals.serializer.serializeError(e)
                 res.status(500).json(serialized_err)
             })

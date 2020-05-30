@@ -131,7 +131,7 @@ export namespace MessageManager {
     }
 
     export function updateMessageState(msg_id: string, msg_state: string): Promise<Message> {
-        logger.info("Updating message state", { 'message': msg_id, 'state': MessageStates[msg_state] })
+        logger.info("Updating message state", { 'msg': msg_id, 'state': MessageStates[msg_state] })
         return getMessageFromId(msg_id)
             .then(function (msg) {
                 if (msg) {
@@ -190,11 +190,11 @@ export namespace MessageManager {
      * @param {Number} id The ID number of the message to retrieve.
      * @returns {promise} A Promise resolving to a row containing the details of the message.
      */
-    export async function getMessageFromId(id: string): Promise<Message | null> {
+    export function getMessageFromId(id: string): Promise<Message | null> {
         return db.models.Message.findByPk(id)
     }
 
-    export async function getMessagesForContact(contact_id: string, offset: number = 0, limit: number = 0): Promise<Message[] | null> {
+    export function getMessagesForContact(contact_id: string, offset: number = 0, limit: number = 0): Promise<Message[] | null> {
         return ContactManager.checkContactWithIDExists(contact_id)
             .then(function (verified_contact_id) {
                 return db.models.Message.findAll({
@@ -206,5 +206,13 @@ export namespace MessageManager {
                     offset: offset
                 })
             })
+    }
+
+    export function getRepliesToMessage(message_id: string) {
+        return db.models.Message.findAll({
+            where: {
+                is_reply_to: message_id
+            }
+        })
     }
 }

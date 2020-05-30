@@ -2,6 +2,7 @@ import { scopes } from "voluble-common";
 import { UserManager } from "../../user-manager";
 import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { Request, Response, NextFunction } from "express";
+import { deprecate } from "util";
 
 export function setupUserOrganizationMiddleware(req: Request, res: Response, next: NextFunction) {
     let sub_id = req['user'].sub
@@ -17,8 +18,7 @@ export function setupUserOrganizationMiddleware(req: Request, res: Response, nex
             })
             .then(function (org) {
                 req['user'].organization = org.id
-                next()
-                return
+                return next()
             })
             .catch(e => {
                 let serialized_data = req.app.locals.serializer.serializeError(e)
@@ -31,6 +31,25 @@ export function setupUserOrganizationMiddleware(req: Request, res: Response, nex
     }
 }
 
+export function checkHasOrgAccessParamMiddleware(org_param_name: string) {
+    return (req, res, next) => {
+        try {
+            checkHasOrgAccess(req['user'], req.params[org_param_name])
+            next()
+        }
+        catch (e) {
+            let serialized_data = req.app.locals.serializer.serializeError(e)
+            res.status(403).json(serialized_data)
+        }
+    }
+}
+
+/**
+ * DEPRECATED - use @function checkHasOrgAccessParamMiddleware instead.
+ * @param req 
+ * @param res 
+ * @param next 
+ */
 export function checkHasOrgAccessMiddleware(req, res, next) {
     try {
         checkHasOrgAccess(req['user'], req.params.org_id)

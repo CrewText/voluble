@@ -7,8 +7,8 @@ let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'C
 
 function checkRequestLimit(req: Request, res: Response, next: NextFunction, min: number, max: number) {
     try {
-        if (!req.query.limit) { req.query.limit = max }
-        else if (!validator.default.isInt(req.query.limit, {
+        if (!req.query.limit) { req.query.limit = max.toString() }
+        else if (!validator.default.isInt(req.query.limit as string, {
             allow_leading_zeroes: true,
             gt: min - 1,
             lt: max + 1
@@ -30,8 +30,8 @@ function checkRequestLimit(req: Request, res: Response, next: NextFunction, min:
 
 function checkRequestOffset(req: Request, res: Response, next: NextFunction, min: number) {
     try {
-        if (!req.query.offset) { req.query.offset = min }
-        else if (!validator.default.isInt(req.query.offset, {
+        if (!req.query.offset) { req.query.offset = min.toString() }
+        else if (!validator.default.isInt(req.query.offset as string, {
             allow_leading_zeroes: true,
             gt: min - 1
         })) {

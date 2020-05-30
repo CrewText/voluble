@@ -1,4 +1,4 @@
-import Axios, * as axios from 'axios';
+import * as axios from 'axios';
 import * as plugin_base from '../plugin_base';
 
 interface IncomingEsendexMessage {
@@ -53,23 +53,27 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       {
         auth: { username: this.username || "", password: this.password || "" },
         responseType: "json",
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        validateStatus: status => status < 500
       })
       .then(function (response) {
-        if (response.status >= 400) { throw new EsendexError(response.status, `${response.data.errors[0].code}: ${response.data.errors[0].description}`) }
+        if (response.status >= 400) {
+          if (response.data) {
+            throw new EsendexError(response.status, `${response.data.errors[0].code}: ${response.data.errors[0].description}`)
+          } else { throw new EsendexError(response.status, response.statusText) }
+        }
+
         return true
       })
       .catch(err => {
         if (err instanceof EsendexError) {
           this.logger.error(`Error ${err.statusCode}: ${err.message}`)
-        } else if (err.response) {
-          if (err.response.errors) {
-            this.logger.error(`${err.response.data.errors[0].statusCode}: ${err.response.data.errors[0].code}: ${err.response.data.errors[0].description}`)
-          }
-          else { this.logger.error(err.response) }
+        } else if (err.isAxiosError && err.response) {
+          this.logger.error(`Axios error sending message`, { response: err.response })
         } else {
-          this.logger.error(err.toJSON())
+          this.logger.error(err.message)
         }
+
         return false
       })
   }

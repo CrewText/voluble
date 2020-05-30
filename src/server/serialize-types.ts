@@ -70,7 +70,7 @@ export function serializeTypes(serializer: any) {
     serializer.register('message', {
         whitelist: ['id', 'body', 'direction', 'message_state', 'sent_time', 'cost'],
         links: {
-            self: data => { return `/orgs/${data.organization}/messages/${data.id}` }
+            self: async data => { return `/orgs/${(await data.getContact()).organization}/messages/${data.id}` }
         },
         relationships: {
             organization: {
@@ -101,6 +101,11 @@ export function serializeTypes(serializer: any) {
             sent_service: {
                 type: 'service',
                 links: data => { return { related: `services/${data.sent_service}` } },
+                schema: 'id-only'
+            },
+            is_reply_to: {
+                type: 'message',
+                links: data => { return { related: `orgs/${data.organization}/messages/${data.is_reply_to}` } },
                 schema: 'id-only'
             }
         }
