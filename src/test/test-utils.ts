@@ -3,7 +3,7 @@ import * as chai from 'chai'
 
 export async function getAccessToken(): Promise<string> {
     // Get an access_token from Auth0 on behalf of the Voluble Test Application
-    let auth0_req_body = {
+    const auth0_req_body = {
         audience: process.env.AUTH0_API_ID,
         grant_type: "client_credentials",
         client_id: process.env.AUTH0_TEST_CLIENT_ID,

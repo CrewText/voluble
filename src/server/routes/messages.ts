@@ -1,18 +1,19 @@
 import * as express from "express";
-import { MessageStates, scopes, MessageDirections } from "voluble-common";
+import { MessageDirections, MessageStates, scopes } from "voluble-common";
 import * as winston from 'winston';
+
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { Message } from "../../models/message";
 import { ServicechainManager } from '../../servicechain-manager';
-import { InvalidParameterValueError, NotEnoughCreditsError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
+import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkHasCredits } from "../helpers/check_has_credits";
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 const router = express.Router();
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
@@ -50,13 +51,13 @@ router.get('/:org_id/messages/', checkJwt,
       checkHasOrgAccess(req['user'], req.params.org_id)
       let from_date: Date, to_date: Date, direction: MessageDirections, state: MessageStates, contact: string, user: string
       if (req.query.from_date) {
-        if ((typeof req.query.from_date == "number" && req.query.from_date > -1) || typeof req.query.from_date == "string" && parseInt(req.query.from_date, 10) != NaN) {
+        if ((typeof req.query.from_date == "number" && req.query.from_date > -1) || typeof req.query.from_date == "string" && !isNaN(parseInt(req.query.from_date, 10))) {
           from_date = new Date((typeof req.query.from_date == "number" ? req.query.from_date : parseInt(req.query.from_date, 10)) * 1000);
         }
         else { throw new InvalidParameterValueError(`from_date must be a positive number representing a Unix timestamp in seconds: ${req.query.from_date}`) }
       }
       if (req.query.to_date) {
-        if ((typeof req.query.to_date == "number" && req.query.to_date > -1) || typeof req.query.to_date == "string" && parseInt(req.query.to_date, 10) != NaN) {
+        if ((typeof req.query.to_date == "number" && req.query.to_date > -1) || typeof req.query.to_date == "string" && isNaN(parseInt(req.query.to_date, 10))) {
           to_date = new Date((typeof req.query.to_date == "number" ? req.query.to_date : parseInt(req.query.to_date, 10)) * 1000);
         }
         else { throw new InvalidParameterValueError(`to_date must be a positive number representing a Unix timestamp in seconds: ${req.query.to_date}`) }
@@ -76,12 +77,12 @@ router.get('/:org_id/messages/', checkJwt,
         if (typeof req.query.user == "string") { contact = req.query.user }
       }
 
-      let messages = await MessageManager.getMessages(parseInt(req.query.offset as string), parseInt(req.query.limit as string), req.params.org_id, from_date, to_date, contact, direction, state, user)
-      let serialized = req.app.locals.serializer.serialize('message', messages)
+      const messages = await MessageManager.getMessages(parseInt(req.query.offset as string), parseInt(req.query.limit as string), req.params.org_id, from_date, to_date, contact, direction, state, user)
+      const serialized = req.app.locals.serializer.serialize('message', messages)
       return res.status(200).json(serialized)
     }
     catch (e) {
-      let serialized_err = req.app.locals.serializer.serializeError(e)
+      const serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof InvalidParameterValueError) {
         res.status(400).json(serialized_err)
       } else if (e instanceof ResourceOutOfUserScopeError) {
@@ -108,7 +109,7 @@ router.get('/:org_id/messages/count', checkJwt,
         res.status(200).json({ data: { count: msgs.length } })
       })
       .catch(e => {
-        let serialized_err = res.app.locals.serializer.serializeError(e)
+        const serialized_err = res.app.locals.serializer.serializeError(e)
         if (e instanceof ResourceOutOfUserScopeError) {
           res.status(403).json(serialized_err)
         }
@@ -133,14 +134,14 @@ router.get('/:org_id/messages/:message_id', checkJwt,
     try {
       checkHasOrgAccess(req['user'], req.params.org_id)
 
-      let msg = await MessageManager.getMessageFromId(req.params.message_id)
+      const msg = await MessageManager.getMessageFromId(req.params.message_id)
       if (msg) {
         res.status(200).json(await req.app.locals.serializer.serializeAsync('message', msg))
       } else {
         throw new ResourceNotFoundError(`Resource with ID ${req.params.message_id} not found`)
       }
     } catch (e) {
-      let serialized_err = req.app.locals.serializer.serializeError(e)
+      const serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
       } else if (e instanceof ResourceNotFoundError) {
@@ -162,7 +163,7 @@ router.get('/:org_id/messages/:message_id/replies', checkJwt,
 
     try { checkHasOrgAccess(req['user'], req.params.org_id) }
     catch (e) {
-      let serialized_err = req.app.locals.serializer.serializeError(e)
+      const serialized_err = req.app.locals.serializer.serializeError(e)
       res.status(403).json(serialized_err)
     }
 
@@ -171,7 +172,7 @@ router.get('/:org_id/messages/:message_id/replies', checkJwt,
         res.status(200).json(req.app.locals.serializer.serialize('message', msgs))
       })
       .catch(e => {
-        let serialized_err = req.app.locals.serializer.serializeError(e)
+        const serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof ResourceNotFoundError) {
           res.status(404).json(serialized_err)
         } else {
@@ -193,9 +194,9 @@ router.post('/:org_id/messages/', checkJwt,
       checkExtendsModel(req.body, Message)
       checkHasOrgAccess(req['user'], req.params.org_id)
 
-      let contact = await ContactManager.getContactWithId(req.body.contact)
+      const contact = await ContactManager.getContactWithId(req.body.contact)
       if (!contact) { throw new ResourceNotFoundError(`Contact with ID ${req.body.contact} not found`) }
-      let sc = req.body.servicechain ? await ServicechainManager.getServicechainById(req.body.servicechain) : await contact.getServicechain()
+      const sc = req.body.servicechain ? await ServicechainManager.getServicechainById(req.body.servicechain) : await contact.getServicechain()
 
       let msg = await MessageManager.createMessage(req.body.body,
         req.body.contact,
@@ -209,11 +210,11 @@ router.post('/:org_id/messages/', checkJwt,
 
       msg = MessageManager.sendMessage(msg)
 
-      let serialized = await req.app.locals.serializer.serializeAsync('message', msg)
+      const serialized = await req.app.locals.serializer.serializeAsync('message', msg)
       res.status(200).json(serialized)
 
     } catch (e) {
-      let serialized_err = req.app.locals.serializer.serializeError(e)
+      const serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
       } else if (e instanceof InvalidParameterValueError) {
@@ -225,4 +226,4 @@ router.post('/:org_id/messages/', checkJwt,
     }
   })
 
-module.exports = router;
+export default router;

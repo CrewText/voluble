@@ -1,5 +1,6 @@
 import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, Model, Sequelize } from 'sequelize';
 import { User as UserAttributes } from 'voluble-common';
+
 import { Contact } from "./contact";
 import { Organization } from "./organization";
 

@@ -2,14 +2,15 @@ import * as express from "express";
 import * as validator from 'validator';
 import { scopes } from "voluble-common";
 import * as winston from 'winston';
+
 import { OrgManager } from "../../org-manager";
-import { PluginManager } from '../../plugin-manager/';
-import { ServicechainManager } from '../../servicechain-manager/';
+import { PluginManager, ServiceNotFoundError } from '../../plugin-manager/';
+import { ResponseServicechain, ServicechainManager,ServicePriority } from '../../servicechain-manager/';
 import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, setupUserOrganizationMiddleware, checkScopesMiddleware } from "../security/scopes";
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicechainsRoute' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicechainsRoute' })
 
 const router = express.Router();
 
@@ -20,16 +21,16 @@ router.get('/:org_id/servicechains/', checkJwt,
 
     try {
       checkHasOrgAccess(req['user'], req.params.org_id)
-      let resp: ServicechainManager.ResponseServicechain[] = []
-      let scs = await ServicechainManager.getAllServicechains()
+      const resp: ResponseServicechain[] = []
+      const scs = await ServicechainManager.getAllServicechains()
       for (const sc of scs) {
         resp.push(await ServicechainManager.getFullServicechain(sc.id))
       }
 
-      let serialized = await req.app.locals.serializer.serializeAsync('servicechain', resp)
+      const serialized = await req.app.locals.serializer.serializeAsync('servicechain', resp)
       res.status(200).json(serialized)
     } catch (e) {
-      let serialized_err = req.app.locals.serializer.serializeError(e)
+      const serialized_err = req.app.locals.serializer.serializeError(e)
       res.status(500).json(serialized_err)
       logger.error(e)
     }
@@ -51,7 +52,7 @@ router.get('/:org_id/servicechains/count', checkJwt, checkScopesMiddleware([scop
         return res.status(200).json({ data: { count: c } })
       })
       .catch(e => {
-        let serialized_err = res.app.locals.serializer.serializeError(e)
+        const serialized_err = res.app.locals.serializer.serializeError(e)
         if (e instanceof ResourceOutOfUserScopeError) {
           res.status(403).json(serialized_err)
         }
@@ -75,22 +76,22 @@ router.post('/:org_id/servicechains/', checkJwt,
       if (!req.body.services) { throw new InvalidParameterValueError(`Parameter 'services' must be supplied`) }
       if (!(req.body.services instanceof Array)) { throw new InvalidParameterValueError(`Parameter 'services' must be an Array`) }
 
-      let services_supplied: any[] = req.body.services
-      let services_to_add: ServicechainManager.ServicePriority[] = []
+      const services_supplied: any[] = req.body.services
+      const services_to_add: ServicePriority[] = []
 
       if (!services_supplied.length) { throw new InvalidParameterValueError(`Parameter 'services' is empty`) }
 
       services_supplied.forEach((svc_prio_pair, idx) => {
-        let s: ServicechainManager.ServicePriority = { service: svc_prio_pair.service, priority: svc_prio_pair.priority }
+        const s: ServicePriority = { service: svc_prio_pair.service, priority: svc_prio_pair.priority }
         services_to_add.push(s)
       });
 
-      let sc_name = req.body.name
+      const sc_name = req.body.name
 
       // Create a new Servicechain
-      let org = await OrgManager.getOrganizationById(req.params.org_id)
+      const org = await OrgManager.getOrganizationById(req.params.org_id)
       if (!org) { throw new ResourceNotFoundError(`Organization resource with ID ${req.params.org_id} not found`) }
-      let sc = await org.createServicechain({
+      const sc = await org.createServicechain({
         name: sc_name
       })
       created_sc_id = sc.id
@@ -99,7 +100,7 @@ router.post('/:org_id/servicechains/', checkJwt,
       for (const svc_prio_pair of services_to_add) {
         const svc = await PluginManager.getServiceById(svc_prio_pair.service);
         if (!svc) {
-          throw new PluginManager.ServiceNotFoundError(`Service with ID ${svc_prio_pair.service} could not be found!`);
+          throw new ServiceNotFoundError(`Service with ID ${svc_prio_pair.service} could not be found!`);
         }
         await sc.addService(svc_prio_pair.service, {
           through: {
@@ -111,12 +112,12 @@ router.post('/:org_id/servicechains/', checkJwt,
       }
 
       await (await sc.save()).reload()
-      let resp = await ServicechainManager.getFullServicechain(sc.id)
-      let serialized = await req.app.locals.serializer.serializeAsync('servicechain', resp)
+      const resp = await ServicechainManager.getFullServicechain(sc.id)
+      const serialized = await req.app.locals.serializer.serializeAsync('servicechain', resp)
       res.status(201).json(serialized)
     } catch (e) {
-      let serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof PluginManager.ServiceNotFoundError || e instanceof ResourceNotFoundError || e instanceof InvalidParameterValueError) {
+      const serialized_err = req.app.locals.serializer.serializeError(e)
+      if (e instanceof ServiceNotFoundError || e instanceof ResourceNotFoundError || e instanceof InvalidParameterValueError) {
         res.status(400).json(serialized_err)
       }
       else {
@@ -130,11 +131,11 @@ router.post('/:org_id/servicechains/', checkJwt,
 router.get('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainView]), async function (req, res, next) {
 
   try {
-    let full_sc = await ServicechainManager.getFullServicechain(req.params.sc_id)
-    let serialized = req.app.locals.serializer.serializeAsync('servicechain', full_sc)
+    const full_sc = await ServicechainManager.getFullServicechain(req.params.sc_id)
+    const serialized = req.app.locals.serializer.serializeAsync('servicechain', full_sc)
     res.status(200).json(serialized)
   } catch (e) {
-    let serialized_err = req.app.locals.serializer.serializeError(e)
+    const serialized_err = req.app.locals.serializer.serializeError(e)
     if (e instanceof ResourceNotFoundError) {
       res.status(400).json(serialized_err)
     }
@@ -155,7 +156,7 @@ router.put('/:org_id/servicechains/:id', checkJwt,
     // This completely overwrites the Servicechain, as opposed to using PUT on other resources,
     // which modifies them in-place.
 
-    let sc_id: string = req.params.id
+    const sc_id: string = req.params.id
 
     new Promise((res, rej) => {
       if (!Array.isArray(req.body.services)) { throw new InvalidParameterValueError(`The services parameter must be an Array of service-priority objects`) }
@@ -175,14 +176,14 @@ router.put('/:org_id/servicechains/:id', checkJwt,
           }
         });
 
-        let services_to_add_list: ServicechainManager.ServicePriority[] = <ServicechainManager.ServicePriority[]>req.body.services
+        const services_to_add_list: ServicePriority[] = <ServicePriority[]>req.body.services
 
         // And add all of the Services to it, same logic as the POST
 
         return Promise.all(services_to_add_list.map((svc_prio_pair, _index, _arr) => {
           return PluginManager.getServiceById(svc_prio_pair.service)
             .then(svc => {
-              if (!svc) { throw new PluginManager.ServiceNotFoundError(`Service with ID ${svc_prio_pair.service} could not be found!`) }
+              if (!svc) { throw new ServiceNotFoundError(`Service with ID ${svc_prio_pair.service} could not be found!`) }
             })
             .then(() => {
               return sc.addService(svc_prio_pair.service, {
@@ -212,8 +213,8 @@ router.put('/:org_id/servicechains/:id', checkJwt,
           })
       })
       .catch(e => {
-        let serialized_err = req.app.locals.serializer.serializeError(e)
-        if (e instanceof ResourceNotFoundError || e instanceof PluginManager.ServiceNotFoundError || e instanceof InvalidParameterValueError) {
+        const serialized_err = req.app.locals.serializer.serializeError(e)
+        if (e instanceof ResourceNotFoundError || e instanceof ServiceNotFoundError || e instanceof InvalidParameterValueError) {
           res.status(400).json(serialized_err)
         } else if (e instanceof ResourceOutOfUserScopeError) {
           res.status(403).json(serialized_err)
@@ -235,15 +236,15 @@ router.delete('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([
       .catch(function (e) {
         if (e instanceof ResourceNotFoundError) { res.status(404).json({}) }
         else if (e instanceof ResourceOutOfUserScopeError) {
-          let serialized_err = req.app.locals.serializer.serializeError(e)
+          const serialized_err = req.app.locals.serializer.serializeError(e)
           res.status(403).json(serialized_err)
         }
         else {
-          let serialized_err = req.app.locals.serializer.serializeError(e)
+          const serialized_err = req.app.locals.serializer.serializeError(e)
           res.status(500).json(serialized_err)
           logger.error(e)
         }
       })
   })
 
-module.exports = router;
+export default router;

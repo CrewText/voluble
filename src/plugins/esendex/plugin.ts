@@ -1,4 +1,5 @@
 import * as axios from 'axios';
+
 import * as plugin_base from '../plugin_base';
 
 interface IncomingEsendexMessage {
@@ -102,10 +103,10 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       to: '00353879409420' } }
     */
 
-    let parsed_message = <IncomingEsendexMessage>message_data
+    const parsed_message = <IncomingEsendexMessage>message_data
 
     // TODO: Actually find the contact out?
-    let interpreted_message: plugin_base.InterpretedIncomingMessage = {
+    const interpreted_message: plugin_base.InterpretedIncomingMessage = {
       phone_number: parsed_message.inboundmessage.from,
       message_body: parsed_message.inboundmessage.messagetext
     }
@@ -117,7 +118,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
   }
 }
 
-var createPlugin = function () {
+const createPlugin = function () {
   return new EsendexPlugin()
 }
 

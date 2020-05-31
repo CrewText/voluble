@@ -2,40 +2,41 @@ import * as cors from 'cors';
 import * as express from "express";
 import { Server } from 'http';
 import * as winston from 'winston';
+
 import * as db from '../models';
 import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
 import { serializeTypes } from './serialize-types';
-let JSONAPISerializer = require("json-api-serializer");
+import JSONAPISerializer = require("json-api-serializer");
 
-const path = require('path');
-const bodyParser = require('body-parser');
-var xmlParser = require('express-xml-bodyparser');
+import path = require('path');
+import bodyParser = require('body-parser');
+import xmlParser = require('express-xml-bodyparser');
 
-let logger = winston.loggers.add(process.mainModule.filename, {
+const logger = winston.loggers.add(process.mainModule.filename, {
   format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
   defaultMeta: { module: 'Server-Main' }
 })
 logger.level = process.env.NODE_ENV === "production" ? "info" : "debug"
 logger.add(new winston.transports.Console())
 
-const http = require('https');
+import http = require('https');
 
 
 
 logger.info("Loading routes")
-const routes_index = require('./routes')
-const routes_user_self = require('./routes/user_self')
-const routes_users = require('./routes/users')
-const routes_orgs = require('./routes/organizations')
-const routes_contacts = require('./routes/contacts')
-const routes_categories = require('./routes/categories')
-const routes_messages = require('./routes/messages')
-const routes_services = require('./routes/services')
-const routes_blasts = require('./routes/blasts')
-const routes_servicechains = require('./routes/servicechains')
-const routes_service_endpoint_generic = require('./routes/service_endpoint')
-const routes_auth0_proxy = require('./routes/auth0-proxy')
+import routes_index from './routes'
+import routes_auth0_proxy from './routes/auth0-proxy'
+import routes_blasts from './routes/blasts'
+import routes_categories from './routes/categories'
+import routes_contacts from './routes/contacts'
+import routes_messages from './routes/messages'
+import routes_orgs from './routes/organizations'
+import routes_service_endpoint_generic from './routes/service_endpoint'
+import routes_servicechains from './routes/servicechains'
+import routes_services from './routes/services'
+import routes_user_self from './routes/user_self'
+import routes_users from './routes/users'
 
 logger.info("Starting Express server")
 const app = express();
@@ -68,7 +69,7 @@ let svr: Server;
 
 function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.headers['x-forwarded-proto'] !== 'https') {
-    let secure_url = ['https://', req.get('Host'), req.url].join('')
+    const secure_url = ['https://', req.get('Host'), req.url].join('')
     logger.debug("Got insecure request, redirecting to " + secure_url)
     return res.redirect(secure_url);
   }
@@ -88,7 +89,7 @@ if (process.env.NODE_ENV != "production") {
 }
 
 export async function initServer() {
-  var port = parseInt(process.env.PORT, 10) || 5000
+  const port = parseInt(process.env.PORT, 10) || 5000
   return new Promise((res, rej) => {
     app.set('port', port);
 
@@ -147,7 +148,7 @@ export async function initServer() {
 export async function shutdownServer() {
   // QueueManager.shutdownQueues()
 
-  let p = new Promise((resolve, reject) => {
+  const p = new Promise((resolve, reject) => {
     if (svr) {
       svr.close((err) => {
         if (err) { logger.error(err) }

@@ -14,6 +14,7 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import * as supertest from 'supertest'
+
 import * as server from '../server/server-main'
 import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource } from './test-utils'
 
@@ -128,7 +129,7 @@ describe('/v1/orgs', function () {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('data')
 
-                    let response = res.body.data
+                    const response = res.body.data
                     chai.expect(response).to.be.instanceOf(Array)
                     chai.expect(response).to.have.lengthOf(1)
 
@@ -176,7 +177,7 @@ describe('/v1/orgs', function () {
 
         it("should change the name of the organization", function (done) {
             if (!created_org) { this.skip() }
-            let new_org_name = faker.company.companyName()
+            const new_org_name = faker.company.companyName()
             supertest(server_app)
                 .put(`/v1/orgs/${created_org}`)
                 .auth(auth_token, { type: "bearer" })
@@ -199,7 +200,7 @@ describe('/v1/orgs', function () {
         it("should fail to change the phone number of the organization to an invalid number", function (done) {
             if (!created_org) { this.skip() }
 
-            let new_org_phone = faker.phone.phoneNumber("+4474########")
+            const new_org_phone = faker.phone.phoneNumber("+4474########")
             supertest(server_app)
                 .put(`/v1/orgs/${created_org}`)
                 .auth(auth_token, { type: "bearer" })
@@ -217,7 +218,7 @@ describe('/v1/orgs', function () {
         it("should change the phone number of the organization", function (done) {
             if (!created_org) { this.skip() }
 
-            let new_org_phone = faker.phone.phoneNumber("+4474########")
+            const new_org_phone = faker.phone.phoneNumber("+4474########")
             supertest(server_app)
                 .put(`/v1/orgs/${created_org}`)
                 .auth(auth_token, { type: "bearer" })

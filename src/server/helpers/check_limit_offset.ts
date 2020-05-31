@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import * as validator from 'validator';
-import { InvalidParameterValueError } from '../../voluble-errors';
 import * as winston from 'winston';
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CheckLimitOffsetHelper' })
+import { InvalidParameterValueError } from '../../voluble-errors';
+
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CheckLimitOffsetHelper' })
 
 function checkRequestLimit(req: Request, res: Response, next: NextFunction, min: number, max: number) {
     try {
@@ -18,7 +19,7 @@ function checkRequestLimit(req: Request, res: Response, next: NextFunction, min:
         next()
     }
     catch (e) {
-        let serialized_err = req.app.locals.serializer.serializeError(e)
+        const serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof InvalidParameterValueError) {
             return res.status(400).json(serialized_err)
         } else {
@@ -40,7 +41,7 @@ function checkRequestOffset(req: Request, res: Response, next: NextFunction, min
 
         next()
     } catch (e) {
-        let serialized_err = req.app.locals.serializer.serializeError(e)
+        const serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof InvalidParameterValueError) {
             return res.status(400).json(serialized_err)
         } else {
@@ -51,17 +52,9 @@ function checkRequestOffset(req: Request, res: Response, next: NextFunction, min
 }
 
 export function checkLimit(limit_min: number, limit_max: number) {
-    return function (req: Request, res: Response, next: NextFunction) {
-        try {
-            checkRequestLimit(req, res, next, limit_min, limit_max)
-        } catch (e) { throw e }
-    }
+    return (req: Request, res: Response, next: NextFunction) => checkRequestLimit(req, res, next, limit_min, limit_max)
 }
 
 export function checkOffset(offset_min: number) {
-    return function (req: Request, res: Response, next: NextFunction) {
-        try {
-            checkRequestOffset(req, res, next, offset_min)
-        } catch (e) { throw e }
-    }
+    return (req: Request, res: Response, next: NextFunction) => checkRequestOffset(req, res, next, offset_min)
 }

@@ -3,14 +3,15 @@ import * as rsmq from 'rsmq'
 // import * as rsmqWorker from 'rsmq-worker'
 import { MessageStates, PlanTypes } from 'voluble-common'
 import * as winston from 'winston'
+
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
 import { PluginManager } from '../plugin-manager'
-import { QueueManager, RMQWorker } from '../queue-manager'
+import { MessageReceivedRequest, QueueManager, RMQWorker } from '../queue-manager'
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-let logger = winston.loggers.add(process.mainModule.filename, {
+const logger = winston.loggers.add(process.mainModule.filename, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
     defaultMeta: { module: 'Worker-Main' }
 })
@@ -31,7 +32,7 @@ logger.info("Main: Initializing worker process")
 function createRedisClient() {
     let client: redis.RedisClient;
     if (process.env.REDISTOGO_URL) {
-        let rtg = require("url").parse(process.env.REDISTOGO_URL);
+        const rtg = require("url").parse(process.env.REDISTOGO_URL);
         logger.info(`Connecting to Redis server at ${rtg.hostname}:${rtg.port}`)
         client = redis.createClient(rtg.port, rtg.hostname)
         logger.info(`Connected to Redis server; now authorizing`)
@@ -44,22 +45,22 @@ function createRedisClient() {
     return client
 }
 
-let client = createRedisClient()
+const client = createRedisClient()
 logger.debug("Main: conn ID " + client.connection_id)
-let rsmq_client = new rsmq({ client: client })
-let worker_msg_send = new RMQWorker("message-send", rsmq_client)
-let worker_msg_recv = new RMQWorker("message-recv", rsmq_client)
-let worker_msg_sent_service = new RMQWorker("message-sent-service-update", rsmq_client)
-let worker_msg_sent_time = new RMQWorker("message-sent-time-update", rsmq_client)
-let worker_send_msg_update = new RMQWorker("message-state-update", rsmq_client)
+const rsmq_client = new rsmq({ client: client })
+const worker_msg_send = new RMQWorker("message-send", rsmq_client)
+const worker_msg_recv = new RMQWorker("message-recv", rsmq_client)
+const worker_msg_sent_service = new RMQWorker("message-sent-service-update", rsmq_client)
+const worker_msg_sent_time = new RMQWorker("message-sent-time-update", rsmq_client)
+const worker_send_msg_update = new RMQWorker("message-state-update", rsmq_client)
 
-worker_msg_send.on("message", async function (message: string, next: () => void, message_id: string) {
-    let parsed_msg_id: string = message
+worker_msg_send.on("message", async function (message: string, next: () => void) {
+    const parsed_msg_id: string = message
     logger.debug(`Main: Worker has collected message ${parsed_msg_id} for sending`)
     QueueManager.addMessageStateUpdateRequest(parsed_msg_id, "MSG_SENDING")
     logger.debug(`Main: Attempting message send`, { 'message': parsed_msg_id })
     try {
-        let msg = await MessageManager.getMessageFromId(parsed_msg_id)
+        const msg = await MessageManager.getMessageFromId(parsed_msg_id)
         await MessageManager.doMessageSend(msg)
             .then(msg => {
                 return msg.getUser()
@@ -80,8 +81,8 @@ worker_msg_send.on("message", async function (message: string, next: () => void,
     }
 }).start()
 
-worker_send_msg_update.on("message", function (message, next, message_id) {
-    let update = JSON.parse(message)
+worker_send_msg_update.on("message", function (message, next) {
+    const update = JSON.parse(message)
     logger.debug("Got message update for message " + update.message_id + ": " + update.status)
     MessageManager.updateMessageState(update.message_id, update.status)
         .catch(function (error) {
@@ -94,8 +95,8 @@ worker_send_msg_update.on("message", function (message, next, message_id) {
         .finally(function () { next() })
 }).start()
 
-worker_msg_sent_time.on("message", (message: string, next: () => void, message_id: string) => {
-    let json_msg = JSON.parse(message)
+worker_msg_sent_time.on("message", (message: string, next: () => void) => {
+    const json_msg = JSON.parse(message)
     MessageManager.getMessageFromId(json_msg.message_id)
         .then(msg => {
             logger.debug(`Collected message-sent-time-update request for message`, { msg: json_msg.message_id, timestamp_ms: json_msg.timestamp })
@@ -111,8 +112,8 @@ worker_msg_sent_time.on("message", (message: string, next: () => void, message_i
         })
 }).start()
 
-worker_msg_sent_service.on("message", (message: string, next: () => void, message_id: string) => {
-    let json_msg = JSON.parse(message)
+worker_msg_sent_service.on("message", (message: string, next: () => void) => {
+    const json_msg = JSON.parse(message)
     MessageManager.getMessageFromId(json_msg.message_id)
         .then((msg) => {
             logger.debug(`Collected message-sent-service-update request for message`, { msg: json_msg.message_id, service: json_msg.sent_service })
@@ -144,7 +145,7 @@ async function attemptContactIdentification(phone_number?: string, email_address
         try {
             phone_number = phone_number.startsWith("+") ? phone_number : `+${phone_number}`
             // The contact ID has not been supplied, we need to try and determine it from the phone number
-            let phone_number_e164 = getE164PhoneNumber(phone_number)
+            const phone_number_e164 = getE164PhoneNumber(phone_number)
 
             return await ContactManager.getContactFromPhone(phone_number_e164)
                 .then(function (contact) {
@@ -179,18 +180,18 @@ async function attemptContactIdentification(phone_number?: string, email_address
     return null
 }
 
-worker_msg_recv.on("message", async (message: string, next, message_id) => {
+worker_msg_recv.on("message", async (message: string, next) => {
     let identified_contact_id: string
 
     // The incoming message will be a serialized JSON of a QM.MessageReceivedRequest, so reconstitute it first to ensure type-correctness
     try {
-        let incoming_message_request = <QueueManager.MessageReceivedRequest>JSON.parse(message)
+        const incoming_message_request = <MessageReceivedRequest>JSON.parse(message)
 
-        let plugin = await PluginManager.getPluginById(incoming_message_request.service_id)
+        const plugin = await PluginManager.getPluginById(incoming_message_request.service_id)
         if (!plugin) { throw new ResourceNotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
         logger.debug(`Received incoming message request for service with ID ${incoming_message_request.service_id}`)
 
-        let message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
+        const message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
 
         /* At this point, the plugin has returned an InterpretedIncomingMessage.
         * This contains the message body, and if the plugin has been able to identify the origin contact, the contacts' ID.
@@ -203,7 +204,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         }
 
         if (message_info.contact_id) {
-            let contact = await ContactManager.getContactWithId(message_info.contact_id)
+            const contact = await ContactManager.getContactWithId(message_info.contact_id)
             if (!contact) {
                 logger.warn(`InterpretedIncomingMessage supplied with Contact ID, but Contact not found!`, { contact_id: message_info.contact_id })
             } else {
@@ -212,7 +213,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         }
 
         if (!identified_contact_id && message_info.is_reply_to) {
-            let outbound_message = await MessageManager.getMessageFromId(message_info.is_reply_to)
+            const outbound_message = await MessageManager.getMessageFromId(message_info.is_reply_to)
             if (!outbound_message) {
                 logger.warn(`Message supplied as is_reply_to does not exist!`, { 'message_id': message_info.is_reply_to })
             } else {
@@ -225,7 +226,7 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
         }
 
         if (!identified_contact_id && (message_info.phone_number || message_info.email_address)) {
-            let attempted_ident = await attemptContactIdentification(message_info.phone_number, message_info.email_address)
+            const attempted_ident = await attemptContactIdentification(message_info.phone_number, message_info.email_address)
             if (attempted_ident) { identified_contact_id = attempted_ident }
         }
 
@@ -235,12 +236,12 @@ worker_msg_recv.on("message", async (message: string, next, message_id) => {
 
         // We've identified the Contact, so now just create the Message in the database
 
-        let contact = await ContactManager.getContactWithId(identified_contact_id)
-        let sc = await contact.getServicechain()
+        const contact = await ContactManager.getContactWithId(identified_contact_id)
+        const sc = await contact.getServicechain()
 
         logger.debug(`Creating new Message from inbound message`, { service: incoming_message_request.service_id, contact: contact.id })
 
-        let new_message = await MessageManager.createMessage(message_info.message_body,
+        const new_message = await MessageManager.createMessage(message_info.message_body,
             contact.id,
             "INBOUND",
             MessageStates.MSG_ARRIVED,

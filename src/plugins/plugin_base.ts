@@ -1,4 +1,5 @@
 import * as winston from 'winston';
+
 import { Contact } from '../models/contact';
 import { Message } from '../models/message';
 import { Organization } from '../models/organization';

@@ -13,6 +13,7 @@ export class ResourceOutOfUserScopeError extends Error { }
 export class NotEnoughCreditsError extends Error { }
 export class InternalError extends Error { }
 
+
 // let Errors = {
 //     MessageAlreadySentError,
 //     MessageFailedError,

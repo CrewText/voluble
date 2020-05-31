@@ -1,10 +1,11 @@
 import { Model } from 'sequelize';
+
 import { InvalidParameterValueError } from '../../voluble-errors';
 
 
 export function checkExtendsModel<T extends typeof Model>(request_obj: any, model: T) {
-    let allowed_params = model.rawAttributes
-    let excluded_params = ['id', 'createdAt', 'updatedAt']
+    const allowed_params = model.rawAttributes
+    const excluded_params = ['id', 'createdAt', 'updatedAt']
     Object.keys(request_obj).forEach(element => {
         if (element in excluded_params) {
             throw new InvalidParameterValueError(`Parameter '${element}' on model '${model.options.name.singular}' is readonly`)

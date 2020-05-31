@@ -2,6 +2,7 @@ import * as express from "express";
 import validator from "validator";
 import { PlanTypes, scopes } from "voluble-common";
 import * as winston from 'winston';
+
 import { Organization } from "../../models/organization";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
@@ -9,9 +10,9 @@ import { getE164PhoneNumber } from '../../utilities';
 import { AuthorizationFailedError, InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError, UserAlreadyInOrgError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, hasScope, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccessMiddleware, checkScopesMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
 const router = express.Router();
 
 /**
@@ -49,7 +50,7 @@ router.get('/',
                     res.status(200).json(serialized)
                 })
                 .catch((e) => {
-                    let serialized_err = req.app.locals.serializer.serializeError(e)
+                    const serialized_err = req.app.locals.serializer.serializeError(e)
                     res.status(500).json(serialized_err)
                 })
         } else {
@@ -63,7 +64,7 @@ router.get('/',
                     res.status(200).json(serialized)
                 })
                 .catch((e) => {
-                    let serialized_err = req.app.locals.serializer.serializeError(e)
+                    const serialized_err = req.app.locals.serializer.serializeError(e)
                     res.status(500).json(serialized_err)
                 })
         }
@@ -107,9 +108,9 @@ router.post('/', checkJwt, async function (req, res, next) {
         throw new AuthorizationFailedError(`No user found in JWT; an Organization cannot be created`)
     }
 
-    let org_name = req.body.name
-    let org_phone_number = req.body.phone_number
-    let plan_type = req.body.plan.toUpperCase()
+    const org_name = req.body.name
+    const org_phone_number = req.body.phone_number
+    const plan_type = req.body.plan.toUpperCase()
     new Promise((res, rej) => {
         res(checkExtendsModel(req.body, Organization))
     })
@@ -146,7 +147,7 @@ router.post('/', checkJwt, async function (req, res, next) {
             res.status(201).json(serialized)
         })
         .catch(e => {
-            let serialized_err = req.app.locals.serializer.serializeError(e)
+            const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
                 logger.debug(e)
@@ -171,7 +172,7 @@ router.get('/:org_id',
     setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware, function (req, res, _next) {
 
-        let org_id = req.params.org_id
+        const org_id = req.params.org_id
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
                 if (!org) {
@@ -184,7 +185,7 @@ router.get('/:org_id',
                 res.status(200).json(serialized)
             })
             .catch(function (e) {
-                let serialized_err = req.app.locals.serializer.serializeError(e)
+                const serialized_err = req.app.locals.serializer.serializeError(e)
                 if (e instanceof ResourceNotFoundError) { res.status(400).json(serialized_err) }
                 else {
                     res.status(500).json(serialized_err)
@@ -236,8 +237,8 @@ router.put('/:org_id',
     setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware,
     async function (req, res, next) {
-        let org_id = req.params.org_id
-        let new_org_data = req.body
+        const org_id = req.params.org_id
+        const new_org_data = req.body
 
         if (!new_org_data) { throw new InvalidParameterValueError(`Request body must not be empty`) }
         OrgManager.getOrganizationById(org_id)
@@ -278,7 +279,7 @@ router.put('/:org_id',
                 res.status(200).json(serialized)
             })
             .catch(e => {
-                let serialized_err = req.app.locals.serializer.serializeError(e)
+                const serialized_err = req.app.locals.serializer.serializeError(e)
                 if (e instanceof ResourceOutOfUserScopeError) {
                     res.status(403).json(serialized_err)
                 } else if (e instanceof InvalidParameterValueError) {
@@ -300,7 +301,7 @@ router.delete('/:org_id', checkJwt,
     scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware,
     function (req, res, next) {
-        let org_id = req.params.org_id
+        const org_id = req.params.org_id
         OrgManager.getOrganizationById(org_id)
             .then((org) => {
                 if (!org) {
@@ -313,10 +314,10 @@ router.delete('/:org_id', checkJwt,
                         return res.status(204).json({})
                     })
                     .catch((e) => {
-                        let serialized_err = req.app.locals.serializer.serializeError(e)
+                        const serialized_err = req.app.locals.serializer.serializeError(e)
                         return res.status(500).json(serialized_err)
                     })
             })
     })
 
-module.exports = router
+export default router

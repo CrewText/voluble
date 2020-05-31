@@ -14,8 +14,9 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import * as supertest from 'supertest'
+
 import * as server from '../server/server-main'
-import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship, satisfiesJsonApiRelatedResource } from './test-utils'
+import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiRelatedResource, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship } from './test-utils'
 
 chai.use(chaiAsPromised)
 let auth_token: string
@@ -71,7 +72,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             .expect(200)
             .end((err, res) => {
                 if (err) { console.log(err); console.log(res.error); return done(err) }
-                let response = res.body.data
+                const response = res.body.data
                 chai.expect(response).to.be.instanceof(Array)
 
                 response.forEach(service => {
@@ -102,7 +103,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             .expect(201)
             .end((err, res) => {
                 if (err) { console.log(err); console.log(res.error); return done(err) }
-                let response = res.body.data
+                const response = res.body.data
                 chai.expect(response).to.have.property('id')
                 chai.expect(response.attributes).to.have.property('name')
                 chai.expect(response.attributes).to.have.property('services')
@@ -122,7 +123,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
     this.beforeAll(function (done) {
         console.log(`Setting up test category`)
         if (!test_org_id) { this.skip() }
-        let cat_name = faker.name.jobArea()
+        const cat_name = faker.name.jobArea()
         supertest(server_app)
             .post(`/v1/orgs/${test_org_id}/categories`)
             .auth(auth_token, { type: "bearer" })
@@ -131,7 +132,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
             .end((err, res) => {
                 if (err) { console.log(err.message); return done(err) }
 
-                let data: any = res.body.data
+                const data: any = res.body.data
                 chai.expect(data.attributes).to.have.property('name', cat_name)
                 chai.expect(data.relationships).to.have.property('organization')
                 test_cat_id = data.id
@@ -154,11 +155,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it("should create a new contact", function (done) {
             if (!test_org_id || !test_sc_id) { this.skip() }
-            let contact_title = faker.name.title()
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_phone = faker.phone.phoneNumber("+4474########")
-            let contact_email = faker.internet.email(contact_fname, contact_sname).toLowerCase()
+            const contact_title = faker.name.title()
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_phone = faker.phone.phoneNumber("+4474########")
+            const contact_email = faker.internet.email(contact_fname, contact_sname).toLowerCase()
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -198,10 +199,10 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it('should create a new contact without an optional email address', function (done) {
             if (!test_org_id || !test_sc_id) { this.skip() }
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_title = faker.name.title()
-            let contact_phone = faker.phone.phoneNumber("+4474########")
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_title = faker.name.title()
+            const contact_phone = faker.phone.phoneNumber("+4474########")
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -239,11 +240,11 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it("should create a new contact without an optional category", function (done) {
             if (!test_org_id || !test_sc_id) { this.skip() }
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_title = faker.name.title()
-            let contact_phone = faker.phone.phoneNumber("+4474########")
-            let contact_email = faker.internet.email(contact_fname, contact_sname)
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_title = faker.name.title()
+            const contact_phone = faker.phone.phoneNumber("+4474########")
+            const contact_email = faker.internet.email(contact_fname, contact_sname)
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -280,10 +281,10 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it('should fail to create a new contact without a Servicechain', function (done) {
             if (!test_org_id) { this.skip() }
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_phone = faker.phone.phoneNumber("+4474########")
-            let contact_email = faker.internet.email(contact_fname, contact_sname)
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_phone = faker.phone.phoneNumber("+4474########")
+            const contact_email = faker.internet.email(contact_fname, contact_sname)
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -306,10 +307,10 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it('should fail to create a new contact without a title', function (done) {
             if (!test_org_id) { this.skip() }
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_phone = faker.phone.phoneNumber("+4474########")
-            let contact_email = faker.internet.email(contact_fname, contact_sname)
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_phone = faker.phone.phoneNumber("+4474########")
+            const contact_email = faker.internet.email(contact_fname, contact_sname)
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -332,10 +333,10 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it('should fail to create a new contact with extraneous parameters', function (done) {
             if (!test_org_id) { this.skip() }
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_phone = faker.phone.phoneNumber("+4474########")
-            let contact_email = faker.internet.email(contact_fname, contact_sname)
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_phone = faker.phone.phoneNumber("+4474########")
+            const contact_email = faker.internet.email(contact_fname, contact_sname)
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -360,10 +361,10 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
         it("Should fail to create a new contact when the phone number is invalid", function (done) {
             if (!test_org_id) { this.skip() }
-            let contact_fname = faker.name.firstName()
-            let contact_sname = faker.name.lastName()
-            let contact_phone = "12345123456"
-            let contact_email = faker.internet.email(contact_fname, contact_sname)
+            const contact_fname = faker.name.firstName()
+            const contact_sname = faker.name.lastName()
+            const contact_phone = "12345123456"
+            const contact_email = faker.internet.email(contact_fname, contact_sname)
 
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/contacts`)
@@ -494,8 +495,8 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         it("should change the contact's first and second names", function (done) {
             if (!test_org_id || !created_contact_id) { this.skip() }
 
-            let new_first_name = faker.name.firstName()
-            let new_surname = faker.name.lastName()
+            const new_first_name = faker.name.firstName()
+            const new_surname = faker.name.lastName()
             supertest(server_app)
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
@@ -530,7 +531,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         it("should change the contact's title", function (done) {
             if (!test_org_id || !created_contact_id) { this.skip() }
 
-            let new_title = faker.name.title()
+            const new_title = faker.name.title()
             supertest(server_app)
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
@@ -565,7 +566,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         it("should change the contact's email", function (done) {
             if (!test_org_id || !created_contact_id) { this.skip() }
 
-            let new_email = faker.internet.exampleEmail()
+            const new_email = faker.internet.exampleEmail()
             supertest(server_app)
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
@@ -600,7 +601,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         it("should fail to change the contact's email to an invalid address", function (done) {
             if (!test_org_id || !created_contact_id) { this.skip() }
 
-            let new_email = "this is not an email address"
+            const new_email = "this is not an email address"
             supertest(server_app)
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })
@@ -716,7 +717,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
         it("should change the contact's phone number", function (done) {
             if (!test_org_id || !created_contact_id) { this.skip() }
 
-            let new_phone = faker.phone.phoneNumber("+4474########")
+            const new_phone = faker.phone.phoneNumber("+4474########")
             supertest(server_app)
                 .put(`/v1/orgs/${test_org_id}/contacts/${created_contact_id}`)
                 .auth(auth_token, { type: "bearer" })

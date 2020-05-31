@@ -14,6 +14,7 @@ import * as chai from 'chai'
 import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import * as supertest from 'supertest'
+
 import * as server from '../server/server-main'
 import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource } from './test-utils'
 
@@ -65,7 +66,7 @@ describe('/v1/services', function () {
                     chai.expect(res.body).to.have.property('data')
                     chai.expect(res.body).not.to.have.property('errors')
 
-                    let response = res.body.data
+                    const response = res.body.data
                     chai.expect(response).to.be.instanceof(Array)
 
                     response.forEach(service => {

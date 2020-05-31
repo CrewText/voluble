@@ -26,7 +26,7 @@ class TelegramPlugin extends plugin_base.voluble_plugin {
     }
 }
 
-var createPlugin = function () {
+const createPlugin = function () {
     return new TelegramPlugin()
 }
 module.exports = createPlugin

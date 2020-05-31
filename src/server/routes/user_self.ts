@@ -1,10 +1,11 @@
 import * as express from "express";
 import * as winston from 'winston';
+
 import { UserManager } from "../../user-manager";
 import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkJwt } from '../security/jwt';
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
 const router = express.Router();
 
 /**
@@ -25,7 +26,7 @@ router.get('/:user_id', checkJwt,
             })
             .then(serialized => res.status(200).json(serialized))
             .catch(e => {
-                let serialized_err = req.app.locals.serializer.serializeError(e)
+                const serialized_err = req.app.locals.serializer.serializeError(e)
                 if (e instanceof ResourceOutOfUserScopeError) { res.status(403).json(serialized_err) }
                 else if (e instanceof ResourceNotFoundError) { res.status(404).json(serialized_err) }
                 else {
@@ -36,4 +37,4 @@ router.get('/:user_id', checkJwt,
 
     })
 
-module.exports = router
+export default router

@@ -1,20 +1,21 @@
 import * as Promise from "bluebird";
+import { PlanTypes } from "voluble-common";
 import * as winston from 'winston';
+
 import * as db from '../models';
 import { Organization } from "../models/organization";
 import { InvalidParameterValueError } from '../voluble-errors';
-import { PlanTypes } from "voluble-common";
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgMgr' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgMgr' })
 
-export namespace OrgManager {
+export class OrgManager {
 
     /**
      * createNewOrganization
      * @param name Name of the organization to create.
      * @returns the new Organization entry, if it is successfully created.
      */
-    export function createNewOrganization(name: string, phone_number: string, plan_type: PlanTypes = PlanTypes.PAYG): Promise<Organization> {
+    public static createNewOrganization(name: string, phone_number: string, plan_type: PlanTypes = PlanTypes.PAYG): Promise<Organization> {
         if (!name) {
             return Promise.reject(new InvalidParameterValueError("An Organization name was not provided."))
         } else if (!phone_number) {
@@ -29,11 +30,11 @@ export namespace OrgManager {
             })
     }
 
-    export function getAllOrganizations(): Promise<Organization[]> {
+    public static getAllOrganizations(): Promise<Organization[]> {
         return db.models.Organization.findAll({ order: [['createdAt', 'DESC']] })
     }
 
-    export function getOrganizationById(id: string): Promise<Organization> {
+    public static getOrganizationById(id: string): Promise<Organization> {
         return db.models.Organization.findByPk(id)
     }
 

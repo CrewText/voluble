@@ -1,13 +1,14 @@
 import * as express from "express";
 import { scopes } from "voluble-common";
 import * as winston from 'winston';
+
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { InvalidParameterValueError, ResourceNotFoundError, UserNotInOrgError } from "../../voluble-errors";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
 const router = express.Router();
 
 /**
@@ -25,7 +26,7 @@ router.get('/:org_id/users', checkJwt,
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
     scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
-        let org_id = req.params.org_id
+        const org_id = req.params.org_id
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
                 if (!org) {
@@ -40,7 +41,7 @@ router.get('/:org_id/users', checkJwt,
                 res.status(200).json(serialized)
             })
             .catch(function (e) {
-                let serialized_err = req.app.locals.serializer.serializeError(e)
+                const serialized_err = req.app.locals.serializer.serializeError(e)
                 if (e instanceof ResourceNotFoundError) {
                     res.status(404).json(serialized_err)
                 } else {
@@ -65,23 +66,23 @@ router.post('/:org_id/users',
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
     scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, async function (req, res, next) {
-        let org_id = req.params.org_id
-        let new_user_id = req.body.id
+        const org_id = req.params.org_id
+        const new_user_id = req.body.id
 
         if (!new_user_id) {
             throw new InvalidParameterValueError(`Parameter 'id' not specified`)
         }
 
         try {
-            let org = await OrgManager.getOrganizationById(org_id)
+            const org = await OrgManager.getOrganizationById(org_id)
             if (!org) { throw new ResourceNotFoundError(`No Organization found with ID ${org_id}`) }
 
-            let user = await org.createUser({ id: new_user_id })
-            let serialized = req.app.locals.serializer.serializeAsync('user', user)
+            const user = await org.createUser({ id: new_user_id })
+            const serialized = req.app.locals.serializer.serializeAsync('user', user)
             res.status(201).json(serialized)
 
         } catch (e) {
-            let serialized_err = req.app.locals.serializer.serializeError(e)
+            const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof ResourceNotFoundError) {
                 res.status(404).json(serialized_err)
             } else if (e instanceof InvalidParameterValueError) {
@@ -180,8 +181,8 @@ router.get('/:org_id/users/:user_id',
     setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware,
     function (req, res, next) {
-        let org_id = req.params.org_id
-        let user_id = req.params.user_id
+        const org_id = req.params.org_id
+        const user_id = req.params.user_id
 
         OrgManager.getOrganizationById(org_id)
             .then(function (org) {
@@ -206,7 +207,7 @@ router.get('/:org_id/users/:user_id',
                 res.status(200).json(serialized)
             })
             .catch(e => {
-                let serialized_err = req.app.locals.serializer.serializeError(e)
+                const serialized_err = req.app.locals.serializer.serializeError(e)
                 if (e instanceof UserNotInOrgError || e instanceof ResourceNotFoundError) {
                     res.status(400).json(serialized_err)
                 } else {
@@ -226,7 +227,7 @@ router.delete('/:org_id/users/:user_id',
     scopes.OrganizationEdit,
     scopes.OrganizationOwner,
     scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, function (req, res, next) {
-        let user_id = req.params.user_id
+        const user_id = req.params.user_id
 
         UserManager.getUserById(user_id)
             .then(function (user) {
@@ -239,9 +240,9 @@ router.delete('/:org_id/users/:user_id',
             })
             .catch(function (e) {
                 if (e instanceof ResourceNotFoundError) { res.status(404).json({}); return }
-                let serialized_err = req.app.locals.serializer.serializeError(e)
+                const serialized_err = req.app.locals.serializer.serializeError(e)
                 res.status(500).json(serialized_err)
             })
     })
 
-module.exports = router
+export default router

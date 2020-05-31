@@ -1,9 +1,10 @@
-import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, fn, Model, Sequelize } from 'sequelize'
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, fn,Model, Sequelize } from 'sequelize'
 import { Message as MessageAttributes, MessageDirections, MessageStates } from 'voluble-common'
-import { Contact } from './contact'
+
 import { Category } from './category'
-import { User } from './user'
+import { Contact } from './contact'
 import { Servicechain } from './servicechain'
+import { User } from './user'
 
 export class Message extends Model implements MessageAttributes {
     public readonly createdAt!: Date

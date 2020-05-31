@@ -1,11 +1,12 @@
+import { NextFunction, Request, Response } from "express";
+import { deprecate } from "util";
 import { scopes } from "voluble-common";
+
 import { UserManager } from "../../user-manager";
 import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
-import { Request, Response, NextFunction } from "express";
-import { deprecate } from "util";
 
 export function setupUserOrganizationMiddleware(req: Request, res: Response, next: NextFunction) {
-    let sub_id = req['user'].sub
+    const sub_id = req['user'].sub
     if (sub_id == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
         return next() // test client, let it do everything
     } else {
@@ -21,7 +22,7 @@ export function setupUserOrganizationMiddleware(req: Request, res: Response, nex
                 return next()
             })
             .catch(e => {
-                let serialized_data = req.app.locals.serializer.serializeError(e)
+                const serialized_data = req.app.locals.serializer.serializeError(e)
                 if (e instanceof ResourceNotFoundError) {
                     res.status(401).json(serialized_data)
                 } else {
@@ -38,7 +39,7 @@ export function checkHasOrgAccessParamMiddleware(org_param_name: string) {
             next()
         }
         catch (e) {
-            let serialized_data = req.app.locals.serializer.serializeError(e)
+            const serialized_data = req.app.locals.serializer.serializeError(e)
             res.status(403).json(serialized_data)
         }
     }
@@ -56,7 +57,7 @@ export function checkHasOrgAccessMiddleware(req, res, next) {
         next()
     }
     catch (e) {
-        let serialized_data = req.app.locals.serializer.serializeError(e)
+        const serialized_data = req.app.locals.serializer.serializeError(e)
         res.status(403).json(serialized_data)
     }
 }
@@ -79,8 +80,8 @@ export function hasScope(user: any, scope: string | string[] | scopes[]) {
 export function checkScopesMiddleware(scopes: string[]) {
     return (req, res, next) => {
         if (!hasScope(req['user'], scopes)) {
-            let e = new ResourceOutOfUserScopeError(`User does not have permission to perform this action`)
-            let serialized_data = req.app.locals.serializer.serializeError(e)
+            const e = new ResourceOutOfUserScopeError(`User does not have permission to perform this action`)
+            const serialized_data = req.app.locals.serializer.serializeError(e)
             res.status(403).json(serialized_data)
         } else {
             next()

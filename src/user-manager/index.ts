@@ -2,26 +2,25 @@ import Axios from 'axios';
 //import * as Promise from "bluebird";
 //import * as request from 'request';
 import * as winston from 'winston';
+
 import * as db from '../models';
 import { User } from "../models/user";
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UserMgr' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UserMgr' })
+
+export interface IUserMetadata {
+    app_metadata: Record<string, unknown>,
+    user_metadata: Record<string, unknown>
+}
 
 /**
  * The UserManager exists in order to co-ordinate the functions regarding Voluble users, and
  * constructing full user profiles from the information stored in the Voluble database and extra
  * PII stored in the Auth0 database, both in cleartext and encrypted.
 */
-export namespace UserManager {
+export class UserManager {
 
-    export interface IUserMetadata {
-        app_metadata: Object,
-        user_metadata: Object
-    }
-
-    //let req_prom = Promise.promisify(request)
-
-    function getMgmtAccessToken(): Promise<string> {
+    public static getMgmtAccessToken(): Promise<string> {
         // let options = {
         //     //method: 'POST',
         //     //url: `${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/oauth/token`,
@@ -54,19 +53,19 @@ export namespace UserManager {
         //     })
     }
 
-    export function getUserById(id: string): Promise<User> {
+    public static getUserById(id: string): Promise<User> {
         return db.models.User.findByPk(id)
     }
 
-    export function createUser(id: string) {
+    public static createUser(id: string): Promise<User> {
         return db.models.User.create({ id: id })
     }
 
-    export function setUserScopes(user_id: string, desired_scopes: string[]): Promise<void> {
+    public static setUserScopes(user_id: string, desired_scopes: string[]): Promise<void> {
         //TODO: #38 alter this to use permissions instead
-        return getMgmtAccessToken()
+        return this.getMgmtAccessToken()
             .then(function (token) {
-                return getUserById(user_id)
+                return this.getUserById(user_id)
                     .then(function (user) {
 
                         return Axios.get(`${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/api/v2/users/auth0|${user.id}`,
@@ -75,8 +74,8 @@ export namespace UserManager {
                                 responseType: "json"
                             })
                             .then(function (resp) {
-                                let app_metadata = resp.data.app_metadata ? resp.data.app_metadata : {}
-                                let scopes: string[] = app_metadata.scopes ? app_metadata.scopes : []
+                                const app_metadata = resp.data.app_metadata ? resp.data.app_metadata : {}
+                                const scopes: string[] = app_metadata.scopes ? app_metadata.scopes : []
                                 return scopes
                             })
                             .then(function (scopes_available) {
@@ -89,7 +88,7 @@ export namespace UserManager {
                                     }
                                 )
                             })
-                            .then(function (req) {
+                            .then(function () {
                                 return
                             })
                     })

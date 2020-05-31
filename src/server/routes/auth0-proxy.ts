@@ -1,13 +1,14 @@
 import axios from 'axios';
 import * as express from "express";
+import { generate } from 'generate-password'
 import * as winston from 'winston';
-import { UserNotInOrgError, InvalidParameterValueError } from '../../voluble-errors';
+
+import { InvalidParameterValueError, UserNotInOrgError } from '../../voluble-errors';
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessParamMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
-import { generate } from 'generate-password'
 
 const router = express.Router();
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'Auth0ProxyRoute' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'Auth0ProxyRoute' })
 
 class UnauthorizedError extends Error { }
 
@@ -19,17 +20,17 @@ interface Token {
 }
 
 let current_auth_token: Token = null;
-let current_auth_token_expiry: number = 0;
+let current_auth_token_expiry = 0;
 
-let getMgmtAuthToken = (): Promise<Token> => {
+const getMgmtAuthToken = (): Promise<Token> => {
     // Use existing auth token if it's still valid. We'll assume that the request might take up to a second, so give us
     // some leeway.
     if (current_auth_token != null && current_auth_token_expiry > Date.now() - 1000) {
         return Promise.resolve(current_auth_token);
     }
 
-    let url = `https://${process.env.AUTH0_VOLUBLE_TENANT}/oauth/token`
-    let body = new URLSearchParams()
+    const url = `https://${process.env.AUTH0_VOLUBLE_TENANT}/oauth/token`
+    const body = new URLSearchParams()
     body.append('grant_type', 'client_credentials')
     body.append('client_id', process.env.AUTH0_USER_MGMT_CLIENT_ID)
     body.append('client_secret', process.env.AUTH0_USER_MGMT_CLIENT_SECRET)
@@ -55,9 +56,9 @@ let getMgmtAuthToken = (): Promise<Token> => {
         })
 }
 
-let checkOriginIsAllowed = (req, res, next) => {
+const checkOriginIsAllowed = (req, res, next) => {
     if (!process.env.AUTH0_PROXY_ALLOWED_ORIGINS.split(';').includes(req.get('Origin'))) {
-        let e = req.app.locals.serializer.serializeError(new UnauthorizedError(`Origin not in allowed origins list: ${req.get('Origin')}`))
+        const e = req.app.locals.serializer.serializeError(new UnauthorizedError(`Origin not in allowed origins list: ${req.get('Origin')}`))
         res.status(401).json(e)
     } else next()
 }
@@ -69,7 +70,7 @@ router.get('/users/:org_id/:user_id', checkOriginIsAllowed, checkJwt, setupUserO
     (req, res, next) => {
         getMgmtAuthToken()
             .then(token => {
-                let url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${req.params.user_id}`)
+                const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${req.params.user_id}`)
                 url.searchParams.append("fields", "given_name,family_name,picture,name,app_metadata")
                 url.searchParams.append("include_fields", "true")
                 return axios.get(url.toString(),
@@ -82,7 +83,7 @@ router.get('/users/:org_id/:user_id', checkOriginIsAllowed, checkJwt, setupUserO
                 return res.status(resp.status).json(resp.data)
             })
             .catch(e => {
-                let s_error = req.app.locals.serializer.serializeError(new Error(`Unable to retrieve user: ${e.message}`))
+                const s_error = req.app.locals.serializer.serializeError(new Error(`Unable to retrieve user: ${e.message}`))
                 res.status(400).json(s_error)
 
                 logger.error(e);
@@ -96,7 +97,7 @@ router.get('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizati
     (req, res, next) => {
         getMgmtAuthToken()
             .then(token => {
-                let url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
+                const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
                 url.searchParams.append("fields", "picture,name,email,app_metadata")
                 url.searchParams.append("include_fields", "true")
                 url.searchParams.append("search_engine", "v3")
@@ -111,7 +112,7 @@ router.get('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizati
                 return res.status(resp.status).json(resp.data)
             })
             .catch(e => {
-                let s_error = req.app.locals.serializer.serializeError(new Error(`Unable to retrieve user list: ${e.message}`))
+                const s_error = req.app.locals.serializer.serializeError(new Error(`Unable to retrieve user list: ${e.message}`))
                 res.status(400).json(s_error)
                 if (e.response) { logger.error("Retrieving user list failed", { data: e.response.data, status: e.response.status }) }
             })
@@ -129,8 +130,8 @@ router.post('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizat
 
         getMgmtAuthToken()
             .then(mgmt_token => {
-                let url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
-                let body = {
+                const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
+                const body = {
                     email: req.body.email,
                     given_name: req.body.first_name,
                     family_name: req.body.last_name,
@@ -148,8 +149,8 @@ router.post('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizat
                         }, responseType: "json"
                     })
                     .then(resp => {
-                        let url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${resp.data.user_id}`)
-                        let body = {
+                        const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${resp.data.user_id}`)
+                        const body = {
                             app_metadata: {
                                 organization: req.params.org_id
                             }
@@ -167,7 +168,7 @@ router.post('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizat
                 return res.status(resp.status).json(resp.data)
             })
             .catch(e => {
-                let s_error = req.app.locals.serializer.serializeError(new Error(`Unable to create new user: ${e.message}`))
+                const s_error = req.app.locals.serializer.serializeError(new Error(`Unable to create new user: ${e.message}`))
                 res.status(400).json(s_error)
                 if (e.response) { logger.error("Creating new user failed", { data: e.response.data, status: e.response.status }) }
             })
@@ -177,8 +178,8 @@ router.post('/users/:org_id/:user_id/resetpassword', checkOriginIsAllowed, check
     (req, res, next) => {
         getMgmtAuthToken()
             .then(token => {
-                let url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/tickets/password-change`)
-                let body = {
+                const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/tickets/password-change`)
+                const body = {
                     user_id: req.params.user_id,
                     mark_email_as_verified: true,
                     //includeEmailInRedirect: false
@@ -193,10 +194,10 @@ router.post('/users/:org_id/:user_id/resetpassword', checkOriginIsAllowed, check
                 return res.status(resp.status).json(resp.data)
             })
             .catch(e => {
-                let s_error = req.app.locals.serializer.serializeError(new Error(`Unable to reset user password: ${e.message}`))
+                const s_error = req.app.locals.serializer.serializeError(new Error(`Unable to reset user password: ${e.message}`))
                 res.status(400).json(s_error)
                 if (e.response) { logger.error("Resetting user password failed", { data: e.response.data, status: e.response.status }) }
             })
     })
 
-module.exports = router;
+export default router;

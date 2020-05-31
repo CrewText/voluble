@@ -16,6 +16,7 @@ import * as faker from 'faker'
 import { Server } from 'http'
 import { AddressInfo } from 'net'
 import * as supertest from 'supertest'
+
 import * as server from '../server/server-main'
 import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiRelatedResource, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship } from './test-utils'
 
@@ -36,7 +37,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
             .then(([server, token]) => {
                 server_app = server
 
-                let addr = server_app.address() as AddressInfo
+                const addr = server_app.address() as AddressInfo
                 address = addr.address
                 port = addr.port
                 auth_token = token
@@ -103,7 +104,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
 
         it('should create a new category', function (done) {
             if (!test_org_id) { this.skip() }
-            let cat_name = faker.name.jobArea()
+            const cat_name = faker.name.jobArea()
             supertest(server_app)
                 .post(`/v1/orgs/${test_org_id}/categories`)
                 .auth(auth_token, { type: "bearer" })
@@ -115,7 +116,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     chai.expect(res.body).to.have.property('data')
                     chai.expect(res.body).not.to.have.property('errors')
 
-                    let data: any = res.body.data
+                    const data: any = res.body.data
                     satisfiesJsonApiResource(data, 'category')
                     chai.expect(data.attributes).to.have.property('name')
                     satisfiesJsonApiResourceRelationship(data, { 'organization': { related: `/orgs/${test_org_id}` } })
@@ -151,7 +152,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     chai.expect(res.body).to.have.property('data')
                     chai.expect(res.body).not.to.have.property('errors')
 
-                    let data: any = res.body.data
+                    const data: any = res.body.data
                     chai.expect(data).to.be.instanceOf(Array)
                     chai.expect(data).to.have.lengthOf(1)
 
@@ -193,7 +194,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     chai.expect(res.body).to.have.property('data')
                     chai.expect(res.body).not.to.have.property('errors')
 
-                    let data: any = res.body.data
+                    const data: any = res.body.data
 
                     satisfiesJsonApiResource(data, 'category', created_cat_id)
                     chai.expect(data.attributes).to.have.property('name')
@@ -263,7 +264,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                     chai.expect(res.body).to.have.property('data')
                     chai.expect(res.body).not.to.have.property('errors')
 
-                    let data: any = res.body.data
+                    const data: any = res.body.data
                     satisfiesJsonApiResource(data, 'category', created_cat_id)
                     satisfiesJsonApiResourceRelationship(data, { 'organization': { related: `/orgs/${test_org_id}` } })
                     satisfiesJsonApiRelatedResource(data, 'organization', 'organization', test_org_id)

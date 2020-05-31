@@ -15,8 +15,9 @@ import * as chaiAsPromised from 'chai-as-promised'
 import * as faker from 'faker'
 import * as supertest from 'supertest'
 import { Service } from 'voluble-common'
+
 import * as server from '../server/server-main'
-import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship, satisfiesJsonApiRelatedResource } from './test-utils'
+import { getAccessToken, satisfiesJsonApiError, satisfiesJsonApiRelatedResource, satisfiesJsonApiResource, satisfiesJsonApiResourceRelationship } from './test-utils'
 
 chai.should()
 chai.use(chaiAsPromised)
@@ -71,7 +72,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
             .end((err, res) => {
                 if (err) { console.log(err); console.log(res.error); return done(err) }
                 chai.expect(res.body).to.have.property('data')
-                let response = res.body.data
+                const response = res.body.data
                 chai.expect(response).to.be.instanceof(Array)
 
                 response.forEach(service => {
@@ -195,7 +196,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                     }
                     chai.expect(res.body).to.have.property('data')
 
-                    let response = res.body.data
+                    const response = res.body.data
                     satisfiesJsonApiResource(response, 'servicechain')
                     satisfiesJsonApiResourceRelationship(response, { 'organization': { 'related': `/orgs/${test_org_id}` } })
                     satisfiesJsonApiRelatedResource(response, 'organization', 'organization', test_org_id)
@@ -234,7 +235,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('data')
-                    let response = res.body.data
+                    const response = res.body.data
                     chai.expect(response).to.be.instanceOf(Array)
                     chai.expect(response).to.have.lengthOf(1)
 
@@ -317,7 +318,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('data')
-                    let response = res.body.data
+                    const response = res.body.data
                     satisfiesJsonApiResource(response, 'servicechain', created_servicechain_id)
                     satisfiesJsonApiResourceRelationship(response, { 'organization': { 'related': `/orgs/${test_org_id}` } })
                     satisfiesJsonApiRelatedResource(response, 'organization', 'organization', test_org_id)

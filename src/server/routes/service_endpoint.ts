@@ -1,11 +1,12 @@
 import * as express from "express"
 import * as winston from 'winston'
+
 import { PluginManager } from '../../plugin-manager'
 import { QueueManager } from '../../queue-manager'
 import { PluginDoesNotExistError } from "../../voluble-errors"
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServiceEndpointRoute' })
-var router = express.Router();
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServiceEndpointRoute' })
+const router = express.Router();
 
 //router.get('/', function)
 
@@ -17,7 +18,7 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
     so we can use the plugin subdir to determine what the plugin is and what to do next.
     */
 
-    let request_service_dir = req.params["plugin_subdir"]
+    const request_service_dir = req.params["plugin_subdir"]
 
     logger.debug("incoming req to " + request_service_dir)
     PluginManager.getServiceByDirName(request_service_dir)
@@ -33,7 +34,7 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
             res.status(200).json({})
         })
         .catch((e) => {
-            let serialized_err = req.app.locals.serializer.serializeError(e)
+            const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof PluginDoesNotExistError) {
                 res.status(404).json(serialized_err)
             } else {
@@ -42,4 +43,4 @@ router.post('/:plugin_subdir/endpoint', function (req, res, next) {
         })
 });
 
-module.exports = router;
+export default router;

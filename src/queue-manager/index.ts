@@ -2,9 +2,10 @@ import { EventEmitter } from 'events';
 import * as redis from 'redis';
 import * as RedisSMQ from 'rsmq';
 import * as winston from 'winston';
+
 import { Message } from '../models/message';
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'QueueMgr' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'QueueMgr' })
 
 export class RMQWorker extends EventEmitter {
     private queue_name: string
@@ -54,26 +55,25 @@ export class RMQWorker extends EventEmitter {
     }
 }
 
-export namespace QueueManager {
-    let queue_list = ["message-send", "message-state-update", "message-sent-time-update", "message-sent-service-update", "message-recv"]
+export interface MessageReceivedRequest {
+    request_data: any,
+    service_id: string
+}
 
-    export interface MessageReceivedRequest {
-        request_data: any,
-        service_id: string
-    }
+const queue_list = ["message-send", "message-state-update", "message-sent-time-update", "message-sent-service-update", "message-recv"]
+let client: redis.RedisClient;
+if (process.env.REDISTOGO_URL) {
+    const rtg = require("url").parse(process.env.REDISTOGO_URL);
+    client = redis.createClient(rtg.port, rtg.hostname)
+    this.client.auth(rtg.auth.split(":")[1]);
+} else {
+    this.client = redis.createClient()//{ host: "127.0.0.1" })
+}
 
-    let client: redis.RedisClient;
-    if (process.env.REDISTOGO_URL) {
-        let rtg = require("url").parse(process.env.REDISTOGO_URL);
-        client = redis.createClient(rtg.port, rtg.hostname)
-        client.auth(rtg.auth.split(":")[1]);
-    } else {
-        client = redis.createClient()//{ host: "127.0.0.1" })
-    }
-    let rsmq = new RedisSMQ({ client: client })
+const rsmq: RedisSMQ = new RedisSMQ({ client: this.client })
 
-
-    export function addMessageToSendRequest(message: Message) {
+export class QueueManager {
+    public static addMessageToSendRequest(message: Message) {
         logger.debug("Sending message with ID " + message.id)
         rsmq.sendMessage({
             qname: "message-send",
@@ -89,8 +89,8 @@ export namespace QueueManager {
         })
     }
 
-    export function addMessageStateUpdateRequest(message_id: string, message_state: string) {
-        let q_msg = { message_id: message_id, status: message_state }
+    public static addMessageStateUpdateRequest(message_id: string, message_state: string) {
+        const q_msg = { message_id: message_id, status: message_state }
         rsmq.sendMessage({
             qname: "message-state-update",
             message: JSON.stringify(q_msg)
@@ -104,8 +104,8 @@ export namespace QueueManager {
         })
     }
 
-    export function addMessageSentTimeUpdateRequest(message_id: string, message_unix_timestamp_ms: number) {
-        let q_msg = { message_id: message_id, timestamp: message_unix_timestamp_ms }
+    public static addMessageSentTimeUpdateRequest(message_id: string, message_unix_timestamp_ms: number) {
+        const q_msg = { message_id: message_id, timestamp: message_unix_timestamp_ms }
         rsmq.sendMessage({
             qname: "message-sent-time-update", message: JSON.stringify(q_msg)
         }, (err, resp) => {
@@ -114,8 +114,8 @@ export namespace QueueManager {
         })
     }
 
-    export function addMessageSentServiceUpdateRequest(message_id: string, message_sent_service_id: string) {
-        let q_msg = { message_id: message_id, sent_service: message_sent_service_id }
+    public static addMessageSentServiceUpdateRequest(message_id: string, message_sent_service_id: string) {
+        const q_msg = { message_id: message_id, sent_service: message_sent_service_id }
         rsmq.sendMessage({
             qname: "message-sent-service-update", message: JSON.stringify(q_msg)
         }, (err, resp) => {
@@ -124,8 +124,8 @@ export namespace QueueManager {
         })
     }
 
-    export async function addMessageReceivedRequest(request_data: any, service_id: string): Promise<string> {
-        let q_msg: MessageReceivedRequest = { request_data: request_data, service_id: service_id }
+    public static async addMessageReceivedRequest(request_data: any, service_id: string): Promise<string> {
+        const q_msg: MessageReceivedRequest = { request_data: request_data, service_id: service_id }
         logger.debug(`Sending queue message`)
         return rsmq.sendMessageAsync({ qname: 'message-recv', message: JSON.stringify(q_msg) })
             .catch(e => {
@@ -135,7 +135,7 @@ export namespace QueueManager {
 
     }
 
-    export function createQueues() {
+    public static createQueues() {
         logger.debug("Loading queue manager")
         return rsmq.listQueuesAsync()
             .then((queues) => {
@@ -157,7 +157,7 @@ export namespace QueueManager {
             })
     }
 
-    export function shutdownQueues() {
+    public static shutdownQueues() {
         rsmq.quit()
         client.end(process.env.NODE_ENV != "production")
     }

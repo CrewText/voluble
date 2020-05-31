@@ -1,5 +1,5 @@
+import { DataTypes, Model, Sequelize } from 'sequelize';
 import { ServicesInSC as ServicesInSCAttributes } from 'voluble-common';
-import { Sequelize, Model, DataTypes } from 'sequelize';
 
 export class ServicesInSC extends Model implements ServicesInSCAttributes {
     public readonly createdAt!: Date

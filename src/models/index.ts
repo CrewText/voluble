@@ -1,5 +1,6 @@
 import * as Sequelize from "sequelize";
 import * as winston from 'winston';
+
 import { Blast } from "./blast";
 import { Category } from './category';
 import { Contact } from './contact';
@@ -10,9 +11,9 @@ import { Servicechain } from './servicechain';
 import { ServicesInSC } from "./servicesInServicechain";
 import { User } from './user';
 
-let logger = winston.loggers.get(process.mainModule.filename).child({ module: 'DB' })
+const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'DB' })
 
-export let models = {
+export const models = {
     Contact: Contact,
     Category: Category,
     Message: Message,
@@ -26,14 +27,14 @@ export let models = {
     // [key: string]: any
 }
 
-let db_url = (process.env.PATH.includes("/app/.heroku") || process.env.CIRRUS_CI) ? process.env.CLEARDB_DATABASE_URL : "mysql://root@localhost/voluble_test"
+const db_url = (process.env.PATH.includes("/app/.heroku") || process.env.CIRRUS_CI) ? process.env.CLEARDB_DATABASE_URL : "mysql://root@localhost/voluble_test"
 
 if (!db_url) {
     // The ENV var has not been correctly set
     throw new Error("ClearDB Database URL is null! Exiting...")
 }
 
-let sequelize = new Sequelize.Sequelize(db_url, {
+const sequelize = new Sequelize.Sequelize(db_url, {
     dialect: 'mysql',
     // logging: process.env.NODE_ENV == "test" ? (sql, timing) => { logger.debug(sql, { timing: timing }) } : false,
     logging: false,

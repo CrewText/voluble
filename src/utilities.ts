@@ -8,8 +8,8 @@ import { PhoneNumberFormat, PhoneNumberUtil } from 'google-libphonenumber';
  * @throws {ValidationError} An error when the provided number cannot be conformed.
  */
 export function getE164PhoneNumber(phone_number: string): string {
-  let phone_utils = PhoneNumberUtil.getInstance()
-  let parsed_number = phone_utils.parse(phone_number)
+  const phone_utils = PhoneNumberUtil.getInstance()
+  const parsed_number = phone_utils.parse(phone_number)
   if (!phone_utils.isValidNumber(parsed_number)) {
     throw new Error("The supplied phone number is invalid.")
   } else {
