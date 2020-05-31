@@ -1,5 +1,8 @@
 module.exports = {
     root: true,
+    "env": {
+        "node": true
+    },
     parser: '@typescript-eslint/parser',
     plugins: [
         '@typescript-eslint',
@@ -18,6 +21,8 @@ module.exports = {
         }
     },
     rules: {
-        "simple-import-sort/sort": "error"
+        "simple-import-sort/sort": "error",
+        "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/ban-ts-comment": "off"
     }
 };
