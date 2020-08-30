@@ -12,7 +12,7 @@ import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessMiddleware, checkScopesMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgsRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'OrgsRoute' })
 const router = express.Router();
 
 /**

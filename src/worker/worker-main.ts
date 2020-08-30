@@ -11,7 +11,7 @@ import { MessageReceivedRequest, QueueManager, RMQWorker } from '../queue-manage
 import { getE164PhoneNumber } from '../utilities'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-const logger = winston.loggers.add(process.mainModule.filename, {
+const logger = winston.loggers.add(process.title, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
     defaultMeta: { module: 'Worker-Main' }
 })

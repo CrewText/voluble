@@ -8,7 +8,7 @@ import { Servicechain } from '../models/servicechain'
 import { ServicesInSC } from '../models/servicesInServicechain'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'SCMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'SCMgr' })
 
 export interface ServicePriority {
     service: string

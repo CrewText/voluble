@@ -11,7 +11,7 @@ import { Servicechain } from './servicechain';
 import { ServicesInSC } from "./servicesInServicechain";
 import { User } from './user';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'DB' })
+const logger = winston.loggers.get(process.title).child({ module: 'DB' })
 
 export const models = {
     Contact: Contact,

@@ -11,7 +11,7 @@ import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessageMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'MessageMgr' })
 
 export class MessageStateInvalidError extends Error { }
 

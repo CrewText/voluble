@@ -6,7 +6,7 @@ import * as db from '../models';
 import { Organization } from "../models/organization";
 import { InvalidParameterValueError } from '../voluble-errors';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'OrgMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'OrgMgr' })
 
 export class OrgManager {
 

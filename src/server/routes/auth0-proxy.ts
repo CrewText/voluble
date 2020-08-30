@@ -8,7 +8,7 @@ import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessParamMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
 const router = express.Router();
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'Auth0ProxyRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'Auth0ProxyRoute' })
 
 class UnauthorizedError extends Error { }
 

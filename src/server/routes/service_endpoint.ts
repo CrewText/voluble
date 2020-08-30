@@ -5,7 +5,7 @@ import { PluginManager } from '../../plugin-manager'
 import { QueueManager } from '../../queue-manager'
 import { PluginDoesNotExistError } from "../../voluble-errors"
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServiceEndpointRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'ServiceEndpointRoute' })
 const router = express.Router();
 
 //router.get('/', function)

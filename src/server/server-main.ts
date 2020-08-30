@@ -13,19 +13,15 @@ import path = require('path');
 import bodyParser = require('body-parser');
 import xmlParser = require('express-xml-bodyparser');
 
-const logger = winston.loggers.add(process.mainModule.filename, {
+const logger = winston.loggers.add(process.title, {
   format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
   defaultMeta: { module: 'Server-Main' }
 })
 logger.level = process.env.NODE_ENV === "production" ? "info" : "debug"
 logger.add(new winston.transports.Console())
 
-import http = require('https');
-
-
-
 logger.info("Loading routes")
-import routes_index from './routes'
+
 import routes_auth0_proxy from './routes/auth0-proxy'
 import routes_blasts from './routes/blasts'
 import routes_categories from './routes/categories'

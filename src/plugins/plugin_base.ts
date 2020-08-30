@@ -55,7 +55,7 @@ export abstract class voluble_plugin {
             throw new NotImplementedError(`Plugin in the following directory has not defined the variable 'plugin_description' in it's constructor: ${__dirname}`)
         }
 
-        this.logger = winston.loggers.get(process.mainModule.filename).child({ module: `Plugin (${this.name})` })
+        this.logger = winston.loggers.get(process.title).child({ module: `Plugin (${this.name})` })
     }
 
     abstract async send_message(message: Message, contact: Contact, organization: Organization): Promise<boolean>

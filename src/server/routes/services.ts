@@ -6,7 +6,7 @@ import { PluginManager } from '../../plugin-manager';
 import { checkJwt } from '../security/jwt';
 import { checkScopesMiddleware } from '../security/scopes';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicesRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'ServicesRoute' })
 const router = express.Router();
 
 router.get('/', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), function (req, res, next) {

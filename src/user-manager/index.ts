@@ -6,7 +6,7 @@ import * as winston from 'winston';
 import * as db from '../models';
 import { User } from "../models/user";
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UserMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'UserMgr' })
 
 export interface IUserMetadata {
     app_metadata: Record<string, unknown>,

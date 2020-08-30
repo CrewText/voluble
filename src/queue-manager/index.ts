@@ -5,7 +5,7 @@ import * as winston from 'winston';
 
 import { Message } from '../models/message';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'QueueMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'QueueMgr' })
 
 export class RMQWorker extends EventEmitter {
     private queue_name: string

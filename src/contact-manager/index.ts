@@ -6,7 +6,7 @@ import { Category } from '../models/category';
 import { Contact } from "../models/contact";
 import { ResourceNotFoundError } from '../voluble-errors';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'ContactMgr' })
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
  * removing Contacts and finding information about Contacts.

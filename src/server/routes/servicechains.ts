@@ -5,12 +5,12 @@ import * as winston from 'winston';
 
 import { OrgManager } from "../../org-manager";
 import { PluginManager, ServiceNotFoundError } from '../../plugin-manager/';
-import { ResponseServicechain, ServicechainManager,ServicePriority } from '../../servicechain-manager/';
+import { ResponseServicechain, ServicechainManager, ServicePriority } from '../../servicechain-manager/';
 import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ServicechainsRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'ServicechainsRoute' })
 
 const router = express.Router();
 

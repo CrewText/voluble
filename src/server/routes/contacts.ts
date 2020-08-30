@@ -15,7 +15,7 @@ import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'ContactsRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'ContactsRoute' })
 const router = express.Router();
 
 /**

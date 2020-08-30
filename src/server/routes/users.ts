@@ -8,7 +8,7 @@ import { InvalidParameterValueError, ResourceNotFoundError, UserNotInOrgError } 
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'UsersRoute' })
 const router = express.Router();
 
 /**

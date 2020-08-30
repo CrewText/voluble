@@ -7,7 +7,7 @@ import { Service } from '../models/service'
 import { voluble_plugin } from '../plugins/plugin_base'
 import { ResourceNotFoundError } from '../voluble-errors'
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'PluginMgr' })
+const logger = winston.loggers.get(process.title).child({ module: 'PluginMgr' })
 
 interface IPluginDirectoryMap {
     subdirectory: string,

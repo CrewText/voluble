@@ -5,7 +5,7 @@ import { UserManager } from "../../user-manager";
 import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkJwt } from '../security/jwt';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'UsersRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'UsersRoute' })
 const router = express.Router();
 
 /**

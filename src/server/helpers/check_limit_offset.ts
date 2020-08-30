@@ -4,7 +4,7 @@ import * as winston from 'winston';
 
 import { InvalidParameterValueError } from '../../voluble-errors';
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CheckLimitOffsetHelper' })
+const logger = winston.loggers.get(process.title).child({ module: 'CheckLimitOffsetHelper' })
 
 function checkRequestLimit(req: Request, res: Response, next: NextFunction, min: number, max: number) {
     try {

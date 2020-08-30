@@ -13,7 +13,7 @@ import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 const router = express.Router();
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'MessagesRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'MessagesRoute' })
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.

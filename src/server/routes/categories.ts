@@ -10,7 +10,7 @@ import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt } from "../security/jwt";
 import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-const logger = winston.loggers.get(process.mainModule.filename).child({ module: 'CategoriesRoute' })
+const logger = winston.loggers.get(process.title).child({ module: 'CategoriesRoute' })
 const router = express.Router();
 
 router.get('/:org_id/categories', checkJwt,
