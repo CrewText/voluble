@@ -37,7 +37,7 @@ test_task:
     folder: node_modules
     fingerprint_script: cat package-lock.json
     populate_script:
-      - cp package-lock.json cp package-lock.json.bkp
+      - cp package-lock.json package-lock.json.bkp
       - sed -i "s/git+https:\/\/github\.com\/CrewText/git+https:\/\/${GIT_ACCESS_TOKEN}:x-oauth-basic@github\.com\/CrewText/g" package-lock.json
       - npm ci
       - rm package-lock.json
