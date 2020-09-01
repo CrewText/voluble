@@ -14,6 +14,7 @@ env:
   REDISTOGO_URL: ENCRYPTED[c4e9f4c3638091c2bd6ceae48251a6584de1bf2a4db62cf90005f35a24e70123bd405e289d86a1171704b055403735ab]
   NODE_ENV: "development"
   PORT: 5000
+  GIT_ACCESS_TOKEN: ENCRYPTED[e73dca0e2a214b435158ee1dc0b4913b1fe319f2b7de8c28e57130bb042395e029ba3fab47d62331473585ec54695d76]
 
 container:
   image: node:latest
@@ -35,7 +36,9 @@ test_task:
   node_modules_cache:
     folder: node_modules
     fingerprint_script: cat package-lock.json
-    populate_script: npm ci
+    populate_script:
+      - sed -i "s/git+https:\/\/github\.com\/CrewText/git+https:\/\/${GIT_ACCESS_TOKEN}:x-oauth-basic@github\.com\/CrewText/g" package.json
+      - npm ci
 
   build_script:
     - tsc -v;
