@@ -1,5 +1,6 @@
 import * as express from 'express';
 import { scopes } from "voluble-common";
+import { ResourceNotFoundError } from 'voluble-common/dist/errors';
 
 import { PluginManager } from '../../plugin-manager';
 import { checkJwt } from '../security/jwt';
@@ -7,16 +8,13 @@ import { checkScopesMiddleware } from '../security/scopes';
 
 const router = express.Router();
 
-router.get('/', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), (req, res, next) => {
-  PluginManager.getAllServices()
-    .then(function (rows) {
-      return req.app.locals.serializer.serializeAsync('service', rows)
-    })
-    .then(serialized_data => {
-      res.status(200).json(serialized_data)
-      return next()
-    })
-})
+router.get('/',
+  checkJwt,
+  checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), async (req, res, next) => {
+    let services = await PluginManager.getAllServices()
+    res.status(200).json(req.app.locals.serializer.serialize('service', services))
+    return next()
+  })
 
 router.get('/count', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
   async (_req, res, next) => {
@@ -26,13 +24,17 @@ router.get('/count', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes
   })
 
 router.get('/:service_id', checkJwt, checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), async (req, res, next) => {
-  const service = await PluginManager.getServiceById(req.params.service_id);
-  if (service) {
-    return req.app.locals.serializer.serializeAsync('service', service);
+  try {
+    const service = await PluginManager.getServiceById(req.params.service_id);
+    if (!service) { throw new ResourceNotFoundError(`Service ${req.params.service_id} does not exist`) }
+    res.status(200).json(req.app.locals.serializer.serialize('service', service));
+    return next();
+  } catch (e) {
+    const serialized_err = req.app.locals.serializer.serializeError(e)
+    if (e instanceof ResourceNotFoundError) {
+      res.status(400).json(serialized_err)
+    } else { throw e }
   }
-  const serialized_svc = undefined;
-  res.status(200).json(serialized_svc);
-  return next();
 })
 
 export default router;
