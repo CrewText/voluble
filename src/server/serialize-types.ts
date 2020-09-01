@@ -1,4 +1,5 @@
-export function serializeTypes(serializer: any) {
+import JSONAPISerializer = require("json-api-serializer");
+export function serializeTypes(serializer: JSONAPISerializer): void {
 
     serializer.register('organization', 'id-only', {
         id: "id"

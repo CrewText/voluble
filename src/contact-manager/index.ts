@@ -1,12 +1,11 @@
-import { Contact as ContactAttrs } from 'voluble-common';
-import * as winston from 'winston';
+import { Contact as ContactAttrs, errors } from "voluble-common";
 
 import * as db from '../models';
 import { Category } from '../models/category';
 import { Contact } from "../models/contact";
-import { ResourceNotFoundError } from '../voluble-errors';
 
-const logger = winston.loggers.get(process.title).child({ module: 'ContactMgr' })
+//const logger = winston.loggers.get(process.title).child({ module: 'ContactMgr' })
+
 /**
  * The ContactManager is responsible for handling all contact-related operations, including creating new Contacts in the DB,
  * removing Contacts and finding information about Contacts.
@@ -57,7 +56,7 @@ export class ContactManager {
         return db.models.Contact.count({ where: { id: id } })
             .then(count => {
                 if (count) { return id }
-                else { throw new ResourceNotFoundError(`No contact with ID ${id}`) }
+                else { throw new errors.ResourceNotFoundError(`No contact with ID ${id}`) }
             })
     }
 
@@ -111,7 +110,7 @@ export class ContactManager {
      * @param {object} updatedDetails Object containing a mapping of parameter names to new values, e.g `{first_name: 'Adam', surname: 'Smith'}`. These parameter names must match the database field names.
      * @returns {promise} Promise resolving to a sequelize confirmation of the updated row.
      */
-    public static updateContactDetailsWithId(id: string, updatedDetails: any) {//Promise<[number, CategoryModel[]]> {
+    public static updateContactDetailsWithId(id: string, updatedDetails: Partial<ContactAttrs>): Promise<[number, Contact[]]> {
         return db.models.Contact.update(updatedDetails,
             {
                 where: { id: id }
@@ -124,7 +123,7 @@ export class CategoryDoesNotExistError extends Error { }
 
 export class CategoryManager {
 
-    public static async getCategoriesInOrg(org_id: string) {
+    public static async getCategoriesInOrg(org_id: string): Promise<Category> {
         return db.models.Category.findOne({
             where:
             {
@@ -133,16 +132,16 @@ export class CategoryManager {
         })
     }
 
-    public static async createCategory(category_name: string) {
+    public static async createCategory(category_name: string): Promise<Category> {
         return db.models.Category.create({
             name: category_name
         })
     }
 
-    public static async deleteCategory(category_id: string) {
+    public static async deleteCategory(category_id: string): Promise<void> {
         const cat = await db.models.Category.findByPk(category_id)
         if (!cat) {
-            throw new CategoryDoesNotExistError(`The Category with ID ${category_id} does not exist`)
+            throw new errors.ResourceNotFoundError(`The Category with ID ${category_id} does not exist`)
         }
 
         await cat.destroy()

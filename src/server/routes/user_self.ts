@@ -1,40 +1,32 @@
 import * as express from "express";
-import * as winston from 'winston';
+import { errors } from "voluble-common";
 
 import { UserManager } from "../../user-manager";
-import { ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkJwt } from '../security/jwt';
+import { Auth0User } from "../security/scopes";
 
-const logger = winston.loggers.get(process.title).child({ module: 'UsersRoute' })
+//const logger = winston.loggers.get(process.title).child({ module: 'UsersRoute' })
 const router = express.Router();
 
-/**
- * 
- */
 router.get('/:user_id', checkJwt,
-    (req, res, next) => {
-        new Promise((res, rej) => {
-            if (req.params.user_id != req['user'].sub) {
-                throw new ResourceOutOfUserScopeError(`Users accessing this endpoint may only request information about themself.`)
+    async (req, res, next) => {
+        try {
+            if (req.params.user_id != (req['user'] as Auth0User).sub) {
+                throw new errors.ResourceOutOfUserScopeError(`Users accessing this endpoint may only request information about themself.`)
             }
 
-            res(UserManager.getUserById(req['user'].sub))
-        })
-            .then(user => {
-                if (!user) { throw new ResourceNotFoundError(`User with ID ${req['user'].sub} not found`) }
-                return req.app.locals.serializer.serializeAsync('user', user)
-            })
-            .then(serialized => res.status(200).json(serialized))
-            .catch(e => {
-                const serialized_err = req.app.locals.serializer.serializeError(e)
-                if (e instanceof ResourceOutOfUserScopeError) { res.status(403).json(serialized_err) }
-                else if (e instanceof ResourceNotFoundError) { res.status(404).json(serialized_err) }
-                else {
-                    res.status(500).json(serialized_err)
-                    logger.error(e)
-                }
-            })
+            const user = await UserManager.getUserById(req['user'].sub)
+            if (!user) { throw new errors.ResourceNotFoundError(`User with ID ${req['user'].sub} not found`) }
+            res.status(200).json(req.app.locals.serializer.serialize('user', user))
+            return next()
+        }
 
+        catch (e) {
+            const serialized_err = req.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.ResourceOutOfUserScopeError) { res.status(403).json(serialized_err) }
+            else if (e instanceof errors.ResourceNotFoundError) { res.status(404).json(serialized_err) }
+            else { throw e }
+        }
     })
 
 export default router

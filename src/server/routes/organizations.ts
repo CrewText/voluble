@@ -1,13 +1,12 @@
 import * as express from "express";
 import validator from "validator";
-import { PlanTypes, scopes } from "voluble-common";
+import { errors, Org, PlanTypes, scopes } from "voluble-common";
 import * as winston from 'winston';
 
 import { Organization } from "../../models/organization";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { getE164PhoneNumber } from '../../utilities';
-import { AuthorizationFailedError, InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError, UserAlreadyInOrgError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessMiddleware, checkScopesMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
@@ -40,33 +39,16 @@ router.get('/',
     checkJwt,
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
-    function (req, res: express.Response, next) {
+    async (req, res: express.Response, next) => {
         if (req['user'].permissions.includes(scopes.VolubleAdmin)) {
-            OrgManager.getAllOrganizations()
-                .then(orgs => {
-                    return req.app.locals.serializer.serializeAsync('organization', orgs)
-                })
-                .then(function (serialized) {
-                    res.status(200).json(serialized)
-                })
-                .catch((e) => {
-                    const serialized_err = req.app.locals.serializer.serializeError(e)
-                    res.status(500).json(serialized_err)
-                })
+            res.status(200).json(req.app.locals.serializer.serialize('organization', await OrgManager.getAllOrganizations()))
+            return next()
         } else {
-            OrgManager.getOrganizationById(req['user'].organization)
-                .then(org => {
-                    return req.app.locals.serializer.serializeAsync('organization', org)
-                })
-                .then(function (serialized) {
-                    // Wrap the returned Org in an array, so regardless of the admin status, the return type
-                    // will be an Array
-                    res.status(200).json(serialized)
-                })
-                .catch((e) => {
-                    const serialized_err = req.app.locals.serializer.serializeError(e)
-                    res.status(500).json(serialized_err)
-                })
+            const org = await OrgManager.getOrganizationById(req['user'].organization)
+            // TODO: Wrap the returned Org in an array, so regardless of the admin status, the return type
+            // will be an Array
+            res.status(200).json(req.app.locals.serializer.serialize('organization', org))
+            return next()
         }
     })
 
@@ -99,100 +81,77 @@ router.get('/',
  *
  *
  */
-router.post('/', checkJwt, async function (req, res, next) {
-    if (req['user'] && req['user'].organization) {
-        throw new UserAlreadyInOrgError(`User is already a member of Organization ${req['user'].organization}`)
-    }
+router.post('/',
+    checkJwt,
+    async (req, res, next) => {
+        if (req['user'] && req['user'].organization) { throw new errors.UserAlreadyInOrgError(`User is already a member of Organization ${req['user'].organization}`) }
+        if (!req['user']) { throw new errors.AuthorizationFailedError(`No user found in JWT; an Organization cannot be created`) }
 
-    if (!req['user']) {
-        throw new AuthorizationFailedError(`No user found in JWT; an Organization cannot be created`)
-    }
+        const org_name = req.body.name
+        const org_phone_number = req.body.phone_number
+        const plan_type = req.body.plan.toUpperCase()
 
-    const org_name = req.body.name
-    const org_phone_number = req.body.phone_number
-    const plan_type = req.body.plan.toUpperCase()
-    new Promise((res, rej) => {
-        res(checkExtendsModel(req.body, Organization))
-    })
-        .then(() => {
-            try { return getE164PhoneNumber(org_phone_number) }
-            catch { throw new InvalidParameterValueError(`Phone number supplied is invalid: ${org_phone_number}`) }
-        })
-        .then(e164_phone_num => {
-            return Promise.all([OrgManager.createNewOrganization(org_name, e164_phone_num, plan_type),
-            UserManager.createUser(req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients` ? Math.random().toString(36).substring(2, 15) : req['user'].sub)])
-        })
-        .then(([new_org, new_user]) => {
+        try {
+            checkExtendsModel(req.body, Organization)
+
+            let e164_phone_num: string = null
+            try { e164_phone_num = getE164PhoneNumber(org_phone_number) }
+            catch { throw new errors.InvalidParameterValueError(`Phone number supplied is invalid: ${org_phone_number}`) }
+
+            const [new_org, new_user] = await Promise.all([
+                OrgManager.createNewOrganization(org_name, e164_phone_num, plan_type),
+                UserManager.createUser(req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients` ? Math.random().toString(36).substring(2, 15) : req['user'].sub)
+            ])
             logger.debug(`Created new Organization`, { 'org': new_org.id })
             logger.debug(`Created new User in Organization`, { 'org': new_org.id, 'user': new_user.id });
-            return new_org.addUser(new_user)
-                .then(() => {
-                    if (req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) {
-                        logger.debug(`Created by test client, not setting user claim`, { 'user': new_user.id })
-                        return
-                    }
-                    else {
-                        logger.debug('Setting user scope organization:owner', { 'user': new_user.id })
-                        return UserManager.setUserScopes(new_user.id, [scopes.OrganizationOwner])
-                    }
-                })
-                .then(() => {
-                    return new_org.reload()
-                })
-        })
-        .then(new_org => {
-            return req.app.locals.serializer.serializeAsync('organization', new_org)
-        })
-        .then(serialized => {
-            res.status(201).json(serialized)
-        })
-        .catch(e => {
+
+            const add_user_prom = new_org.addUser(new_user)
+
+            if (req['user'].sub == `${process.env.AUTH0_TEST_CLIENT_ID}@clients`) { logger.debug(`Created by test client, not setting user claim`, { 'user': new_user.id }) }
+            else {
+                logger.debug('Setting user scope organization:owner', { 'user': new_user.id })
+                await UserManager.setUserScopes(new_user.id, [scopes.OrganizationOwner])
+            }
+
+            await add_user_prom
+            await new_org.reload()
+
+            res.status(201).json(req.app.locals.serializer.serialize('organization', new_org))
+            return next()
+        } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
-            if (e instanceof InvalidParameterValueError) {
+            if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
                 logger.debug(e)
-            } else if (e instanceof UserAlreadyInOrgError) {
+            } else if (e instanceof errors.UserAlreadyInOrgError) {
                 res.status(400).json(serialized_err)
                 logger.debug(e)
-            } else if (e instanceof AuthorizationFailedError) {
+            } else if (e instanceof errors.AuthorizationFailedError) {
                 res.status(401).json(serialized_err)
                 logger.debug(e)
             }
-            else {
-                res.status(500).json(serialized_err)
-                logger.error(e)
-            }
-        })
-})
+            else { throw e }
+        }
+    })
 
 
 router.get('/:org_id',
     checkJwt,
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
-    checkHasOrgAccessMiddleware, function (req, res, _next) {
+    checkHasOrgAccessMiddleware, (req, res, next) => {
 
         const org_id = req.params.org_id
-        OrgManager.getOrganizationById(org_id)
-            .then(function (org) {
-                if (!org) {
-                    throw new ResourceNotFoundError(`Organization with ID ${org_id} does not exist`)
-                } else {
-                    return req.app.locals.serializer.serializeAsync('organization', org)
-                }
-            })
-            .then(serialized => {
-                res.status(200).json(serialized)
-            })
-            .catch(function (e) {
-                const serialized_err = req.app.locals.serializer.serializeError(e)
-                if (e instanceof ResourceNotFoundError) { res.status(400).json(serialized_err) }
-                else {
-                    res.status(500).json(serialized_err)
-                    logger.error(e)
-                }
-            })
-
+        const org = OrgManager.getOrganizationById(org_id)
+        try {
+            if (!org) { throw new errors.ResourceNotFoundError(`Organization with ID ${org_id} does not exist`) }
+            res.status(200).json(req.app.locals.serializer.serialize('organization', org))
+            return next()
+        } catch (e) {
+            const serialized_err = req.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.ResourceNotFoundError) { res.status(400).json(serialized_err) }
+            else { throw e }
+        }
     })
 
 /**
@@ -236,61 +195,56 @@ router.put('/:org_id',
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware,
-    async function (req, res, next) {
+    async (req, res, next) => {
         const org_id = req.params.org_id
         const new_org_data = req.body
 
-        if (!new_org_data) { throw new InvalidParameterValueError(`Request body must not be empty`) }
-        OrgManager.getOrganizationById(org_id)
-            .then(org => {
-                if (!org) { throw new ResourceNotFoundError(`Resource not found: ${org_id}`) }
+        try {
+            if (!new_org_data) { throw new errors.InvalidParameterValueError(`Request body must not be empty`) }
+            const org = await OrgManager.getOrganizationById(org_id)
+            if (!org) { throw new errors.ResourceNotFoundError(`Resource not found: ${org_id}`) }
 
-                if (new_org_data.name) {
-                    org.set("name", new_org_data.name)
-                }
+            const updates: Partial<Org> = {}
 
-                if (new_org_data.phone_number) {
-                    let parsed_phone_num: string
-                    try {
-                        parsed_phone_num = getE164PhoneNumber(new_org_data.phone_number)
-                    } catch {
-                        throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + req.body.phone_number)
-                    }
+            if (new_org_data.name) {
+                updates.name = new_org_data.name
+            }
 
-                    org.set("phone_number", parsed_phone_num)
-                }
+            if (new_org_data.phone_number) {
+                let parsed_phone_num: string
+                try { parsed_phone_num = getE164PhoneNumber(new_org_data.phone_number) }
+                catch { throw new errors.InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + req.body.phone_number) }
+                updates.phone_number = parsed_phone_num
+            }
 
-                if (new_org_data.plan) {
-                    if (!hasScope(req['user'], [scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin])) { throw new ResourceOutOfUserScopeError(`This user cannot alter parameter 'plan'`) }
-                    if (!(new_org_data.plan in PlanTypes)) { throw new InvalidParameterValueError(`Parameter 'plan' must be one of the following: ${Object.values(PlanTypes)}`) }
-                    org.plan = new_org_data.plan.toUpperCase()
-                }
+            if (new_org_data.plan) {
+                if (!hasScope(req['user'], [scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin])) { throw new errors.ResourceOutOfUserScopeError(`This user cannot alter parameter 'plan'`) }
+                if (!(new_org_data.plan in PlanTypes)) { throw new errors.InvalidParameterValueError(`Parameter 'plan' must be one of the following: ${Object.values(PlanTypes)}`) }
+                updates.plan = new_org_data.plan.toUpperCase()
+            }
 
-                if (new_org_data.credits) {
-                    if (!hasScope(req['user'], [scopes.CreditsUpdate, scopes.OrganizationOwner, scopes.VolubleAdmin])) { throw new ResourceOutOfUserScopeError(`This user cannot alter parameter 'credits'`) }
-                    if (typeof new_org_data.credits != "number" || (typeof new_org_data.credits == "string" && validator.isInt(new_org_data.credits)) || new_org_data.credits < 0) { throw new InvalidParameterValueError(`Parameter 'credits' must be a number above zero`) }
-                    org.set("credits", new_org_data.credits)
-                }
-                return org.save()
-            })
-            .then(org => { return org.reload() })
-            .then(org => { return req.app.locals.serializer.serializeAsync('organization', org) })
-            .then(serialized => {
-                res.status(200).json(serialized)
-            })
-            .catch(e => {
-                const serialized_err = req.app.locals.serializer.serializeError(e)
-                if (e instanceof ResourceOutOfUserScopeError) {
-                    res.status(403).json(serialized_err)
-                } else if (e instanceof InvalidParameterValueError) {
-                    res.status(400).json(serialized_err)
-                } else if (e instanceof ResourceNotFoundError) {
-                    res.status(404).json(serialized_err)
-                } else {
-                    res.status(500).json(serialized_err)
-                    logger.error(e)
-                }
-            })
+            if (new_org_data.credits) {
+                if (!hasScope(req['user'], [scopes.CreditsUpdate, scopes.OrganizationOwner, scopes.VolubleAdmin])) { throw new errors.ResourceOutOfUserScopeError(`This user cannot alter parameter 'credits'`) }
+                if (typeof new_org_data.credits != "number" || (typeof new_org_data.credits == "string" && validator.isInt(new_org_data.credits)) || new_org_data.credits < 0) { throw new errors.InvalidParameterValueError(`Parameter 'credits' must be a number above zero`) }
+                updates.credits = new_org_data.credits
+            }
+
+            await OrgManager.updateOrganizationWithId(org.id, updates)
+            await org.reload()
+
+            res.status(200).json(req.app.locals.serializer.serialize('organization', org))
+            return next()
+        }
+        catch (e) {
+            const serialized_err = req.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.ResourceOutOfUserScopeError) {
+                res.status(403).json(serialized_err)
+            } else if (e instanceof errors.InvalidParameterValueError) {
+                res.status(400).json(serialized_err)
+            } else if (e instanceof errors.ResourceNotFoundError) {
+                res.status(404).json(serialized_err)
+            } else { throw e }
+        }
     })
 
 
@@ -300,24 +254,16 @@ router.delete('/:org_id', checkJwt,
     scopes.OrganizationDelete,
     scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
     checkHasOrgAccessMiddleware,
-    function (req, res, next) {
+    async (req, res, next) => {
         const org_id = req.params.org_id
-        OrgManager.getOrganizationById(org_id)
-            .then((org) => {
-                if (!org) {
-                    return res.status(404).json({})
-                }
+        const org = await OrgManager.getOrganizationById(org_id)
 
-                // TODO: Delete SCs, Messages, Contacts, too?
-                org.destroy()
-                    .then(() => {
-                        return res.status(204).json({})
-                    })
-                    .catch((e) => {
-                        const serialized_err = req.app.locals.serializer.serializeError(e)
-                        return res.status(500).json(serialized_err)
-                    })
-            })
+        if (!org) { return res.status(404).json({}) }
+
+        // TODO: Delete SCs, Messages, Contacts, too?
+        await org.destroy()
+        res.status(204).json({})
+        return next()
     })
 
 export default router

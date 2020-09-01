@@ -1,14 +1,11 @@
-import { Servicechain as ServicechainAttrs, ServicesInSC as ServicesInSCAttrs } from 'voluble-common'
-import * as winston from 'winston'
+import { errors, Servicechain as ServicechainAttrs, ServicesInSC as ServicesInSCAttrs } from 'voluble-common'
 
 import { ContactManager } from '../contact-manager/'
 import * as db from '../models'
 import { Service } from '../models/service'
 import { Servicechain } from '../models/servicechain'
 import { ServicesInSC } from '../models/servicesInServicechain'
-import { ResourceNotFoundError } from '../voluble-errors'
-
-const logger = winston.loggers.get(process.title).child({ module: 'SCMgr' })
+//const logger = winston.loggers.get(process.title).child({ module: 'SCMgr' })
 
 export interface ServicePriority {
     service: string
@@ -29,9 +26,6 @@ export class EmptyServicechainError extends Error { }
  * Like all Voluble Managers, ServicechainManager does not need to be instantiated and can be accessed directly.
  */
 export class ServicechainManager {
-
-
-
     /**
      * Returns a list of service IDs associated with a given servicechain, in the priority order that they were defined in.
      * @param servicechain_id {Number} The ID of the servicechain that we want to retrieve the services for.
@@ -67,7 +61,7 @@ export class ServicechainManager {
 
         const sc = await db.models.Servicechain.findByPk(sc_id)
 
-        if (!sc) { throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} does not exist`) }
+        if (!sc) { throw new errors.ResourceNotFoundError(`Servicechain with ID ${sc_id} does not exist`) }
 
         const svcs = await sc.getServices()
 
@@ -84,7 +78,7 @@ export class ServicechainManager {
             else { throw new EmptyServicechainError(`No plugins found in servicechain ${sc_id}`) }
 
         } else {
-            throw new ResourceNotFoundError(`No servicechain found with ID ${sc_id}`)
+            throw new errors.ResourceNotFoundError(`No servicechain found with ID ${sc_id}`)
         }
     }
 
@@ -107,12 +101,12 @@ export class ServicechainManager {
         })
     }
 
-    public static async getFullServicechain(sc_id: string) {
+    public static async getFullServicechain(sc_id: string): Promise<ResponseServicechain> {
         return db.models.Servicechain.findByPk(sc_id
         )
             .then(async (sc) => {
                 if (!sc) {
-                    throw new ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`)
+                    throw new errors.ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`)
                 }
                 const svcs = await sc.getServices()
 
@@ -147,7 +141,7 @@ export class ServicechainManager {
         return db.models.Servicechain.destroy({ where: { id: id } })
             .then(function (destroyedRowsCount) {
                 if (!destroyedRowsCount) {
-                    return Promise.reject(new ResourceNotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
+                    return Promise.reject(new errors.ResourceNotFoundError(`Cannot destroy SC with ID ${id} - SC with matching ID not found.`))
                 } else {
                     return Promise.resolve(destroyedRowsCount)
                 }

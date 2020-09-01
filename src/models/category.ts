@@ -4,6 +4,7 @@ import { Category as CategoryAttributes } from 'voluble-common';
 import { Contact } from "./contact";
 import { Organization } from "./organization";
 
+
 export class Category extends Model implements CategoryAttributes {
     public id!: string
     public readonly createdAt!: Date
@@ -25,7 +26,7 @@ export class Category extends Model implements CategoryAttributes {
     public removeContact!: HasManyRemoveAssociationMixin<Contact, Contact['id']>
     public removeContacts!: HasManyRemoveAssociationsMixin<Contact, Contact['id']>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return Category.init({
             id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
             name: { type: DataTypes.STRING, allowNull: false }

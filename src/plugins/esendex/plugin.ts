@@ -1,6 +1,6 @@
 import * as axios from 'axios';
-
-import * as plugin_base from '../plugin_base';
+import { Contact, Message, Org } from 'voluble-common';
+import { InterpretedIncomingMessage, voluble_plugin } from 'voluble-plugin-base';
 
 interface IncomingEsendexMessage {
   inboundmessage: ReceivedEsendexMessageData
@@ -23,7 +23,7 @@ class EsendexError extends Error {
   }
 }
 
-class EsendexPlugin extends plugin_base.voluble_plugin {
+class EsendexPlugin extends voluble_plugin {
   username: string | undefined
   password: string | undefined
   account_ref: string | undefined
@@ -35,7 +35,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     this.account_ref = process.env.ESENDEX_ACCOUNT_REF
   }
 
-  async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance, organization: plugin_base.orgInstance) {
+  async send_message(message: Message, contact: Contact, organization: Org) {
     //this.populate_object_data_tables(message, contact)
     const esendex_message = {
       accountreference: this.account_ref,
@@ -79,7 +79,7 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
       })
   }
 
-  async handle_incoming_message(message_data: any) {
+  async handle_incoming_message(message_data: unknown) {
     /* If all has gone well, we're expecting a message from Esendex of the form:
     <InboundMessage>
         <Id>{guid-of-push-notification}</Id>
@@ -106,14 +106,15 @@ class EsendexPlugin extends plugin_base.voluble_plugin {
     const parsed_message = <IncomingEsendexMessage>message_data
 
     // TODO: Actually find the contact out?
-    const interpreted_message: plugin_base.InterpretedIncomingMessage = {
+    const interpreted_message: InterpretedIncomingMessage = {
       phone_number: parsed_message.inboundmessage.from,
       message_body: parsed_message.inboundmessage.messagetext
     }
 
-    return new Promise<plugin_base.InterpretedIncomingMessage>((resolve, reject) => {
-      resolve(interpreted_message)
-    })
+    return Promise.resolve(interpreted_message)
+    // return new Promise<InterpretedIncomingMessage>((resolve, _reject) => {
+    //   resolve(interpreted_message)
+    // })
 
   }
 }

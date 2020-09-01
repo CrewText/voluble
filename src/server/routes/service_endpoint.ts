@@ -1,9 +1,9 @@
 import * as express from "express"
+import { errors } from "voluble-common"
 import * as winston from 'winston'
 
 import { PluginManager } from '../../plugin-manager'
 import { QueueManager } from '../../queue-manager'
-import { PluginDoesNotExistError } from "../../voluble-errors"
 
 const logger = winston.loggers.get(process.title).child({ module: 'ServiceEndpointRoute' })
 const router = express.Router();
@@ -11,36 +11,32 @@ const router = express.Router();
 //router.get('/', function)
 
 /* POST service endpoint */
-router.post('/:plugin_subdir/endpoint', function (req, res, next) {
-    /* At this point, we know that an outside service has contacted us with an inbound message
-    and that the incoming address is of the format
-    https://voluble-server.com/services/plugin-subdir-here/endpoint
-    so we can use the plugin subdir to determine what the plugin is and what to do next.
-    */
+router.post('/:plugin_subdir/endpoint',
+    async (req, res, next) => {
+        /* At this point, we know that an outside service has contacted us with an inbound message
+        and that the incoming address is of the format
+        https://voluble-server.com/services/plugin-subdir-here/endpoint
+        so we can use the plugin subdir to determine what the plugin is and what to do next.
+        */
 
-    const request_service_dir = req.params["plugin_subdir"]
+        try {
+            const request_service_dir = req.params["plugin_subdir"]
+            const service = await PluginManager.getServiceByDirName(request_service_dir)
 
-    logger.debug("incoming req to " + request_service_dir)
-    PluginManager.getServiceByDirName(request_service_dir)
-        .then(function (service) {
             if (!service) {
-                throw new PluginDoesNotExistError(`Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
+                throw new errors.PluginDoesNotExistError(`Inbound request made to service endpoint for ${request_service_dir}, which does not exist`)
             }
             logger.debug(`Passing message on to ${service.directory_name}`)
 
-            return QueueManager.addMessageReceivedRequest(req.body, service.id)
-
-        }).then(() => {
             res.status(200).json({})
-        })
-        .catch((e) => {
+            QueueManager.addMessageReceivedRequest(req.body, service.id)
+            return next()
+        } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
-            if (e instanceof PluginDoesNotExistError) {
+            if (e instanceof errors.PluginDoesNotExistError) {
                 res.status(404).json(serialized_err)
-            } else {
-                res.status(500).json(serialized_err)
-            }
-        })
-});
+            } else { throw e }
+        }
+    });
 
 export default router;

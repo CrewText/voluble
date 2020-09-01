@@ -1,11 +1,11 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { errors } from 'voluble-common'
+import { voluble_plugin } from 'voluble-plugin-base'
 import * as winston from 'winston'
 
 import * as db from '../models'
 import { Service } from '../models/service'
-import { voluble_plugin } from '../plugins/plugin_base'
-import { ResourceNotFoundError } from '../voluble-errors'
 
 const logger = winston.loggers.get(process.title).child({ module: 'PluginMgr' })
 
@@ -15,7 +15,7 @@ interface IPluginDirectoryMap {
 }
 
 export class PluginImportFailedError extends Error { }
-export class ServiceNotFoundError extends Error { }
+//export class ServiceNotFoundError extends Error { }
 
 /**
  * The PluginManager keeps track of all loaded plugins, as well as initializing, loading and shutting down all detected plugins.
@@ -34,7 +34,7 @@ export class PluginManager {
         const svc = await db.models.Service.findByPk(id)
 
         if (!svc) {
-            throw new ResourceNotFoundError(`Plugin with ID ${id} cannot be found`)
+            throw new errors.ResourceNotFoundError(`Plugin with ID ${id} cannot be found`)
         }
 
         try {
@@ -61,7 +61,7 @@ export class PluginManager {
  * Set the plugin directory and load all of the plugins in it.
  * @param {string} plugin_dir The path to the directory containing the plugins that Voluble should use.
  */
-    public static async initAllPlugins() {
+    public static async initAllPlugins(): Promise<void> {
         logger.info("Loading plugins from" + this.__PLUGIN_DIR)
 
         const plugin_subdir_list = this.discoverPlugins(this.__PLUGIN_DIR)
@@ -122,7 +122,7 @@ export class PluginManager {
         // return Promise.resolve(plugin_subdirs)
     }
 
-    static synchronizePluginDatabase(plugin_list: IPluginDirectoryMap[]) {
+    static synchronizePluginDatabase(plugin_list: IPluginDirectoryMap[]): void {
         plugin_list.map(async (current_plugin_map) => {
             let service = await db.models.Service.findOne({
                 where: { 'directory_name': current_plugin_map.subdirectory }
@@ -157,7 +157,7 @@ export class PluginManager {
         return db.models.Service.findByPk(id)
     }
 
-    public static getServiceCount() {
+    public static getServiceCount(): Promise<number> {
         return db.models.Service.count({})
     }
 }

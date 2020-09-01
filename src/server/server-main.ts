@@ -6,7 +6,19 @@ import * as winston from 'winston';
 import * as db from '../models';
 import { PluginManager } from '../plugin-manager';
 import { QueueManager } from '../queue-manager';
+import routes_auth0_proxy from './routes/auth0-proxy';
+import routes_blasts from './routes/blasts';
+import routes_categories from './routes/categories';
+import routes_contacts from './routes/contacts';
+import routes_messages from './routes/messages';
+import routes_orgs from './routes/organizations';
+import routes_service_endpoint_generic from './routes/service_endpoint';
+import routes_servicechains from './routes/servicechains';
+import routes_services from './routes/services';
+import routes_user_self from './routes/user_self';
+import routes_users from './routes/users';
 import { serializeTypes } from './serialize-types';
+
 import JSONAPISerializer = require("json-api-serializer");
 
 import path = require('path');
@@ -21,19 +33,6 @@ logger.level = process.env.NODE_ENV === "production" ? "info" : "debug"
 logger.add(new winston.transports.Console())
 
 logger.info("Loading routes")
-
-import routes_auth0_proxy from './routes/auth0-proxy'
-import routes_blasts from './routes/blasts'
-import routes_categories from './routes/categories'
-import routes_contacts from './routes/contacts'
-import routes_messages from './routes/messages'
-import routes_orgs from './routes/organizations'
-import routes_service_endpoint_generic from './routes/service_endpoint'
-import routes_servicechains from './routes/servicechains'
-import routes_services from './routes/services'
-import routes_user_self from './routes/user_self'
-import routes_users from './routes/users'
-
 logger.info("Starting Express server")
 const app = express();
 
@@ -84,9 +83,9 @@ if (process.env.NODE_ENV != "production") {
   app.use(forceSSL)
 }
 
-export async function initServer() {
+export async function initServer(): Promise<Server> {
   const port = parseInt(process.env.PORT, 10) || 5000
-  return new Promise((res, rej) => {
+  return new Promise((resolve, _rej) => {
     app.set('port', port);
 
     // uncomment after placing your favicon in /public
@@ -114,7 +113,15 @@ export async function initServer() {
     app.use('/v1/orgs', routes_servicechains)
     app.use('/v1/orgs', routes_users)
     app.use('/auth0', routes_auth0_proxy)
-    return res()
+
+    // Global error handler
+    app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      const serialized_err = req.app.locals.serializer.serializeError(err)
+      res.status(500).json(serialized_err)
+      logger.error(err.message, { "route": req.baseUrl, "method": req.method, "errorName": err.name, stack: err.stack })
+    })
+
+    return resolve()
   })
     .then(() => {
       logger.debug("Initializing DB")
@@ -132,7 +139,7 @@ export async function initServer() {
     })
     .then(() => {
       svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
-      return new Promise<Server>((res, rej) => {
+      return new Promise<Server>((res, _rej) => {
         svr.once('listening', () => {
           logger.info("Server listening on " + port)
           res(svr)
@@ -141,10 +148,10 @@ export async function initServer() {
     })
 }
 
-export async function shutdownServer() {
+export async function shutdownServer(): Promise<void> {
   // QueueManager.shutdownQueues()
 
-  const p = new Promise((resolve, reject) => {
+  await new Promise((resolve, _reject) => {
     if (svr) {
       svr.close((err) => {
         if (err) { logger.error(err) }
@@ -152,6 +159,4 @@ export async function shutdownServer() {
       })
     }
   })
-
-  await p;
 }

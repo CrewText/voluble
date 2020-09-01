@@ -1,8 +1,9 @@
-import { Association, BelongsToManyAddAssociationMixin, BelongsToManyAddAssociationsMixin, BelongsToManyCountAssociationsMixin, BelongsToManyCreateAssociationMixin, BelongsToManyGetAssociationsMixin, BelongsToManyHasAssociationMixin, BelongsToManyHasAssociationsMixin, BelongsToManyRemoveAssociationMixin, BelongsToManyRemoveAssociationsMixin, BelongsToManySetAssociationsMixin, DataTypes, Model, Sequelize } from 'sequelize';
+import { BelongsToManyAddAssociationMixin, BelongsToManyAddAssociationsMixin, BelongsToManyCountAssociationsMixin, BelongsToManyCreateAssociationMixin, BelongsToManyGetAssociationsMixin, BelongsToManyHasAssociationMixin, BelongsToManyHasAssociationsMixin, BelongsToManyRemoveAssociationMixin, BelongsToManyRemoveAssociationsMixin, BelongsToManySetAssociationsMixin, DataTypes, Model, Sequelize } from 'sequelize';
 import { Service as ServiceAttributes } from 'voluble-common';
 
 import { Servicechain } from "./servicechain";
 import { ServicesInSC } from './servicesInServicechain';
+
 
 export class Service extends Model implements ServiceAttributes {
     public readonly createdAt!: Date
@@ -24,7 +25,7 @@ export class Service extends Model implements ServiceAttributes {
     public removeServicechains!: BelongsToManyRemoveAssociationsMixin<Servicechain, Servicechain['id']>
     public setServicechains!: BelongsToManySetAssociationsMixin<Servicechain, Servicechain['id']>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: {
                 type: DataTypes.UUID,

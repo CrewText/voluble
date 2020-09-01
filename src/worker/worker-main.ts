@@ -1,15 +1,17 @@
 import * as redis from 'redis'
 import * as rsmq from 'rsmq'
 // import * as rsmqWorker from 'rsmq-worker'
-import { MessageStates, PlanTypes } from 'voluble-common'
+import { errors,MessageStates, PlanTypes } from 'voluble-common'
 import * as winston from 'winston'
 
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
 import { PluginManager } from '../plugin-manager'
-import { MessageReceivedRequest, QueueManager, RMQWorker } from '../queue-manager'
+import { MessageReceivedRequest, QueueManager } from '../queue-manager'
+import { RMQWorker } from '../RMQWorker'
 import { getE164PhoneNumber } from '../utilities'
-import { ResourceNotFoundError } from '../voluble-errors'
+
+
 
 const logger = winston.loggers.add(process.title, {
     format: winston.format.combine(winston.format.json(), winston.format.prettyPrint()),
@@ -60,73 +62,57 @@ worker_msg_send.on("message", async function (message: string, next: () => void)
     QueueManager.addMessageStateUpdateRequest(parsed_msg_id, "MSG_SENDING")
     logger.debug(`Main: Attempting message send`, { 'message': parsed_msg_id })
     try {
-        const msg = await MessageManager.getMessageFromId(parsed_msg_id)
-        await MessageManager.doMessageSend(msg)
-            .then(msg => {
-                return msg.getUser()
-                    .then(user => {
-                        return user.getOrganization()
-                    })
-                    .then(org => {
-                        if (org.plan == PlanTypes.PAY_IN_ADVANCE) {
-                            return org.decrement('credits', { by: msg.cost })
-                        }
-                        else return
-                    })
-            })
+        const unsent_msg = await MessageManager.getMessageFromId(parsed_msg_id)
+        const msg = await MessageManager.doMessageSend(unsent_msg)
+        const user = await msg.getUser()
+        const org = await user.getOrganization()
+
+        if (org.plan == PlanTypes.PAY_IN_ADVANCE) { org.decrement('credits', { by: msg.cost }) }
     } catch (e) {
         logger.error(e)
-    } finally {
-        next()
     }
+
+    return next()
+
 }).start()
 
-worker_send_msg_update.on("message", function (message, next) {
+worker_send_msg_update.on("message", async function (message, next) {
     const update = JSON.parse(message)
     logger.debug("Got message update for message " + update.message_id + ": " + update.status)
-    MessageManager.updateMessageState(update.message_id, update.status)
-        .catch(function (error) {
-            if (error instanceof ResourceNotFoundError) {
-                logger.info("Dropping message update request for message with ID " + update.message_id)
-            } else {
-                throw error
-            }
-        })
-        .finally(function () { next() })
+    try { await MessageManager.updateMessageState(update.message_id, update.status) }
+    catch (error) {
+        if (error instanceof errors.ResourceNotFoundError) {
+            logger.info("Dropping message update request for message with ID " + update.message_id)
+        } else { logger.error(error) }
+    }
+    return next()
 }).start()
 
-worker_msg_sent_time.on("message", (message: string, next: () => void) => {
+worker_msg_sent_time.on("message", async (message: string, next: () => void) => {
     const json_msg = JSON.parse(message)
-    MessageManager.getMessageFromId(json_msg.message_id)
-        .then(msg => {
-            logger.debug(`Collected message-sent-time-update request for message`, { msg: json_msg.message_id, timestamp_ms: json_msg.timestamp })
-            msg.sent_time = new Date(json_msg.timestamp)
-            return msg.save()
-        })
-        .catch(e => {
-            logger.error(e)
-            throw e
-        })
-        .finally(() => {
-            next()
-        })
+    try {
+        const msg = await MessageManager.getMessageFromId(json_msg.message_id)
+        logger.debug(`Collected message-sent-time-update request for message`, { msg: json_msg.message_id, timestamp_ms: json_msg.timestamp })
+        msg.sent_time = new Date(json_msg.timestamp)
+        await msg.save()
+    } catch (e) {
+        logger.error(e)
+    }
+
+    return next()
 }).start()
 
-worker_msg_sent_service.on("message", (message: string, next: () => void) => {
+worker_msg_sent_service.on("message", async (message: string, next: () => void) => {
     const json_msg = JSON.parse(message)
-    MessageManager.getMessageFromId(json_msg.message_id)
-        .then((msg) => {
-            logger.debug(`Collected message-sent-service-update request for message`, { msg: json_msg.message_id, service: json_msg.sent_service })
-            msg.sent_service = json_msg.sent_service
-            return msg.save()
-        })
-        .catch(e => {
-            logger.error(e)
-            throw e
-        })
-        .finally(() => {
-            next()
-        })
+    try {
+        const msg = await MessageManager.getMessageFromId(json_msg.message_id)
+        logger.debug(`Collected message-sent-service-update request for message`, { msg: json_msg.message_id, service: json_msg.sent_service })
+        msg.sent_service = json_msg.sent_service
+        await msg.save()
+    } catch (e) {
+        logger.error(e)
+    }
+    return next()
 }).start()
 
 /**
@@ -152,7 +138,7 @@ async function attemptContactIdentification(phone_number?: string, email_address
                     if (contact) {
                         return contact.id
                     } else {
-                        throw new ResourceNotFoundError(`No contact found with phone number ${phone_number} (parsed as ${phone_number_e164})`)
+                        throw new errors.ResourceNotFoundError(`No contact found with phone number ${phone_number} (parsed as ${phone_number_e164})`)
                     }
                 })
         } catch (e) {
@@ -163,14 +149,12 @@ async function attemptContactIdentification(phone_number?: string, email_address
     if (email_address) {
         // Neither the contact ID or the phone number are supplied, we need to determine it from the email address
         try {
-            return ContactManager.getContactFromEmail(email_address)
-                .then(function (contact) {
-                    if (contact) {
-                        return contact.id
-                    } else {
-                        throw new ResourceNotFoundError(`No contact found with email ${email_address}`)
-                    }
-                })
+            const contact = await ContactManager.getContactFromEmail(email_address)
+            if (contact) {
+                return contact.id
+            } else {
+                throw new errors.ResourceNotFoundError(`No contact found with email ${email_address}`)
+            }
         } catch (e) {
             logger.warn(`Could not identify inbound contact from email address: ${e.name}: ${e.message}`)
         }
@@ -188,7 +172,7 @@ worker_msg_recv.on("message", async (message: string, next) => {
         const incoming_message_request = <MessageReceivedRequest>JSON.parse(message)
 
         const plugin = await PluginManager.getPluginById(incoming_message_request.service_id)
-        if (!plugin) { throw new ResourceNotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
+        if (!plugin) { throw new errors.ResourceNotFoundError(`Plugin not found with ID ${incoming_message_request.service_id}`) }
         logger.debug(`Received incoming message request for service with ID ${incoming_message_request.service_id}`)
 
         const message_info = await plugin.handle_incoming_message(incoming_message_request.request_data)
@@ -231,7 +215,7 @@ worker_msg_recv.on("message", async (message: string, next) => {
         }
 
         if (!identified_contact_id) {
-            throw new ResourceNotFoundError(`Contact could not be identified!`)
+            throw new errors.ResourceNotFoundError(`Contact could not be identified!`)
         }
 
         // We've identified the Contact, so now just create the Message in the database
@@ -253,14 +237,14 @@ worker_msg_recv.on("message", async (message: string, next) => {
     } catch (e) {
         if (e instanceof EmptyMessageInfoError) {
             logger.warn(`Received inbound Message without any message_info! Could be a plugin-related service message...`)
-        } else if (e instanceof ResourceNotFoundError || e instanceof InvalidMessageInfoError) {
+        } else if (e instanceof errors.ResourceNotFoundError || e instanceof InvalidMessageInfoError) {
             logger.warn(`${e.name} ${e.message}`)
         } else {
             logger.error(`${e.name} ${e.message}`)
         }
-    } finally {
-        next()
     }
+    return next()
+
 }).start()
 
 client.on('error', function () {

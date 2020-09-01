@@ -21,6 +21,7 @@ module.exports = {
         }
     },
     rules: {
+        "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
         "simple-import-sort/sort": "error",
         "@typescript-eslint/no-var-requires": "off",
         "@typescript-eslint/ban-ts-comment": "off"

@@ -1,8 +1,9 @@
-import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToManyAddAssociationMixin, BelongsToManyAddAssociationsMixin, BelongsToManyCountAssociationsMixin, BelongsToManyCreateAssociationMixin, BelongsToManyGetAssociationsMixin, BelongsToManyHasAssociationMixin, BelongsToManyHasAssociationsMixin, BelongsToManyRemoveAssociationMixin, BelongsToManyRemoveAssociationsMixin, BelongsToManySetAssociationsMixin, BelongsToSetAssociationMixin, DataTypes, HasMany, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize } from 'sequelize';
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToManyAddAssociationMixin, BelongsToManyAddAssociationsMixin, BelongsToManyCountAssociationsMixin, BelongsToManyCreateAssociationMixin, BelongsToManyGetAssociationsMixin, BelongsToManyHasAssociationMixin, BelongsToManyHasAssociationsMixin, BelongsToManyRemoveAssociationMixin, BelongsToManyRemoveAssociationsMixin, BelongsToManySetAssociationsMixin, BelongsToSetAssociationMixin, DataTypes, Model, Sequelize } from 'sequelize';
 import { Servicechain as ServicechainAttributes } from 'voluble-common';
 
 import { Organization } from "./organization";
 import { Service } from "./service";
+
 
 export class Servicechain extends Model implements ServicechainAttributes {
     public id!: string
@@ -34,7 +35,7 @@ export class Servicechain extends Model implements ServicechainAttributes {
     public setOrganization!: BelongsToSetAssociationMixin<Organization, Organization['id']>
     public createOrganization!: BelongsToCreateAssociationMixin<Organization>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: {
                 type: DataTypes.UUID,

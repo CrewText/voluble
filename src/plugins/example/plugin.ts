@@ -1,4 +1,5 @@
-import * as plugin_base from '../plugin_base'
+import { Contact, Message, Org } from 'voluble-common'
+import * as plugin_base from 'voluble-plugin-base'
 
 class MyExamplePlugin extends plugin_base.voluble_plugin {
     api_key: string | undefined
@@ -14,15 +15,15 @@ class MyExamplePlugin extends plugin_base.voluble_plugin {
         return true
     }
 
-    async send_message(message: plugin_base.messageInstance, contact: plugin_base.contactInstance, ) {
+    async send_message(message: Message, contact: Contact, _org: Org) {
         this.logger.info(`EXAMPLE: Sending message ${message.id} to contact ${contact.id}`)
-        return new Promise<boolean>((resolve, reject) => {
+        return new Promise<boolean>((resolve, _reject) => {
             resolve(false)
         })
     }
 
-    handle_incoming_message(message: any) {
-        return new Promise<plugin_base.InterpretedIncomingMessage>((resolve, reject) => {
+    handle_incoming_message(_message: Record<string, unknown> | string) {
+        return new Promise<plugin_base.InterpretedIncomingMessage>((resolve, _reject) => {
             resolve(<plugin_base.InterpretedIncomingMessage>{ contact: "0", message_body: "" })
         })
     }

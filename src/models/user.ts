@@ -4,6 +4,7 @@ import { User as UserAttributes } from 'voluble-common';
 import { Contact } from "./contact";
 import { Organization } from "./organization";
 
+
 export class User extends Model implements UserAttributes {
     public id!: string
     public OrganizationId!: string
@@ -18,7 +19,7 @@ export class User extends Model implements UserAttributes {
     public setContact!: BelongsToSetAssociationMixin<Contact, Contact['id']>
     public createContact!: BelongsToCreateAssociationMixin<Contact>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: {
                 type: DataTypes.STRING,

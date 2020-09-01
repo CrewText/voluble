@@ -1,10 +1,11 @@
-import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, fn,Model, Sequelize } from 'sequelize'
+import { BelongsToCreateAssociationMixin, BelongsToGetAssociationMixin, BelongsToSetAssociationMixin, DataTypes, Model, Sequelize } from 'sequelize'
 import { Message as MessageAttributes, MessageDirections, MessageStates } from 'voluble-common'
 
 import { Category } from './category'
 import { Contact } from './contact'
 import { Servicechain } from './servicechain'
 import { User } from './user'
+
 
 export class Message extends Model implements MessageAttributes {
     public readonly createdAt!: Date
@@ -36,7 +37,7 @@ export class Message extends Model implements MessageAttributes {
     public setServicechain!: BelongsToSetAssociationMixin<Servicechain, Servicechain['id']>
     public createServicechain!: BelongsToCreateAssociationMixin<Servicechain>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
 
             id: {

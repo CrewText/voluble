@@ -6,6 +6,7 @@ import { Message } from "./message";
 import { Organization } from './organization';
 import { Servicechain } from './servicechain';
 
+
 export class Contact extends Model implements ContactAttributes {
     public id!: string
     public readonly createdAt!: Date
@@ -42,7 +43,7 @@ export class Contact extends Model implements ContactAttributes {
     public removeMessage!: HasManyRemoveAssociationMixin<Message, Message['id']>
     public removeMessages!: HasManyRemoveAssociationsMixin<Message, Message['id']>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
             title: { type: DataTypes.STRING, allowNull: false },

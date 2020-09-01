@@ -1,19 +1,18 @@
 import * as express from "express";
-import { scopes } from "voluble-common";
-import * as winston from 'winston';
+import { errors, scopes } from "voluble-common";
 
 import { CategoryManager } from "../../contact-manager";
 import { Category } from "../../models/category";
 import { OrgManager } from "../../org-manager";
-import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from "../../voluble-errors";
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt } from "../security/jwt";
 import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
-const logger = winston.loggers.get(process.title).child({ module: 'CategoriesRoute' })
+//const logger = winston.loggers.get(process.title).child({ module: 'CategoriesRoute' })
 const router = express.Router();
 
-router.get('/:org_id/categories', checkJwt,
+router.get('/:org_id/categories',
+    checkJwt,
     checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
     async (req, res, next) => {
@@ -21,180 +20,141 @@ router.get('/:org_id/categories', checkJwt,
         try {
             checkHasOrgAccess(req['user'], req.params.org_id)
             const org = await OrgManager.getOrganizationById(req.params.org_id)
-            if (!org) {
-                throw new ResourceNotFoundError(`Organization not found: ${req.params.org_id}`)
-            }
+            if (!org) { throw new errors.ResourceNotFoundError(`Organization not found: ${req.params.org_id}`) }
             const cats = await org.getCategories()
-            const data = await res.app.locals.serializer.serializeAsync('category', cats)
-            res.status(200).json(data)
-        }
-        catch (e) {
+            res.status(200).json(res.app.locals.serializer.serialize('category', cats))
+            return next()
+        } catch (e) {
             const serialized_err = res.app.locals.serializer.serializeError(e)
-            if (e instanceof ResourceOutOfUserScopeError) {
+            if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
-            } else if (e instanceof ResourceNotFoundError) { res.status(400).json(serialized_err) }
-            else {
-                logger.error(e.message)
-                res.status(500).json(serialized_err)
-            }
+            } else if (e instanceof errors.ResourceNotFoundError) { res.status(400).json(serialized_err) }
+            else { throw e }
 
         }
     })
 
-router.get('/:org_id/categories/count', checkJwt, checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
-    (req, res, next) => {
-        new Promise((res, rej) => {
-            res(checkHasOrgAccess(req['user'], req.params.org_id))
-        })
-            .then(() => {
-                return OrgManager.getOrganizationById(req.params.org_id)
-            })
-            .then(org => {
-                return org.countCategories()
-            })
-            .then(c => {
-                return res.status(200).json({ data: { count: c } })
-            })
-            .catch(e => {
-                const serialized_err = res.app.locals.serializer.serializeError(e)
-                if (e instanceof ResourceOutOfUserScopeError) {
-                    res.status(403).json(serialized_err)
-                }
-                else if (e instanceof ResourceNotFoundError) {
-                    res.status(400).json(serialized_err)
-                }
-                else {
-                    logger.error(e.message)
-                    res.status(500).json(serialized_err)
-                }
-            })
+router.get('/:org_id/categories/count',
+    checkJwt,
+    checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
+    async (req, res, next) => {
+        try {
+            checkHasOrgAccess(req['user'], req.params.org_id)
+
+            const org = await OrgManager.getOrganizationById(req.params.org_id)
+            const cat_count = await org.countCategories()
+            res.status(200).json({ data: { count: cat_count } })
+            return next()
+        } catch (e) {
+            const serialized_err = res.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.ResourceOutOfUserScopeError) {
+                res.status(403).json(serialized_err)
+            }
+            else if (e instanceof errors.ResourceNotFoundError) {
+                res.status(400).json(serialized_err)
+            }
+            else { throw e }
+        }
     })
 
-router.post('/:org_id/categories', checkJwt,
+router.post('/:org_id/categories',
+    checkJwt,
     checkScopesMiddleware([scopes.CategoryAdd, scopes.VolubleAdmin]),
-    setupUserOrganizationMiddleware, async (req, res, _next) => {
-
+    setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
             checkHasOrgAccess(req['user'], req.params.org_id)
             checkExtendsModel(req.body, Category)
 
             const org = await OrgManager.getOrganizationById(req.params.org_id)
-            if (!org) { throw new ResourceNotFoundError(`Organization not found: ${req.params.org_id}`) }
-            const new_cat = await org.createCategory({
-                name: req.body.name
-            })
+            if (!org) { throw new errors.ResourceNotFoundError(`Organization not found: ${req.params.org_id}`) }
+            const new_cat = await org.createCategory({ name: req.body.name })
 
-            req.app.locals.serializer.serializeAsync('category', new_cat)
-                .then(serialized_data => { res.status(201).json(serialized_data) })
+            res.status(201).json(req.app.locals.serializer.serialize('category', new_cat))
+            return next()
         } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
-            if (e instanceof ResourceOutOfUserScopeError) {
+            if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
-            } else if (e instanceof InvalidParameterValueError) {
+            } else if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
             }
-            else {
-                logger.error(e)
-                res.status(500).json(serialized_err)
-            }
+            else { throw e }
         }
     })
 
 router.get('/:org_id/categories/:cat_id',
-    checkJwt, checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin]),
-    setupUserOrganizationMiddleware, async (req, res, next) => {
-        return new Promise((res, rej) => {
-            res(checkHasOrgAccess(req['user'], req.params.org_id))
-        })
-            .then(() => {
-                return CategoryManager.getCategoryById(req.params.cat_id)
-                    .then(cat => {
-                        if (!cat) {
-                            throw new ResourceNotFoundError(`Category ${req.params.cat_id} not found`)
-                        }
-                        return cat
-                    })
-            })
-            .then(cat => {
-                return req.app.locals.serializer.serializeAsync('category', cat)
-            })
-            .then(resp => {
-                res.status(200).json(resp)
-            })
-            .catch(async e => {
-                const serialized_err = await req.app.locals.serializer.serializeError(e)
-                if (e instanceof ResourceNotFoundError) {
-                    res.status(404).json(serialized_err)
-                } else if (e instanceof ResourceOutOfUserScopeError) {
-                    res.status(403).json(serialized_err)
-                } else {
-                    logger.error(e.message)
-                    res.status(500).json(serialized_err)
-                }
-            })
+    checkJwt,
+    checkScopesMiddleware([scopes.CategoryView, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    async (req, res, next) => {
+        try {
+            checkHasOrgAccess(req['user'], req.params.org_id)
+
+            const cat = await CategoryManager.getCategoryById(req.params.cat_id)
+            if (!cat) { throw new errors.ResourceNotFoundError(`Category ${req.params.cat_id} not found`) }
+            res.status(200).json(req.app.locals.serializer.serialize('category', cat))
+            return next()
+        } catch (e) {
+            const serialized_err = await req.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.ResourceNotFoundError) {
+                res.status(404).json(serialized_err)
+            } else if (e instanceof errors.ResourceOutOfUserScopeError) {
+                res.status(403).json(serialized_err)
+            } else { throw e }
+        }
     })
 
 router.put('/:org_id/categories/:cat_id', checkJwt,
     checkScopesMiddleware([scopes.CategoryEdit, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware, async (req, res, next) => {
         try {
-            let cat = await CategoryManager.getCategoryById(req.params.cat_id)
-            if (!cat) {
-                throw new ResourceNotFoundError(`Category ${req.params.cat_id} not found`)
-            }
+            const cat = await CategoryManager.getCategoryById(req.params.cat_id)
+            if (!cat) { throw new errors.ResourceNotFoundError(`Category ${req.params.cat_id} not found`) }
 
             checkHasOrgAccess(req['user'], req.params.org_id)
 
-            if (!req.body.name) {
-                throw new InvalidParameterValueError(`Parameter 'name' was not provided`)
-            }
-
+            if (!req.body.name) { throw new errors.InvalidParameterValueError(`Parameter 'name' was not provided`) }
             cat.name = req.body.name
-            await cat.save()
-            cat = await cat.reload()
-            await req.app.locals.serializer.serializeAsync('category', cat)
-                .then(serialized_data => { res.status(200).json(serialized_data); })
 
+            await cat.save()
+            await cat.reload()
+            res.status(200).json(req.app.locals.serializer.serialize('category', cat));
+            return next()
         } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
-            if (e instanceof ResourceNotFoundError) {
+            if (e instanceof errors.ResourceNotFoundError) {
                 res.status(404).json(serialized_err)
-            } else if (e instanceof ResourceOutOfUserScopeError) {
+            } else if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
-            } else if (e instanceof InvalidParameterValueError) {
+            } else if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
             }
-            else {
-                res.status(500).json(serialized_err)
-            }
+            else { throw e }
         }
     })
 
 router.delete('/:org_id/categories/:cat_id',
-    checkJwt, checkScopesMiddleware([scopes.CategoryDelete, scopes.VolubleAdmin]),
-    setupUserOrganizationMiddleware, async (req, res, next) => {
+    checkJwt,
+    checkScopesMiddleware([scopes.CategoryDelete, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    async (req, res, next) => {
         try {
             const cat = await CategoryManager.getCategoryById(req.params.cat_id)
-            if (!cat) {
-                res.status(404).json({})
-                return
-            }
+            if (!cat) { throw new errors.ResourceNotFoundError(`Category ${req.params.cat_id} not found`) }
 
             const cat_org = await cat.getOrganization()
             checkHasOrgAccess(req['user'], cat_org.id)
 
             await cat.destroy()
             res.status(204).json({})
-
+            return next()
         } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
-            if (e instanceof ResourceNotFoundError) {
+            if (e instanceof errors.ResourceNotFoundError) {
                 res.status(404).json(serialized_err)
-            } else if (e instanceof ResourceOutOfUserScopeError) {
+            } else if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
-            } else {
-                res.status(500).json(serialized_err)
-            }
+            } else { throw e }
         }
     })
 

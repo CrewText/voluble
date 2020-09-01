@@ -1,19 +1,18 @@
 import * as express from "express";
-import { MessageDirections, MessageStates, scopes } from "voluble-common";
-import * as winston from 'winston';
+import { errors, MessageDirections, MessageStates, scopes } from "voluble-common";
 
 import { ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager/';
 import { Message } from "../../models/message";
 import { ServicechainManager } from '../../servicechain-manager';
-import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkHasCredits } from "../helpers/check_has_credits";
 import { checkLimit, checkOffset } from "../helpers/check_limit_offset";
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccess, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+
 const router = express.Router();
-const logger = winston.loggers.get(process.title).child({ module: 'MessagesRoute' })
+//const logger = winston.loggers.get(process.title).child({ module: 'MessagesRoute' })
 /**
  * Handles the route GET /messages
  * Lists the first 100 messages available to the user, with a given offset.
@@ -46,7 +45,7 @@ router.get('/:org_id/messages/', checkJwt,
   setupUserOrganizationMiddleware,
   checkLimit(0, 100),
   checkOffset(0),
-  async function (req, res, next) {
+  async (req, res, next) => {
     try {
       checkHasOrgAccess(req['user'], req.params.org_id)
       let from_date: Date, to_date: Date, direction: MessageDirections, state: MessageStates, contact: string, user: string
@@ -54,73 +53,63 @@ router.get('/:org_id/messages/', checkJwt,
         if ((typeof req.query.from_date == "number" && req.query.from_date > -1) || typeof req.query.from_date == "string" && !isNaN(parseInt(req.query.from_date, 10))) {
           from_date = new Date((typeof req.query.from_date == "number" ? req.query.from_date : parseInt(req.query.from_date, 10)) * 1000);
         }
-        else { throw new InvalidParameterValueError(`from_date must be a positive number representing a Unix timestamp in seconds: ${req.query.from_date}`) }
+        else { throw new errors.InvalidParameterValueError(`from_date must be a positive number representing a Unix timestamp in seconds: ${req.query.from_date}`) }
       }
       if (req.query.to_date) {
         if ((typeof req.query.to_date == "number" && req.query.to_date > -1) || typeof req.query.to_date == "string" && isNaN(parseInt(req.query.to_date, 10))) {
           to_date = new Date((typeof req.query.to_date == "number" ? req.query.to_date : parseInt(req.query.to_date, 10)) * 1000);
         }
-        else { throw new InvalidParameterValueError(`to_date must be a positive number representing a Unix timestamp in seconds: ${req.query.to_date}`) }
+        else { throw new errors.InvalidParameterValueError(`to_date must be a positive number representing a Unix timestamp in seconds: ${req.query.to_date}`) }
       }
       if (req.query.direction) {
-        if (req.query.direction in MessageDirections) { direction = req.query.direction as MessageDirections }
-        else { throw new InvalidParameterValueError(`direction must be one of the following: ${Object.values(MessageDirections)}`) }
+        if (MessageDirections[req.query.direction as string]) { direction = req.query.direction as MessageDirections }
+        else { throw new errors.InvalidParameterValueError(`direction must be one of the following: ${Object.values(MessageDirections)}`) }
       }
       if (req.query.state) {
-        if (req.query.state in MessageStates) { state = req.query.state as MessageStates }
-        else { throw new InvalidParameterValueError(`state must be one of the following: ${Object.values(MessageStates)}`) }
-      }
-      if (req.query.contact) {
-        if (typeof req.query.contact == "string") { contact = req.query.contact }
-      }
-      if (req.query.user) {
-        if (typeof req.query.user == "string") { contact = req.query.user }
+        if (MessageStates[req.query.state as string]) { state = req.query.state as MessageStates }
+        else { throw new errors.InvalidParameterValueError(`state must be one of the following: ${Object.values(MessageStates)}`) }
       }
 
+      if (req.query.contact && typeof req.query.contact == "string") { contact = req.query.contact }
+      if (req.query.user && typeof req.query.user == "string") { contact = req.query.user }
+
       const messages = await MessageManager.getMessages(parseInt(req.query.offset as string), parseInt(req.query.limit as string), req.params.org_id, from_date, to_date, contact, direction, state, user)
-      const serialized = req.app.locals.serializer.serialize('message', messages)
-      return res.status(200).json(serialized)
+      res.status(200).json(req.app.locals.serializer.serialize('message', messages))
+      return next()
     }
     catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof InvalidParameterValueError) {
+      if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else if (e instanceof ResourceOutOfUserScopeError) {
+      } else if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
-      } else {
-        res.status(500).json(serialized_err)
-      }
+      } else { throw e }
     }
   })
 
 router.get('/:org_id/messages/count', checkJwt,
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin, scopes.OrganizationOwner]),
   setupUserOrganizationMiddleware,
-  (req, res, next) => {
-    new Promise((res, rej) => {
-      res(checkHasOrgAccess(req['user'], req.params.org_id))
-    })
-      .then(() => {
-        return MessageManager.getMessages(0, 100000, req.params.org_id,
-          req.query.start_timestamp ? new Date(parseInt(req.query.start_timestamp as string) * 1000) : new Date(0),
-          req.query.end_timestamp ? new Date(parseInt(req.query.end_timestamp as string) * 1000) : new Date())
-      })
-      .then(msgs => {
-        res.status(200).json({ data: { count: msgs.length } })
-      })
-      .catch(e => {
-        const serialized_err = res.app.locals.serializer.serializeError(e)
-        if (e instanceof ResourceOutOfUserScopeError) {
-          res.status(403).json(serialized_err)
-        }
-        else if (e instanceof ResourceNotFoundError) {
-          res.status(400).json(serialized_err)
-        }
-        else {
-          logger.error(e.message)
-          res.status(500).json(serialized_err)
-        }
-      })
+  async (req, res, next) => {
+    try {
+      checkHasOrgAccess(req['user'], req.params.org_id)
+      const msgs = await MessageManager.getMessages(0, 100000, req.params.org_id,
+        req.query.start_timestamp ? new Date(parseInt(req.query.start_timestamp as string) * 1000) : new Date(0),
+        req.query.end_timestamp ? new Date(parseInt(req.query.end_timestamp as string) * 1000) : new Date())
+
+      res.status(200).json({ data: { count: msgs.length } })
+      return next()
+    }
+    catch (e) {
+      const serialized_err = res.app.locals.serializer.serializeError(e)
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
+        res.status(403).json(serialized_err)
+      }
+      else if (e instanceof errors.ResourceNotFoundError) {
+        res.status(400).json(serialized_err)
+      }
+      else { throw (e) }
+    }
   })
 
 /**
@@ -129,26 +118,24 @@ router.get('/:org_id/messages/count', checkJwt,
  */
 router.get('/:org_id/messages/:message_id', checkJwt,
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
-  setupUserOrganizationMiddleware, async function (req: any, res: any, _next) {
-
+  setupUserOrganizationMiddleware,
+  async (req: express.Request, res: express.Response, next) => {
     try {
       checkHasOrgAccess(req['user'], req.params.org_id)
-
       const msg = await MessageManager.getMessageFromId(req.params.message_id)
       if (msg) {
-        res.status(200).json(await req.app.locals.serializer.serializeAsync('message', msg))
+        res.status(200).json(req.app.locals.serializer.serialize('message', msg))
+        return next()
       } else {
-        throw new ResourceNotFoundError(`Resource with ID ${req.params.message_id} not found`)
+        throw new errors.ResourceNotFoundError(`Resource with ID ${req.params.message_id} not found`)
       }
     } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof ResourceOutOfUserScopeError) {
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
-      } else if (e instanceof ResourceNotFoundError) {
+      } else if (e instanceof errors.ResourceNotFoundError) {
         res.status(404).json(serialized_err)
-      } else {
-        res.status(500).json(serialized_err)
-      }
+      } else { throw e }
     }
 
   })
@@ -159,26 +146,23 @@ router.get('/:org_id/messages/:message_id', checkJwt,
  */
 router.get('/:org_id/messages/:message_id/replies', checkJwt,
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
-  setupUserOrganizationMiddleware, async function (req: any, res: any, _next) {
+  setupUserOrganizationMiddleware,
+  async (req: express.Request, res: express.Response, next) => {
 
-    try { checkHasOrgAccess(req['user'], req.params.org_id) }
-    catch (e) {
+    try {
+      checkHasOrgAccess(req['user'], req.params.org_id)
+
+      const replies = await MessageManager.getRepliesToMessage(req.params.message_id)
+      res.status(200).json(req.app.locals.serializer.serialize('message', replies))
+      return next()
+    } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      res.status(403).json(serialized_err)
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
+        res.status(403).json(serialized_err)
+      } else if (e instanceof errors.ResourceNotFoundError) {
+        res.status(404).json(serialized_err)
+      } else { throw e }
     }
-
-    MessageManager.getRepliesToMessage(req.params.message_id)
-      .then(msgs => {
-        res.status(200).json(req.app.locals.serializer.serialize('message', msgs))
-      })
-      .catch(e => {
-        const serialized_err = req.app.locals.serializer.serializeError(e)
-        if (e instanceof ResourceNotFoundError) {
-          res.status(404).json(serialized_err)
-        } else {
-          res.status(500).json(serialized_err)
-        }
-      })
   })
 
 /**
@@ -189,13 +173,13 @@ router.post('/:org_id/messages/', checkJwt,
   checkScopesMiddleware([scopes.MessageSend, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
   checkHasCredits(1),
-  async function (req, res, next) {
+  async (req, res, next) => {
     try {
       checkExtendsModel(req.body, Message)
       checkHasOrgAccess(req['user'], req.params.org_id)
 
       const contact = await ContactManager.getContactWithId(req.body.contact)
-      if (!contact) { throw new ResourceNotFoundError(`Contact with ID ${req.body.contact} not found`) }
+      if (!contact) { throw new errors.ResourceNotFoundError(`Contact with ID ${req.body.contact} not found`) }
       const sc = req.body.servicechain ? await ServicechainManager.getServicechainById(req.body.servicechain) : await contact.getServicechain()
 
       let msg = await MessageManager.createMessage(req.body.body,
@@ -209,20 +193,16 @@ router.post('/:org_id/messages/', checkJwt,
         1)
 
       msg = MessageManager.sendMessage(msg)
-
-      const serialized = await req.app.locals.serializer.serializeAsync('message', msg)
-      res.status(200).json(serialized)
+      res.status(200).json(req.app.locals.serializer.serialize('message', msg))
+      return next()
 
     } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof ResourceOutOfUserScopeError) {
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
-      } else if (e instanceof InvalidParameterValueError) {
+      } else if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else {
-        res.status(500).json(serialized_err)
-        logger.error(e)
-      }
+      } else { throw e }
     }
   })
 

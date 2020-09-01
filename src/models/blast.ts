@@ -3,6 +3,7 @@ import { Blast as BlastAttributes } from 'voluble-common'
 
 import { Message } from './message'
 
+
 export class Blast extends Model implements BlastAttributes {
     public readonly createdAt!: Date
     public readonly updatedAt!: Date
@@ -20,7 +21,7 @@ export class Blast extends Model implements BlastAttributes {
     public removeMessage!: HasManyRemoveAssociationMixin<Message, Message['id']>
     public removeMessages!: HasManyRemoveAssociationsMixin<Message, Message['id']>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: {
                 type: DataTypes.UUID,

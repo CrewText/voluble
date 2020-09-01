@@ -10,7 +10,7 @@ export class ServicesInSC extends Model implements ServicesInSCAttributes {
     public servicechain!: string
     public priority!: number
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: {
                 type: DataTypes.UUID,

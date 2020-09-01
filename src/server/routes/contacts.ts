@@ -1,7 +1,6 @@
 import * as express from "express";
 import * as validator from 'validator';
-import { scopes } from "voluble-common";
-import * as winston from 'winston';
+import { errors, scopes } from "voluble-common";
 
 import { CategoryManager, ContactManager } from '../../contact-manager';
 import { MessageManager } from '../../message-manager';
@@ -9,26 +8,25 @@ import { Contact } from "../../models/contact";
 import { OrgManager } from "../../org-manager";
 import { ServicechainManager } from '../../servicechain-manager';
 import { getE164PhoneNumber } from "../../utilities";
-import { InvalidParameterValueError, ResourceNotFoundError, ResourceOutOfUserScopeError } from '../../voluble-errors';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkHasOrgAccessParamMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
-const logger = winston.loggers.get(process.title).child({ module: 'ContactsRoute' })
+//const logger = winston.loggers.get(process.title).child({ module: 'ContactsRoute' })
 const router = express.Router();
 
 /**
  * Handles the route `GET /contacts`.
  * List the available contacts to the user, within the boundaries provided by 'offset' and 'limit'.
  */
-router.get('/:org_id/contacts', checkJwt,
-
+router.get('/:org_id/contacts',
+  checkJwt,
   checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
   checkLimit(0, 100),
   checkOffset(0),
-  async function (req, res, next) {
+  async (req, res, next) => {
     try {
       const offset: number = req.query.offset ? validator.default.toInt(String(req.query.offset)) : 0
       const limit: number = req.query.limit ? validator.default.toInt(String(req.query.limit)) : 100
@@ -36,76 +34,58 @@ router.get('/:org_id/contacts', checkJwt,
       checkHasOrgAccess(req['user'], req.params.org_id)
 
       const contacts = await ContactManager.getContacts(offset, limit, req.params.org_id)
-      const serialized = await req.app.locals.serializer.serializeAsync('contact', contacts)
-      res.status(200).json(serialized)
+      res.status(200).json(req.app.locals.serializer.serialize('contact', contacts))
+      return next()
     } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof ResourceOutOfUserScopeError) {
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
-      } else if (e instanceof InvalidParameterValueError) {
+      } else if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else {
-        res.status(500).json(serialized_err)
-        logger.error(e)
-      }
+      } else { throw e }
     }
   })
 
 router.get('/:org_id/contacts/count', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
-  (req, res, next) => {
-    return new Promise((res, rej) => {
-      res(checkHasOrgAccess(req['user'], req.params.org_id))
-    })
-      .then(() => {
-        return OrgManager.getOrganizationById(req.params.org_id)
-      })
-      .then(org => {
-        return org.countContacts()
-      })
-      .then(c => {
-        return res.status(200).json({ data: { count: c } })
-      })
-      .catch(e => {
-        const serialized_err = res.app.locals.serializer.serializeError(e)
-        if (e instanceof ResourceOutOfUserScopeError) {
-          res.status(403).json(serialized_err)
-        }
-        else if (e instanceof ResourceNotFoundError) {
-          res.status(400).json(serialized_err)
-        }
-        else {
-          logger.error(e.message)
-          res.status(500).json(serialized_err)
-        }
-      })
+  async (req, res, next) => {
+    try {
+      checkHasOrgAccess(req['user'], req.params.org_id)
+
+      const org = await OrgManager.getOrganizationById(req.params.org_id)
+      res.status(200).json({ data: { count: await org.countContacts() } })
+      return next()
+    } catch (e) {
+      const serialized_err = res.app.locals.serializer.serializeError(e)
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
+        res.status(403).json(serialized_err)
+      }
+      else if (e instanceof errors.ResourceNotFoundError) {
+        res.status(400).json(serialized_err)
+      }
+      else { throw e }
+    }
   })
 
 /**
  * Handles the route `GET /contacts/{id}`.
  * Lists all of the details available about the contact with a given ID.
  */
-router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]), function (req, res, next) {
-  return ContactManager.checkContactWithIDExists(req.params.contact_id)
-    .then(function (id) {
-      return ContactManager.getContactWithId(id)
-    })
-    .then(function (user) {
-      if (user) {
-        return req.app.locals.serializer.serializeAsync('contact', user)
-      } else { throw new ResourceNotFoundError(`User with ID ${req.params.contact_id} is not found!`) }
-    })
-    .then(serialized => {
-      return res.status(200).json(serialized)
-    })
-    .catch(function (e) {
+router.get('/:org_id/contacts/:contact_id', checkJwt,
+  checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+  checkHasOrgAccessParamMiddleware('org_id'),
+  async (req, res, next) => {
+    try {
+      const contact = await ContactManager.getContactWithId(req.params.contact_id)
+      if (!contact) { throw new errors.ResourceNotFoundError(`Contact not found: ${req.params.contact_id}`) }
+      res.status(200).json(req.app.locals.serializer.serialize('contact', contact))
+      return next()
+    } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof ResourceNotFoundError) {
+      if (e instanceof errors.ResourceNotFoundError) {
         res.status(404).json(serialized_err)
-      } else {
-        res.status(500).json(serialized_err)
-      }
-    })
-})
+      } else { throw e }
+    }
+  })
 
 /**
  * Handles the route `POST /contacts/`.
@@ -116,8 +96,7 @@ router.get('/:org_id/contacts/:contact_id', checkJwt, checkScopesMiddleware([sco
 router.post('/:org_id/contacts', checkJwt,
   checkScopesMiddleware([scopes.ContactAdd, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
-  async function (req, res, next) {
-
+  async (req, res, next) => {
     try {
       const contact_title: string = req.body["title"]
       const contact_fname: string = req.body["first_name"]
@@ -132,18 +111,18 @@ router.post('/:org_id/contacts', checkJwt,
       checkHasOrgAccess(req['user'], contact_org)
 
       if (!contact_title || !contact_fname || !contact_sname || !contact_phone || !contact_sc) {
-        throw new InvalidParameterValueError("First name, surname, title, phone number, or Servicechain not supplied.")
+        throw new errors.InvalidParameterValueError("First name, surname, title, phone number, or Servicechain not supplied.")
       }
 
       if (contact_email && (!(typeof contact_email == "string") || !validator.default.isEmail(contact_email, { require_tld: true }))) {
-        throw new InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
+        throw new errors.InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + contact_email)
       }
 
       let e164_phone_num: string
       try {
         e164_phone_num = getE164PhoneNumber(contact_phone)
       } catch {
-        throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
+        throw new errors.InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + contact_phone)
       }
 
       /** Get all of the promises in motion, then we can await the results
@@ -156,15 +135,15 @@ router.post('/:org_id/contacts', checkJwt,
       const requested_org = await org_p
 
       if (!requested_org) {
-        throw new ResourceNotFoundError(`Organization with ID ${contact_org} not found`)
+        throw new errors.ResourceNotFoundError(`Organization with ID ${contact_org} not found`)
       }
 
       if (contact_cat && (!await cat_p)) {
-        throw new InvalidParameterValueError(`Supplied Category not found: ${contact_cat}`)
+        throw new errors.InvalidParameterValueError(`Supplied Category not found: ${contact_cat}`)
       }
 
       if (!await sc_p) {
-        throw new ResourceNotFoundError(`Specified Servicechain ID ${contact_sc} does not exist`)
+        throw new errors.ResourceNotFoundError(`Specified Servicechain ID ${contact_sc} does not exist`)
       }
 
       const created_contact = await requested_org.createContact({
@@ -177,22 +156,18 @@ router.post('/:org_id/contacts', checkJwt,
         phone_number: e164_phone_num
       })
 
-      const serialized = await req.app.locals.serializer.serializeAsync('contact', await created_contact.reload())
+      const serialized = req.app.locals.serializer.serialize('contact', await created_contact.reload())
       res.status(201).json(serialized)
+      return next()
     } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof ResourceNotFoundError || e instanceof InvalidParameterValueError) {
+      if (e instanceof errors.ResourceNotFoundError || e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else if (e instanceof ResourceOutOfUserScopeError) {
+      } else if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
       }
-      else {
-        res.status(500).json(serialized_err)
-        logger.error(e.name, e.message)
-      }
+      else { throw e }
     }
-
-
   })
 
 /**
@@ -200,33 +175,39 @@ router.post('/:org_id/contacts', checkJwt,
  * Updates the details for the Contact with the specified ID with the details provided in the request body.
  */
 router.put('/:org_id/contacts/:contact_id', checkJwt,
-  checkScopesMiddleware([scopes.ContactEdit, scopes.VolubleAdmin]), async function (req, res, next) {
+  checkScopesMiddleware([scopes.ContactEdit, scopes.VolubleAdmin]),
+  async (req, res, next) => {
     try {
       checkHasOrgAccess(req['user'], req.params.org_id)
 
       const contact = await ContactManager.getContactWithId(req.params.contact_id)
-      if (!contact) { throw new ResourceNotFoundError(`Contact not found: ${req.params.contact_id}`) }
+      if (!contact) { throw new errors.ResourceNotFoundError(`Contact not found: ${req.params.contact_id}`) }
+
+      const detailsToUpdate: Partial<Contact> = {}
 
       if (Object.keys(req.body).indexOf('category') > -1) {
         if (req.body.category != null) {
           const cat = await CategoryManager.getCategoryById(req.body.CategoryId)
 
-          if (!cat) { throw new InvalidParameterValueError(`Category does not exist: ${req.body.CategoryId}`) }
-          await contact.setCategory(cat.id)
+          if (!cat) { throw new errors.InvalidParameterValueError(`Category does not exist: ${req.body.CategoryId}`) }
+          // await contact.setCategory(cat.id)
+          detailsToUpdate.category = cat.id;
         } else {
-          await contact.setCategory(null)
+          // await contact.setCategory(null)
+          detailsToUpdate.category = null;
         }
       }
 
       if (Object.keys(req.body).indexOf('servicechain') > -1) {
         const sc = await ServicechainManager.getServicechainById(req.body.ServicechainId)
-        if (!sc) { throw new InvalidParameterValueError(`Servicechain does not exist: ${req.body.ServicechainId}`) }
-        await contact.setServicechain(sc)
+        if (!sc) { throw new errors.InvalidParameterValueError(`Servicechain does not exist: ${req.body.ServicechainId}`) }
+        //await contact.setServicechain(sc)
+        detailsToUpdate.servicechain = sc.id
       }
 
       ["title", "first_name", "surname"].forEach(trait => {
         if (Object.keys(req.body).indexOf(trait) > -1) {
-          contact.set(<keyof Contact>trait, req.body[trait])
+          detailsToUpdate[trait] = req.body.trait
         }
       });
 
@@ -235,36 +216,30 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
         try {
           e164_phone_num = getE164PhoneNumber(req.body.phone_number)
         } catch {
-          throw new InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + req.body.phone_number)
+          throw new errors.InvalidParameterValueError("Supplied parameter 'phone_number' is not the correct format: " + req.body.phone_number)
         }
 
-        contact.set('phone_number', e164_phone_num)
+        detailsToUpdate.phone_number = e164_phone_num
       }
 
       if (Object.keys(req.body).indexOf('email_address') > -1) {
         if (req.body.email_address != null && !validator.default.isEmail(req.body.email_address, { require_tld: true })) {
-          throw new InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + req.body.email_address)
+          throw new errors.InvalidParameterValueError("Supplied parameter 'email_address' is not the correct format: " + req.body.email_address)
         } else {
-          contact.set('email_address', req.body.email_address)
+          detailsToUpdate.email_address = req.body.email_address
         }
       }
 
-      await contact.save()
-
-      const serialized = await req.app.locals.serializer.serializeAsync('contact', await contact.reload())
-      res.status(200).json(serialized)
+      const updatedContact: Contact = (await ContactManager.updateContactDetailsWithId(contact.id, detailsToUpdate))[1][1]
+      res.status(200).json(req.app.locals.serializer.serialize('contact', updatedContact))
+      return next()
     } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
-      if (e instanceof ResourceOutOfUserScopeError) {
+      if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
-      }
-      else if (e instanceof InvalidParameterValueError) {
+      } else if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else {
-
-        res.status(500).json(serialized_err)
-        logger.error(e.message)
-      }
+      } else { throw e }
     }
   })
 
@@ -275,55 +250,41 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
  */
 router.delete('/:org_id/contacts/:contact_id',
   checkJwt,
-
   setupUserOrganizationMiddleware,
   checkHasOrgAccessMiddleware,
-  checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]), function (req, res, next) {
+  checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]), async (req, res, next) => {
 
     const contact_id = req.params.contact_id
+    const contact = await ContactManager.getContactWithId(contact_id)
 
-    return ContactManager.getContactWithId(contact_id)
-      .then(function (contact) {
-        if (!contact) {
-          return false // Because idempotence
-        }
-
-        return contact.destroy()
-          .then(function () { return true })
-      })
-      .then(function (resp) {
-        res.status(resp ? 204 : 404).json({})
-      })
-      .catch(function (e: any) {
-        const serialized_err = req.app.locals.serializer.serializeError(e)
-        res.status(500).json(serialized_err)
-        logger.error(e)
-      })
+    if (!contact) {
+      res.status(404)
+    } else {
+      contact.destroy()
+      res.status(204)
+    }
+    res.json({})
+    return next()
   })
 
-router.get('/:org_id/contacts/:contact_id/messages', checkJwt,
-
+router.get('/:org_id/contacts/:contact_id/messages',
+  checkJwt,
   checkScopesMiddleware([scopes.MessageRead, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
   checkLimit(0, 100),
   checkOffset(0),
-  function (req, res, next) {
+  async (req, res, next) => {
     const contact_id = req.params.contact_id
-    MessageManager.getMessagesForContact(contact_id, parseInt(req.query.limit as string), parseInt(req.query.offset as string))
-      .then(function (messages) {
-        return req.app.locals.serializer.serializeAsync('message')
-      })
-      .then(serialized => {
-        res.status(200).json(serialized)
-      })
-      .catch(function (e) {
-        const serialized_err = req.app.locals.serializer.serializeError(e)
-        if (e instanceof ResourceNotFoundError) {
-          res.status(404).json(serialized_err)
-        } else {
-          res.status(500).json(serialized_err)
-        }
-      })
+    try {
+      const msgs = await MessageManager.getMessagesForContact(contact_id, parseInt(req.query.limit as string), parseInt(req.query.offset as string))
+      res.status(200).json(req.app.locals.serializer.serializeAsync('message', msgs))
+      return next()
+    } catch (e) {
+      const serialized_err = req.app.locals.serializer.serializeError(e)
+      if (e instanceof errors.ResourceNotFoundError) {
+        res.status(404).json(serialized_err)
+      } else { throw e }
+    }
   })
 
 export default router;

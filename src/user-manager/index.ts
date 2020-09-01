@@ -1,12 +1,9 @@
 import Axios from 'axios';
-//import * as Promise from "bluebird";
-//import * as request from 'request';
-import * as winston from 'winston';
 
 import * as db from '../models';
 import { User } from "../models/user";
 
-const logger = winston.loggers.get(process.title).child({ module: 'UserMgr' })
+//const logger = winston.loggers.get(process.title).child({ module: 'UserMgr' })
 
 export interface IUserMetadata {
     app_metadata: Record<string, unknown>,

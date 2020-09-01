@@ -1,17 +1,18 @@
 import Axios from 'axios';
 import { NextFunction, Request, Response } from "express";
-import { errors,JWKS, JWT } from 'jose';
+import { errors as JWTerrors, JWKS, JWT } from 'jose';
+import { errors as VolubleErrors } from 'voluble-common'
+    ;
 
-import { AuthorizationFailedError } from '../../voluble-errors';
-import jwtAuthz = require('express-jwt-authz');
+//import jwtAuthz = require('express-jwt-authz');
 
-export function checkJwt(req: Request, res: Response, next: NextFunction) {
+export function checkJwt(req: Request, res: Response, next: NextFunction): void {
     let auth_header_token: string
     try {
         auth_header_token = req.headers['authorization'].split(" ")[1].trim()
     }
     catch (e) {
-        const serialized_err = req.app.locals.serializer.serializeError(new AuthorizationFailedError('Authorization token not provided'))
+        const serialized_err = req.app.locals.serializer.serializeError(new VolubleErrors.AuthorizationFailedError('Authorization token not provided'))
         res.status(401).json(serialized_err)
         return
     }
@@ -28,15 +29,15 @@ export function checkJwt(req: Request, res: Response, next: NextFunction) {
         })
         .then((_key) => {
             Object.defineProperty(req, "user", { configurable: true, enumerable: true, writable: true, value: JWT.decode(auth_header_token) })
-            next()
+            return next()
         })
         .catch((err) => {
 
-            if (err instanceof errors.JWTExpired) {
-                const serialized_err = req.app.locals.serializer.serializeError(new AuthorizationFailedError("Authorization token expired"))
+            if (err instanceof JWTerrors.JWTExpired) {
+                const serialized_err = req.app.locals.serializer.serializeError(new VolubleErrors.AuthorizationFailedError("Authorization token expired"))
                 res.status(401).json(serialized_err)
-            } else if (err instanceof errors.JWTMalformed) {
-                const serialized_err = req.app.locals.serializer.serializeError(new AuthorizationFailedError("Authorization token malformed"))
+            } else if (err instanceof JWTerrors.JWTMalformed) {
+                const serialized_err = req.app.locals.serializer.serializeError(new VolubleErrors.AuthorizationFailedError("Authorization token malformed"))
                 res.status(401).json(serialized_err)
             } else {
                 const serialized_err = req.app.locals.serializer.serializeError(err)

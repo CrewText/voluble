@@ -1,4 +1,4 @@
-import { Association, DataTypes, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize } from 'sequelize';
+import { DataTypes, HasManyAddAssociationMixin, HasManyAddAssociationsMixin, HasManyCountAssociationsMixin, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin, HasManyHasAssociationsMixin, HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, HasManySetAssociationsMixin, Model, Sequelize } from 'sequelize';
 import { Org as OrgAttributes, PlanTypes } from 'voluble-common';
 
 import { getE164PhoneNumber } from '../utilities';
@@ -6,6 +6,7 @@ import { Category } from "./category";
 import { Contact } from "./contact";
 import { Servicechain } from "./servicechain";
 import { User } from "./user";
+
 
 export class Organization extends Model implements OrgAttributes {
     public id!: string
@@ -64,7 +65,7 @@ export class Organization extends Model implements OrgAttributes {
     public removeCategory!: HasManyRemoveAssociationMixin<Category, Category['id']>
     public removeCategories!: HasManyRemoveAssociationsMixin<Category, Category['id']>
 
-    public static initModel(sequelize: Sequelize) {
+    public static initModel(sequelize: Sequelize): void {
         return this.init({
             id: {
                 type: DataTypes.UUID,

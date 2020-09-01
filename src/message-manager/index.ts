@@ -1,5 +1,5 @@
 import { WhereOptions } from 'sequelize/types'
-import { MessageDirections, MessageStates } from 'voluble-common'
+import { errors, MessageDirections, MessageStates } from 'voluble-common'
 import * as winston from 'winston'
 
 import { ContactManager } from '../contact-manager'
@@ -9,7 +9,7 @@ import { Service } from '../models/service'
 import { PluginManager } from '../plugin-manager'
 import { QueueManager } from '../queue-manager'
 import { ServicechainManager } from '../servicechain-manager'
-import { ResourceNotFoundError } from '../voluble-errors'
+
 
 const logger = winston.loggers.get(process.title).child({ module: 'MessageMgr' })
 
@@ -92,7 +92,7 @@ export class MessageManager {
                 logger.debug(`Found service; Attempting message send`, { msg: msg.id, sc: sc.id, svc: svc.directory_name, priority: current_svc_prio })
                 is_sent = await this.sendMessageWithService(msg, svc)
             } catch (e) {
-                if (e instanceof ResourceNotFoundError) {
+                if (e instanceof errors.ResourceNotFoundError) {
                     logger.warn(e)
                 } else {
                     logger.error(e)
@@ -120,7 +120,7 @@ export class MessageManager {
     static async sendMessageWithService(msg: Message, svc: Service): Promise<boolean> {
         return Promise.all([PluginManager.getPluginById(svc.id), ContactManager.getContactWithId(msg.contact)])
             .then(async ([plugin, contact]) => {
-                if (!contact) { throw new ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`) }
+                if (!contact) { throw new errors.ResourceNotFoundError(`Could not find contact with ID ${msg.contact}`) }
                 logger.debug(`Found contact ${contact.id}, calling 'send_message() on plugin ${plugin.name} for message ${msg.id}...`)
 
                 return plugin.send_message(msg, contact, await contact.getOrganization())
@@ -144,7 +144,7 @@ export class MessageManager {
                     return msg.save()
                 } else {
                     logger.warn(`Could not find message with ID ${msg_id}`)
-                    return Promise.reject(new ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
+                    return Promise.reject(new errors.ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
                 }
             })
     }
@@ -209,7 +209,7 @@ export class MessageManager {
             })
     }
 
-    public static getRepliesToMessage(message_id: string) {
+    public static getRepliesToMessage(message_id: string): Promise<Message[]> {
         return db.models.Message.findAll({
             where: {
                 is_reply_to: message_id
