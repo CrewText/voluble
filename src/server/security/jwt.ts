@@ -6,7 +6,7 @@ import { errors as VolubleErrors } from 'voluble-common'
 
 //import jwtAuthz = require('express-jwt-authz');
 
-export function checkJwt(req: Request, res: Response, next: NextFunction): void {
+export async function checkJwt(req: Request, res: Response, next: NextFunction): Promise<void> {
     let auth_header_token: string
     try {
         auth_header_token = req.headers['authorization'].split(" ")[1].trim()
@@ -17,7 +17,7 @@ export function checkJwt(req: Request, res: Response, next: NextFunction): void 
         return
     }
 
-    Axios.get(`https://${process.env.AUTH0_VOLUBLE_TENANT}/.well-known/jwks.json`, { responseType: 'json' })
+    await Axios.get(`https://${process.env.AUTH0_VOLUBLE_TENANT}/.well-known/jwks.json`, { responseType: 'json' })
         .then((resp) => {
             const jwks_data = resp.data
             const jwks = JWKS.asKeyStore(jwks_data)

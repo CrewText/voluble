@@ -28,6 +28,7 @@ describe('/v1/orgs', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
+        this.timeout(10000)
 
         return Promise.all([server.initServer(), getAccessToken()])
             .then(([server, token]) => {
@@ -35,7 +36,7 @@ describe('/v1/orgs', function () {
                 auth_token = token
                 // done()
                 return true
-            })
+            }).catch(e => { console.error(e); throw e })
     })
 
     this.afterAll((done) => {
@@ -95,7 +96,6 @@ describe('/v1/orgs', function () {
                 .end((err, res) => {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
                     chai.expect(res.body).to.have.property('data')
-
                     satisfiesJsonApiResource(res.body.data, 'organization')
                     chai.expect(res.body.data).to.have.property('id')
                     chai.expect(res.body.data.attributes).to.have.property('name')
@@ -152,7 +152,6 @@ describe('/v1/orgs', function () {
                     if (err) { console.log(err); console.log(res.error); return done(err) }
 
                     chai.expect(res.body).to.have.property('data')
-
                     satisfiesJsonApiResource(res.body.data, 'organization')
                     chai.expect(res.body.data).to.have.property('id', created_org)
                     chai.expect(res.body.data.attributes).to.have.property('name')

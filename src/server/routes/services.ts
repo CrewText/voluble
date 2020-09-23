@@ -11,7 +11,7 @@ const router = express.Router();
 router.get('/',
   checkJwt,
   checkScopesMiddleware([scopes.ServiceView, scopes.VolubleAdmin, scopes.OrganizationOwner]), async (req, res, next) => {
-    let services = await PluginManager.getAllServices()
+    const services = await PluginManager.getAllServices()
     res.status(200).json(req.app.locals.serializer.serialize('service', services))
     return next()
   })
@@ -27,13 +27,14 @@ router.get('/:service_id', checkJwt, checkScopesMiddleware([scopes.ServiceView, 
   try {
     const service = await PluginManager.getServiceById(req.params.service_id);
     if (!service) { throw new ResourceNotFoundError(`Service ${req.params.service_id} does not exist`) }
-    res.status(200).json(req.app.locals.serializer.serialize('service', service));
+    const serialized = req.app.locals.serializer.serialize('service', service)
+    res.status(200).json(serialized);
     return next();
   } catch (e) {
     const serialized_err = req.app.locals.serializer.serializeError(e)
     if (e instanceof ResourceNotFoundError) {
       res.status(400).json(serialized_err)
-    } else { throw e }
+    } else { next(e) }
   }
 })
 

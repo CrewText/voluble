@@ -22,7 +22,7 @@ export function checkHasCredits(credits_required: number): ExpressMiddleware {
                 const serialized_err = req.app.locals.serializer.serializeError(e)
                 if (e instanceof errors.NotEnoughCreditsError) {
                     res.status(402).json(serialized_err)
-                } else { throw e }
+                } else { next(e) }
             }
         }
     }

@@ -37,7 +37,7 @@ export class Message extends Model implements MessageAttributes {
     public setServicechain!: BelongsToSetAssociationMixin<Servicechain, Servicechain['id']>
     public createServicechain!: BelongsToCreateAssociationMixin<Servicechain>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<Message, null> {
         return this.init({
 
             id: {

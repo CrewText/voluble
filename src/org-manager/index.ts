@@ -1,4 +1,4 @@
-import * as Promise from "bluebird";
+//import * as Promise from "bluebird";
 import { errors, Org, PlanTypes } from "voluble-common";
 
 import * as db from '../models';
@@ -24,8 +24,10 @@ export class OrgManager {
         return Organization.create({
             name: name, phone_number: phone_number, plan: plan_type
         })
-            .catch(db.models.sequelize.ValidationError, (err) => {
-                throw new errors.InvalidParameterValueError(err.message)
+            .catch(err => {
+                if (err instanceof db.models.sequelize.ValidationError) {
+                    throw new errors.InvalidParameterValueError(err.message)
+                } else { throw err }
             })
     }
 

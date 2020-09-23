@@ -114,23 +114,22 @@ router.post('/',
             }
 
             await add_user_prom
-            await new_org.reload()
 
-            res.status(201).json(req.app.locals.serializer.serialize('organization', new_org))
+            res.status(201).json(req.app.locals.serializer.serialize('organization', await new_org.reload()))
             return next()
         } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
-                logger.debug(e)
+                //                logger.debug(e)
             } else if (e instanceof errors.UserAlreadyInOrgError) {
                 res.status(400).json(serialized_err)
-                logger.debug(e)
+                //               logger.debug(e)
             } else if (e instanceof errors.AuthorizationFailedError) {
                 res.status(401).json(serialized_err)
-                logger.debug(e)
+                //             logger.debug(e)
             }
-            else { throw e }
+            else { next(e) }
         }
     })
 
@@ -139,18 +138,18 @@ router.get('/:org_id',
     checkJwt,
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
-    checkHasOrgAccessMiddleware, (req, res, next) => {
+    checkHasOrgAccessMiddleware, async (req, res, next) => {
 
         const org_id = req.params.org_id
-        const org = OrgManager.getOrganizationById(org_id)
         try {
+            const org = await OrgManager.getOrganizationById(org_id)
             if (!org) { throw new errors.ResourceNotFoundError(`Organization with ID ${org_id} does not exist`) }
             res.status(200).json(req.app.locals.serializer.serialize('organization', org))
             return next()
         } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof errors.ResourceNotFoundError) { res.status(400).json(serialized_err) }
-            else { throw e }
+            else { next(e) }
         }
     })
 
@@ -243,7 +242,7 @@ router.put('/:org_id',
                 res.status(400).json(serialized_err)
             } else if (e instanceof errors.ResourceNotFoundError) {
                 res.status(404).json(serialized_err)
-            } else { throw e }
+            } else { next(e) }
         }
     })
 

@@ -50,11 +50,11 @@ let svr: Server;
 //   // handle specific listen errors with friendly messages
 //   switch (error.code) {
 //     case 'EACCES':
-//       console.error(bind + ' requires elevated privileges');
+//       ;
 //       process.exit(1);
 //       break;
 //     case 'EADDRINUSE':
-//       console.error(bind + ' is already in use');
+//       ;
 //       process.exit(1);
 //       break;
 //     default:
@@ -85,67 +85,63 @@ if (process.env.NODE_ENV != "production") {
 
 export async function initServer(): Promise<Server> {
   const port = parseInt(process.env.PORT, 10) || 5000
-  return new Promise((resolve, _rej) => {
-    app.set('port', port);
 
-    // uncomment after placing your favicon in /public
-    //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-    app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(xmlParser({ explicitArray: false }))
-    app.use(express.static(path.join(__dirname, 'public')));
+  app.set('port', port);
 
-    logger.debug("Using cors")
-    app.use(cors())
+  // uncomment after placing your favicon in /public
+  //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(xmlParser({ explicitArray: false }))
+  app.use(express.static(path.join(__dirname, 'public')));
 
-    app.options('*', cors()) // include before other routes
+  logger.debug("Using cors")
+  app.use(cors())
 
-    logger.debug('Setting up routes')
-    // app.use('/v1/', routes_index);
-    app.use('/v1/users', routes_user_self);
-    app.use('/v1/services', routes_services)
-    app.use('/v1/services', routes_service_endpoint_generic)
-    app.use('/v1/orgs', routes_orgs)
-    app.use('/v1/orgs', routes_contacts)
-    app.use('/v1/orgs', routes_categories)
-    app.use('/v1/orgs', routes_messages)
-    app.use('/v1/orgs', routes_blasts)
-    app.use('/v1/orgs', routes_servicechains)
-    app.use('/v1/orgs', routes_users)
-    app.use('/auth0', routes_auth0_proxy)
+  app.options('*', cors()) // include before other routes
 
-    // Global error handler
-    app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-      const serialized_err = req.app.locals.serializer.serializeError(err)
-      res.status(500).json(serialized_err)
-      logger.error(err.message, { "route": req.baseUrl, "method": req.method, "errorName": err.name, stack: err.stack })
-    })
+  logger.debug('Setting up routes')
+  // app.use('/v1/', routes_index);
+  app.use('/v1/users', routes_user_self);
+  app.use('/v1/services', routes_services)
+  app.use('/v1/services', routes_service_endpoint_generic)
+  app.use('/v1/orgs', routes_orgs)
+  app.use('/v1/orgs', routes_contacts)
+  app.use('/v1/orgs', routes_categories)
+  app.use('/v1/orgs', routes_messages)
+  app.use('/v1/orgs', routes_blasts)
+  app.use('/v1/orgs', routes_servicechains)
+  app.use('/v1/orgs', routes_users)
+  app.use('/auth0', routes_auth0_proxy)
 
-    return resolve()
+  // Global error handler
+  app.use((err: Error, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const serialized_err = req.app.locals.serializer.serializeError(err)
+    res.status(500).json(serialized_err)
+    if (process.env.NODE_ENV != "test") { logger.error(err.message, { "route": req.baseUrl, "method": req.method, "errorName": err.name, stack: err.stack }) }
   })
-    .then(() => {
-      logger.debug("Initializing DB")
-      return db.initialize_database()
+
+  logger.debug("Initializing DB")
+  await db.initialize_database()
+
+  logger.debug('Serializing models')
+  app.locals.serializer = new JSONAPISerializer({ jsonapiObject: false })
+  serializeTypes(app.locals.serializer)
+
+  // Set up plugin manager
+  logger.debug('Initializing plugins')
+  await PluginManager.initAllPlugins()
+  logger.debug('Creating RSMQs')
+  await QueueManager.createQueues()
+
+  logger.debug('Starting server')
+  svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
+  return new Promise<Server>((res, _rej) => {
+    svr.once('listening', () => {
+      logger.info("Server listening on " + port)
+      res(svr)
     })
-    .then(() => {
-      logger.debug('Serializing models')
-      app.locals.serializer = new JSONAPISerializer({ jsonapiObject: false })
-      serializeTypes(app.locals.serializer)
-      return
-    })
-    .then(() => {
-      // Set up plugin manager
-      return Promise.all([PluginManager.initAllPlugins(), QueueManager.createQueues()])
-    })
-    .then(() => {
-      svr = process.env.NODE_ENV == "test" ? app.listen(port, "localhost") : app.listen(port);
-      return new Promise<Server>((res, _rej) => {
-        svr.once('listening', () => {
-          logger.info("Server listening on " + port)
-          res(svr)
-        })
-      })
-    })
+  })
 }
 
 export async function shutdownServer(): Promise<void> {

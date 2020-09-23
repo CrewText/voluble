@@ -19,7 +19,7 @@ export class User extends Model implements UserAttributes {
     public setContact!: BelongsToSetAssociationMixin<Contact, Contact['id']>
     public createContact!: BelongsToCreateAssociationMixin<Contact>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<User, null> {
         return this.init({
             id: {
                 type: DataTypes.STRING,

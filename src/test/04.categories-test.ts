@@ -31,7 +31,6 @@ describe('/v1/orgs/<org-id>/categories', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
-        console.log('Getting auth token')
 
         return Promise.all([server.initServer(), getAccessToken()])
             .then(([server, token]) => {
@@ -42,7 +41,6 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 port = addr.port
                 auth_token = token
 
-                console.log(`URL: ${address}:${port}`)
                 return true
             })
     })
@@ -57,7 +55,6 @@ describe('/v1/orgs/<org-id>/categories', function () {
     // Setup test_org_id
     this.beforeAll((done) => {
         // this.timeout()
-        console.log('Setting up test Org')
 
         supertest(server_app)
             .post("/v1/orgs")
@@ -65,8 +62,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
             .send({ name: "API Test Organization-CATS TEST", phone_number: faker.phone.phoneNumber("+4474########"), plan: "PAYG" })
             .expect(201)
             .end((err, res) => {
-                // console.log("DONE THE TEST THINGS")
-                if (err) { console.log(err); return done(err) }
+                //                 if (err) { console.log(err); return done(err) }
                 test_org_id = res.body.data.id
                 done()
             })
@@ -147,7 +143,7 @@ describe('/v1/orgs/<org-id>/categories', function () {
                 .auth(auth_token, { type: "bearer" })
                 .expect(200)
                 .end((err, res) => {
-                    if (err) { console.error(err); console.log(res.error); return done(err) }
+                    if (err) { console.error(err); return done(err) }
 
                     chai.expect(res.body).to.have.property('data')
                     chai.expect(res.body).not.to.have.property('errors')

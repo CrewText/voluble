@@ -65,7 +65,7 @@ export class Organization extends Model implements OrgAttributes {
     public removeCategory!: HasManyRemoveAssociationMixin<Category, Category['id']>
     public removeCategories!: HasManyRemoveAssociationsMixin<Category, Category['id']>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<Organization, null> {
         return this.init({
             id: {
                 type: DataTypes.UUID,

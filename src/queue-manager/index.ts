@@ -21,6 +21,9 @@ if (process.env.REDISTOGO_URL) {
 } else {
     client = redis.createClient()//{ host: "127.0.0.1" })
 }
+client.on("error", (e) => {
+    if (e.code == "ECONNREFUSED") { logger.error(e); throw e } else { logger.warn(e) }
+})
 
 const rsmq: RedisSMQ = new RedisSMQ({ client })
 
@@ -86,7 +89,6 @@ export class QueueManager {
     }
 
     public static createQueues(): Promise<void> {
-        logger.debug("Loading queue manager")
         return rsmq.listQueuesAsync()
             .then((queues) => {
                 return queue_list.filter((required_q) => {

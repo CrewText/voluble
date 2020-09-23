@@ -25,7 +25,7 @@ export class Service extends Model implements ServiceAttributes {
     public removeServicechains!: BelongsToManyRemoveAssociationsMixin<Servicechain, Servicechain['id']>
     public setServicechains!: BelongsToManySetAssociationsMixin<Servicechain, Servicechain['id']>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<Service, null> {
         return this.init({
             id: {
                 type: DataTypes.UUID,

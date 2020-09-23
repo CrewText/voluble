@@ -29,7 +29,7 @@ router.get('/:org_id/categories',
             if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
             } else if (e instanceof errors.ResourceNotFoundError) { res.status(400).json(serialized_err) }
-            else { throw e }
+            else { next(e) }
 
         }
     })
@@ -53,7 +53,7 @@ router.get('/:org_id/categories/count',
             else if (e instanceof errors.ResourceNotFoundError) {
                 res.status(400).json(serialized_err)
             }
-            else { throw e }
+            else { next(e) }
         }
     })
 
@@ -78,7 +78,7 @@ router.post('/:org_id/categories',
             } else if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
             }
-            else { throw e }
+            else { next(e) }
         }
     })
 
@@ -100,7 +100,7 @@ router.get('/:org_id/categories/:cat_id',
                 res.status(404).json(serialized_err)
             } else if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
-            } else { throw e }
+            } else { next(e) }
         }
     })
 
@@ -129,7 +129,7 @@ router.put('/:org_id/categories/:cat_id', checkJwt,
             } else if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
             }
-            else { throw e }
+            else { next(e) }
         }
     })
 
@@ -151,10 +151,10 @@ router.delete('/:org_id/categories/:cat_id',
         } catch (e) {
             const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof errors.ResourceNotFoundError) {
-                res.status(404).json(serialized_err)
+                res.status(404).json({})
             } else if (e instanceof errors.ResourceOutOfUserScopeError) {
                 res.status(403).json(serialized_err)
-            } else { throw e }
+            } else { next(e) }
         }
     })
 

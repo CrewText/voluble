@@ -28,7 +28,6 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup auth_token
     this.beforeAll(async function () {
-        console.log(`Setting up server and access token`)
 
         return Promise.all([server.initServer(), getAccessToken()])
             .then(([server, token]) => {
@@ -50,7 +49,6 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_org_id
     this.beforeAll((done) => {
-        console.log(`Setting up test org`)
         supertest(server_app)
             .post(`/v1/orgs`)
             .auth(auth_token, { type: "bearer" })
@@ -65,7 +63,6 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_services
     this.beforeAll((done => {
-        console.log(`Setting up test services`)
         supertest(server_app)
             .get("/v1/services")
             .auth(auth_token, { type: "bearer" })
@@ -87,18 +84,18 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_sc_id
     this.beforeAll(function (done) {
-        console.log(`Setting up test servicechain`)
         if (!test_org_id) { this.skip() }
+        let body = {
+            name: "API Test Servicechain",
+            services: [{
+                "service": test_services[0].id,
+                "priority": 1
+            }]
+        }
 
         supertest(server_app)
             .post(`/v1/orgs/${test_org_id}/servicechains`)
-            .send({
-                name: "API Test Servicechain",
-                services: [{
-                    "service": test_services[0].id,
-                    "priority": 1
-                }]
-            })
+            .send(body)
             .auth(auth_token, { type: "bearer" })
             .expect(201)
             .end((err, res) => {
@@ -121,7 +118,6 @@ describe('/v1/orgs/<org-id>/contacts', function () {
 
     // Setup test_cat_id
     this.beforeAll(function (done) {
-        console.log(`Setting up test category`)
         if (!test_org_id) { this.skip() }
         const cat_name = faker.name.jobArea()
         supertest(server_app)

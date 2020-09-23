@@ -42,7 +42,7 @@ router.get('/:org_id/contacts',
         res.status(403).json(serialized_err)
       } else if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 
@@ -62,7 +62,7 @@ router.get('/:org_id/contacts/count', checkJwt, checkScopesMiddleware([scopes.Co
       else if (e instanceof errors.ResourceNotFoundError) {
         res.status(400).json(serialized_err)
       }
-      else { throw e }
+      else { next(e) }
     }
   })
 
@@ -83,7 +83,7 @@ router.get('/:org_id/contacts/:contact_id', checkJwt,
       const serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof errors.ResourceNotFoundError) {
         res.status(404).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 
@@ -166,7 +166,7 @@ router.post('/:org_id/contacts', checkJwt,
       } else if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
       }
-      else { throw e }
+      else { next(e) }
     }
   })
 
@@ -206,11 +206,8 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
       }
 
       ["title", "first_name", "surname"].forEach(trait => {
-        if (Object.keys(req.body).indexOf(trait) > -1) {
-          detailsToUpdate[trait] = req.body.trait
-        }
+        if (Object.keys(req.body).includes(trait)) { detailsToUpdate[trait] = req.body[trait] }
       });
-
       if (Object.keys(req.body).indexOf('phone_number') > -1) {
         let e164_phone_num: string
         try {
@@ -230,8 +227,10 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
         }
       }
 
-      const updatedContact: Contact = (await ContactManager.updateContactDetailsWithId(contact.id, detailsToUpdate))[1][1]
-      res.status(200).json(req.app.locals.serializer.serialize('contact', updatedContact))
+      await ContactManager.updateContactDetailsWithId(contact.id, detailsToUpdate)
+      // contact = await contact.reload()
+
+      res.status(200).json(req.app.locals.serializer.serialize('contact', await contact.reload()))
       return next()
     } catch (e) {
       const serialized_err = req.app.locals.serializer.serializeError(e)
@@ -239,7 +238,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
         res.status(403).json(serialized_err)
       } else if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 
@@ -283,7 +282,7 @@ router.get('/:org_id/contacts/:contact_id/messages',
       const serialized_err = req.app.locals.serializer.serializeError(e)
       if (e instanceof errors.ResourceNotFoundError) {
         res.status(404).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 

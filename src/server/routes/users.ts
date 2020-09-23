@@ -40,7 +40,7 @@ router.get('/:org_id/users', checkJwt,
             const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof errors.ResourceNotFoundError) {
                 res.status(404).json(serialized_err)
-            } else { throw e }
+            } else { next(e) }
         }
     })
 
@@ -80,7 +80,7 @@ router.post('/:org_id/users',
                 res.status(404).json(serialized_err)
             } else if (e instanceof errors.InvalidParameterValueError) {
                 res.status(400).json(serialized_err)
-            } else { throw e }
+            } else { next(e) }
         }
     })
 
@@ -192,7 +192,7 @@ router.get('/:org_id/users/:user_id',
             if (e instanceof errors.UserNotInOrgError || e instanceof errors.ResourceNotFoundError) {
                 const serialized_err = req.app.locals.serializer.serializeError(e)
                 res.status(400).json(serialized_err)
-            } else { throw e }
+            } else { next(e) }
         }
     })
 
@@ -217,7 +217,7 @@ router.delete('/:org_id/users/:user_id',
             return next()
         }
         catch (e) {
-            if (e instanceof errors.ResourceNotFoundError) { res.status(404).json({}); return } else { throw e }
+            if (e instanceof errors.ResourceNotFoundError) { res.status(404).json({}); return } else { next(e) }
         }
     })
 

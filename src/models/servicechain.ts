@@ -20,6 +20,7 @@ export class Servicechain extends Model implements ServicechainAttributes {
     public hasServices!: BelongsToManyHasAssociationsMixin<Service, Service['id']>
     public removeService!: BelongsToManyRemoveAssociationMixin<Service, Service['id']>
     public removeServices!: BelongsToManyRemoveAssociationsMixin<Service, Service['id']>
+
     public setServices!: BelongsToManySetAssociationsMixin<Service, Service['id']>
     // public getServices!: HasManyGetAssociationsMixin<ServiceModel>
     // public setServices!: HasManySetAssociationsMixin<ServiceModel, ServiceModel['id']>
@@ -35,7 +36,7 @@ export class Servicechain extends Model implements ServicechainAttributes {
     public setOrganization!: BelongsToSetAssociationMixin<Organization, Organization['id']>
     public createOrganization!: BelongsToCreateAssociationMixin<Organization>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<Servicechain, null> {
         return this.init({
             id: {
                 type: DataTypes.UUID,

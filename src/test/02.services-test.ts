@@ -142,7 +142,7 @@ describe('/v1/services', function () {
         it("should fail when we touch an endpoint that doesn't exist", function (done) {
 
             supertest(server_app)
-                .post(`/v1/services/${faker.random.uuid()}/endpoint`)
+                .post(`/v1/services/FAKE_SERVICE_NAME/endpoint`)
                 .send({ data: 'some data here' })
                 .expect(404)
                 .end((err, res) => {

@@ -1,11 +1,16 @@
+import { syncBuiltinESMExports } from 'module';
+import { Sequelize } from 'sequelize/types';
 import { errors, Servicechain as ServicechainAttrs, ServicesInSC as ServicesInSCAttrs } from 'voluble-common'
+import * as winston from 'winston';
 
 import { ContactManager } from '../contact-manager/'
 import * as db from '../models'
 import { Service } from '../models/service'
 import { Servicechain } from '../models/servicechain'
 import { ServicesInSC } from '../models/servicesInServicechain'
-//const logger = winston.loggers.get(process.title).child({ module: 'SCMgr' })
+import { PluginManager } from '../plugin-manager'
+
+const logger = winston.loggers.get(process.title).child({ module: 'SCMgr' })
 
 export interface ServicePriority {
     service: string
@@ -100,6 +105,45 @@ export class ServicechainManager {
             priority: priority
         })
     }
+
+    public static async addServicesToServicechain(services: ServicePriority[], servicechain: string): Promise<Servicechain> {
+        const sc = await ServicechainManager.getServicechainById(servicechain)
+        let t = await sc.sequelize.transaction()
+
+
+        try {
+            await Promise.all(services.map(async svc_prio => {
+                const svc = await PluginManager.getServiceById(svc_prio.service);
+                if (!svc) { throw new errors.ResourceNotFoundError(`Service with ID ${svc_prio.service} could not be found!`); }
+                //return new Promise((res, rej) => res())
+                return sc.addService(svc_prio.service, {
+                    through: {
+                        service: svc_prio.service,
+                        servicechain: sc.id,
+                        priority: svc_prio.priority
+                    },
+                    transaction: t
+                })
+            }))
+
+            await t.commit()
+        } catch (e) {
+            await t.rollback()
+            throw e
+        }
+
+        await sc.save();
+        return sc.reload()
+
+    }
+
+    // public static async removeServicesFromServicechain(sc_id: string, services?: string[]) {
+    //     const servicesToRemove: string[] = services ?? (await db.models.ServicesInSC.findAll({ where: { servicechain: sc_id } })).map(svcInSc => svcInSc.service)
+    //     db.models.ServicesInSC.sequelize.transaction(t=>{
+
+    //     })
+
+    // }
 
     public static async getFullServicechain(sc_id: string): Promise<ResponseServicechain> {
         return db.models.Servicechain.findByPk(sc_id

@@ -26,7 +26,7 @@ export class Category extends Model implements CategoryAttributes {
     public removeContact!: HasManyRemoveAssociationMixin<Contact, Contact['id']>
     public removeContacts!: HasManyRemoveAssociationsMixin<Contact, Contact['id']>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<Category, null> {
         return Category.init({
             id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
             name: { type: DataTypes.STRING, allowNull: false }

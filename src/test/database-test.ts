@@ -1,6 +1,5 @@
 // process.env.NODE_ENV = "test"
-// console.log("Node Env: " + process.env.NODE_ENV)
-// import * as chai from 'chai';
+// // import * as chai from 'chai';
 // import * as chaiAsPromised from 'chai-as-promised';
 // import * as faker from 'faker';
 // import { MessageStates } from 'voluble-common';
@@ -27,8 +26,7 @@
 //     let contact_fname = faker.name.firstName()
 //     let contact_sname = faker.name.lastName()
 //     let contact_email = faker.internet.email(contact_fname, contact_sname)
-//     //console.log(`Email:  ${contact_email}`)
-//     let contact_phone = faker.phone.phoneNumber("+447426######")
+//     ////     let contact_phone = faker.phone.phoneNumber("+447426######")
 //     let sc_id: string
 //     let sc_name = faker.random.word()
 //     let org_id: string

@@ -322,7 +322,7 @@ describe('/v1/orgs/<org-id>/servicechains', function () {
                     satisfiesJsonApiResource(response, 'servicechain', created_servicechain_id)
                     satisfiesJsonApiResourceRelationship(response, { 'organization': { 'related': `/orgs/${test_org_id}` } })
                     satisfiesJsonApiRelatedResource(response, 'organization', 'organization', test_org_id)
-
+                    chai.expect(response.attributes.services).to.have.length(1);
                     response.attributes.services.forEach(svc => {
                         chai.expect(svc).to.have.property('id')
                         chai.expect(svc).to.have.property('service')

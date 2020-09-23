@@ -21,7 +21,7 @@ export class Blast extends Model implements BlastAttributes {
     public removeMessage!: HasManyRemoveAssociationMixin<Message, Message['id']>
     public removeMessages!: HasManyRemoveAssociationsMixin<Message, Message['id']>
 
-    public static initModel(sequelize: Sequelize): void {
+    public static initModel(sequelize: Sequelize): Model<Blast, null> {
         return this.init({
             id: {
                 type: DataTypes.UUID,

@@ -25,7 +25,7 @@ router.get('/:user_id', checkJwt,
             const serialized_err = req.app.locals.serializer.serializeError(e)
             if (e instanceof errors.ResourceOutOfUserScopeError) { res.status(403).json(serialized_err) }
             else if (e instanceof errors.ResourceNotFoundError) { res.status(404).json(serialized_err) }
-            else { throw e }
+            else { next(e) }
         }
     })
 

@@ -83,7 +83,7 @@ router.get('/:org_id/messages/', checkJwt,
         res.status(400).json(serialized_err)
       } else if (e instanceof errors.ResourceOutOfUserScopeError) {
         res.status(403).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 
@@ -135,7 +135,7 @@ router.get('/:org_id/messages/:message_id', checkJwt,
         res.status(403).json(serialized_err)
       } else if (e instanceof errors.ResourceNotFoundError) {
         res.status(404).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
 
   })
@@ -161,7 +161,7 @@ router.get('/:org_id/messages/:message_id/replies', checkJwt,
         res.status(403).json(serialized_err)
       } else if (e instanceof errors.ResourceNotFoundError) {
         res.status(404).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 
@@ -202,7 +202,7 @@ router.post('/:org_id/messages/', checkJwt,
         res.status(403).json(serialized_err)
       } else if (e instanceof errors.InvalidParameterValueError) {
         res.status(400).json(serialized_err)
-      } else { throw e }
+      } else { next(e) }
     }
   })
 

@@ -22,7 +22,7 @@ function checkRequestLimit(req: Request, res: Response, next: NextFunction, min:
         const serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof errors.InvalidParameterValueError) {
             return res.status(400).json(serialized_err)
-        } else { throw e }
+        } else { next(e) }
     }
 }
 
@@ -41,7 +41,7 @@ function checkRequestOffset(req: Request, res: Response, next: NextFunction, min
         const serialized_err = req.app.locals.serializer.serializeError(e)
         if (e instanceof errors.InvalidParameterValueError) {
             return res.status(400).json(serialized_err)
-        } else { throw e }
+        } else { next(e) }
     }
 }
 
