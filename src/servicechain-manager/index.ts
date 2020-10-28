@@ -108,7 +108,7 @@ export class ServicechainManager {
 
     public static async addServicesToServicechain(services: ServicePriority[], servicechain: string): Promise<Servicechain> {
         const sc = await ServicechainManager.getServicechainById(servicechain)
-        let t = await sc.sequelize.transaction()
+        const t = await sc.sequelize.transaction()
 
 
         try {

@@ -85,7 +85,7 @@ describe('/v1/orgs/<org-id>/contacts', function () {
     // Setup test_sc_id
     this.beforeAll(function (done) {
         if (!test_org_id) { this.skip() }
-        let body = {
+        const body = {
             name: "API Test Servicechain",
             services: [{
                 "service": test_services[0].id,

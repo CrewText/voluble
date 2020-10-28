@@ -127,7 +127,7 @@ router.put('/:org_id/servicechains/:id', checkJwt,
       const sc_id: string = req.params.id
       if (!Array.isArray(req.body.services)) { throw new errors.InvalidParameterValueError(`The services parameter must be an Array of service-priority objects`) }
 
-      let sc = await ServicechainManager.getServicechainById(sc_id)
+      const sc = await ServicechainManager.getServicechainById(sc_id)
       if (!sc) { throw new errors.ResourceNotFoundError(`Servicechain with ID ${sc_id} not found`) }
 
 
