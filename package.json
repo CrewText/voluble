@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node ./dist/server/index.js",
     "dev": "nodemon ./dist/server/index.js",
+    "preinstall": "if [ -z HEROKU_APP_ID ]; then sed -i 's/https:\/\/github.com/https:\/\/calmcl1:${GITHUB_TOKEN}@github.com/' package.json; fi",
     "postinstall": "tsc -v ; tsc",
     "test-tap": "mocha dist/test --exit --reporter tap",
     "test": "mocha dist/test --exit --full-trace --bail --timeout=20000",
@@ -40,8 +41,8 @@
     "sequelize": "^6.3.5",
     "telegram-mtproto": "^1.0.5",
     "validator": "^13.1.17",
-    "voluble-common": "git+https://calmcl1:b1cb0f81ff2e65503a51b487f3ab12d42dee7d4b@github.com/crewtext/voluble-common.git",
-    "voluble-plugin-base": "git+https://calmcl1:b1cb0f81ff2e65503a51b487f3ab12d42dee7d4b@github.com/CrewText/voluble-plugin-base.git",
+    "voluble-common": "git+https://github.com/crewtext/voluble-common.git",
+    "voluble-plugin-base": "git+https://github.com/CrewText/voluble-plugin-base.git",
     "winston": "^3.3.3"
   },
   "description": "A plugin-oriented mass text communication system",
