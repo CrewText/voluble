@@ -18,8 +18,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npx eslint ./src/**/* --ext .js,.ts --fix",
-      "pre-install": "if [ -z HEROKU_APP_ID ]; then sed -i 's/git+https:\/\/github.com/https:\/\/calmcl1:${GITHUB_TOKEN}@github.com/' test.json; fi"
+      "pre-commit": "npx eslint ./src/**/* --ext .js,.ts --fix"
     }
   },
   "dependencies": {
@@ -41,8 +40,8 @@
     "sequelize": "^6.3.5",
     "telegram-mtproto": "^1.0.5",
     "validator": "^13.1.17",
-    "voluble-common": "git+https://github.com/crewtext/voluble-common.git",
-    "voluble-plugin-base": "git+https://github.com/CrewText/voluble-plugin-base.git",
+    "voluble-common": "git+https://fafb0d643022f78ee759ff9fbb7fd39a60f3e84f:x-oauth-basic@github.com/crewtext/voluble-common.git",
+    "voluble-plugin-base": "git+https://fafb0d643022f78ee759ff9fbb7fd39a60f3e84f:x-oauth-basic@github.com/CrewText/voluble-plugin-base.git",
     "winston": "^3.3.3"
   },
   "description": "A plugin-oriented mass text communication system",
