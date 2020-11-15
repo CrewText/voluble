@@ -50,13 +50,14 @@ router.get('/:org_id/messages/', checkJwt,
       checkHasOrgAccess(req['user'], req.params.org_id)
       let from_date: Date, to_date: Date, direction: MessageDirections, state: MessageStates, contact: string, user: string
       if (req.query.from_date) {
-        if ((typeof req.query.from_date == "number" && req.query.from_date > -1) || typeof req.query.from_date == "string" && !isNaN(parseInt(req.query.from_date, 10))) {
+        if ((typeof req.query.from_date == "number" && req.query.from_date > -1) || (typeof req.query.from_date == "string" && !isNaN(parseInt(req.query.from_date, 10)))) {
           from_date = new Date((typeof req.query.from_date == "number" ? req.query.from_date : parseInt(req.query.from_date, 10)) * 1000);
         }
         else { throw new errors.InvalidParameterValueError(`from_date must be a positive number representing a Unix timestamp in seconds: ${req.query.from_date}`) }
       }
+
       if (req.query.to_date) {
-        if ((typeof req.query.to_date == "number" && req.query.to_date > -1) || typeof req.query.to_date == "string" && isNaN(parseInt(req.query.to_date, 10))) {
+        if ((typeof req.query.to_date == "number" && req.query.to_date > -1) || (typeof req.query.to_date == "string" && !isNaN(parseInt(req.query.to_date, 10)))) {
           to_date = new Date((typeof req.query.to_date == "number" ? req.query.to_date : parseInt(req.query.to_date, 10)) * 1000);
         }
         else { throw new errors.InvalidParameterValueError(`to_date must be a positive number representing a Unix timestamp in seconds: ${req.query.to_date}`) }
