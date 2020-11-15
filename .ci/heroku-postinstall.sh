@@ -11,4 +11,5 @@ if [ "$GIT_SSH_KEY" != "" ]; then
 
     # Clear that sensitive key data from the environment
     export GIT_SSH_KEY=0
+    echo "SSH Cleanup Complete" >&1
 fi

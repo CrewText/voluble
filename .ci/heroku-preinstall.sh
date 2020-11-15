@@ -7,8 +7,8 @@ if [ "$GIT_SSH_KEY" != "" ]; then
 
     # Ensure we have an ssh folder
     if [ ! -d ~/.ssh ]; then
-    mkdir -p ~/.ssh
-    chmod 700 ~/.ssh
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
     fi
 
     # Load the private key into a file.
@@ -16,7 +16,7 @@ if [ "$GIT_SSH_KEY" != "" ]; then
 
     # Change the permissions on the file to
     # be read-only for this user.
-    chmod 400 ~/.ssh/deploy_key
+    #chmod 400 ~/.ssh/deploy_key
 
     # Setup the ssh config file.
     echo -e "Host github.com\n"\
@@ -25,4 +25,6 @@ if [ "$GIT_SSH_KEY" != "" ]; then
             " UserKnownHostsFile=/dev/null\n"\
             " StrictHostKeyChecking no"\
             > ~/.ssh/config
+
+    echo "SSH Config Complete" >&1
 fi
