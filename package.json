@@ -18,7 +18,8 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npx eslint ./src/**/* --ext .js,.ts --fix"
+      "pre-commit": "npx eslint ./src/**/* --ext .js,.ts --fix",
+      "pre-install": "if [ -z HEROKU_APP_ID ]; then sed -i 's/git+https:\/\/github.com/https:\/\/calmcl1:${GITHUB_TOKEN}@github.com/' test.json; fi"
     }
   },
   "dependencies": {
@@ -82,7 +83,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/calmcl1/voluble.git"
+    "url": "git+ssh://git@github.com/crewtext/voluble.git"
   },
   "keywords": [
     "messaging",
@@ -92,7 +93,7 @@
   "author": "Cal McLean",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/calmcl1/voluble/issues"
+    "url": "https://github.com/crewtext/voluble/issues"
   },
-  "homepage": "https://github.com/calmcl1/voluble#readme"
+  "homepage": "https://github.com/crewtext/voluble#readme"
 }
