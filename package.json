@@ -9,8 +9,8 @@
   "scripts": {
     "start": "node ./dist/server/index.js",
     "dev": "nodemon ./dist/server/index.js",
-    "preinstall": "bash ./.ci/heroku-preinstall.sh",
-    "postinstall": "tsc -v ; tsc",
+    "preinstall": "chmod +x ./.ci/heroku-preinstall.sh; bash ./.ci/heroku-preinstall.sh",
+    "postinstall": "chmod +x ./.ci/heroku-postinstall.sh; bash ./.ci/heroku-postinstall.sh; tsc -v ; tsc",
     "test-tap": "mocha dist/test --exit --reporter tap",
     "test": "mocha dist/test --exit --full-trace --bail --timeout=20000",
     "start-server": "node --trace-warnings ./dist/server/index.js",
@@ -41,8 +41,8 @@
     "sequelize": "^6.3.5",
     "telegram-mtproto": "^1.0.5",
     "validator": "^13.1.17",
-    "voluble-common": "git+https://github.com/crewtext/voluble-common.git",
-    "voluble-plugin-base": "git+https://github.com/CrewText/voluble-plugin-base.git",
+    "voluble-common": "git+ssh://github.com/crewtext/voluble-common.git",
+    "voluble-plugin-base": "git+ssh://github.com/CrewText/voluble-plugin-base.git",
     "winston": "^3.3.3"
   },
   "description": "A plugin-oriented mass text communication system",

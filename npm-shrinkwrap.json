@@ -27,8 +27,8 @@
         "sequelize": "^6.3.5",
         "telegram-mtproto": "^1.0.5",
         "validator": "^13.1.17",
-        "voluble-common": "git+https://github.com/crewtext/voluble-common.git",
-        "voluble-plugin-base": "git+https://github.com/CrewText/voluble-plugin-base.git",
+        "voluble-common": "git+ssh://github.com/crewtext/voluble-common.git",
+        "voluble-plugin-base": "git+ssh://github.com/CrewText/voluble-plugin-base.git",
         "winston": "^3.3.3"
       },
       "devDependencies": {
@@ -11250,11 +11250,11 @@
     },
     "voluble-common": {
       "version": "git+ssh://git@github.com/crewtext/voluble-common.git#55ac016d85eb871d5ab042542c4bbfd0724b6c1c",
-      "from": "voluble-common@git+https://github.com/crewtext/voluble-common.git"
+      "from": "voluble-common@git+ssh://github.com/crewtext/voluble-common.git"
     },
     "voluble-plugin-base": {
       "version": "git+ssh://git@github.com/CrewText/voluble-plugin-base.git#445dc11f7fdd7c08c5f75618fd0dc49f24494fca",
-      "from": "voluble-plugin-base@git+https://github.com/CrewText/voluble-plugin-base.git",
+      "from": "voluble-plugin-base@git+ssh://github.com/CrewText/voluble-plugin-base.git",
       "requires": {
         "voluble-common": "git+https://github.com/CrewText/voluble-common.git",
         "winston": "^3.3.3"
