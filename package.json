@@ -9,7 +9,7 @@
   "scripts": {
     "start": "node ./dist/server/index.js",
     "dev": "nodemon ./dist/server/index.js",
-    "preinstall": "if [ -z HEROKU_APP_ID ]; then sed -i 's/https:\/\/github.com/https:\/\/calmcl1:${GITHUB_TOKEN}@github.com/' package.json; fi",
+    "preinstall": "bash ./.ci/heroku-preinstall.sh",
     "postinstall": "tsc -v ; tsc",
     "test-tap": "mocha dist/test --exit --reporter tap",
     "test": "mocha dist/test --exit --full-trace --bail --timeout=20000",
