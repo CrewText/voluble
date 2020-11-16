@@ -11,12 +11,13 @@
     "start": "node ./dist/server/index.js",
     "dev": "nodemon ./dist/server/index.js",
     "heroku-prebuild": "chmod +x ./.ci/heroku-preinstall.sh; bash ./.ci/heroku-preinstall.sh",
-    "heroku-cleanup": "chmod +x ./.ci/heroku-postinstall.sh; bash ./.ci/heroku-postinstall.sh; tsc -v ; tsc",
+    "heroku-cleanup": "chmod +x ./.ci/heroku-postinstall.sh; bash ./.ci/heroku-postinstall.sh",
     "test-tap": "mocha dist/test --exit --reporter tap",
     "test": "mocha dist/test --exit --full-trace --bail --timeout=20000",
     "start-server": "node --trace-warnings ./dist/server/index.js",
     "start-worker": "node ./dist/worker/worker-main.js",
-    "lint": "npx eslint ./src/**/* --ext .js,.ts --ignore-pattern src/test/* --fix"
+    "lint": "npx eslint ./src/**/* --ext .js,.ts --ignore-pattern src/test/* --fix",
+    "build": "npm lint; tsc"
   },
   "husky": {
     "hooks": {
