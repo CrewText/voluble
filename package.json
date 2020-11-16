@@ -17,11 +17,11 @@
     "start-server": "node --trace-warnings ./dist/server/index.js",
     "start-worker": "node ./dist/worker/worker-main.js",
     "lint": "npx eslint ./src/**/* --ext .js,.ts --ignore-pattern src/test/* --fix",
-    "build": "npm lint; tsc"
+    "build": "tsc"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npx eslint ./src/**/* --ext .js,.ts --fix"
+      "pre-commit": "npm run-script lint"
     }
   },
   "dependencies": {

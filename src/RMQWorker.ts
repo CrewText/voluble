@@ -30,11 +30,14 @@ export class RMQWorker extends EventEmitter {
 
         while (this.continue_check) {
 
-            const msgRecvProm: Promise<RedisSMQ.QueueMessage | Record<string, unknown>> = new Promise(async (res, _) => {
-                let m = await this.rsmq.receiveMessageAsync({ qname: this.queue_name })
-                if (m["id"]) {
-                    res(m)
-                }
+            const msgRecvProm: Promise<RedisSMQ.QueueMessage | Record<string, unknown>> = new Promise((res, _) => {
+                this.rsmq.receiveMessageAsync({ qname: this.queue_name })
+                    .then(m => {
+                        if (m["id"]) {
+                            res(m)
+                        }
+                    })
+
             })
             const timeoutProm = new Promise((_, rej) => {
                 const wait = setTimeout(() => {
@@ -49,8 +52,9 @@ export class RMQWorker extends EventEmitter {
                     if (message?.id) { this.emit('message', message.message, () => { this.rsmq.deleteMessageAsync({ id: (message as RedisSMQ.QueueMessage).id, qname: this.queue_name }) }, message.id) }
                 })
                 .catch(e => {
-                    if (e instanceof TimeoutError) {
-                    } else { console.error(e) }
+                    if (!(e instanceof TimeoutError)) {
+                        console.error(e)
+                    }
                 })
         }
     }
