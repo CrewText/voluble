@@ -4,7 +4,8 @@
   "private": true,
   "main": "app.js",
   "engines": {
-    "node": "13.2.0"
+    "node": "15.2.0",
+    "npm": "7.0.8"
   },
   "scripts": {
     "start": "node ./dist/server/index.js",
@@ -40,6 +41,7 @@
     "rsmq": "^0.12.2",
     "sequelize": "^6.3.5",
     "telegram-mtproto": "^1.0.5",
+    "uuid": "^8.3.1",
     "validator": "^13.1.17",
     "voluble-common": "git+ssh://github.com/crewtext/voluble-common.git",
     "voluble-plugin-base": "git+ssh://github.com/CrewText/voluble-plugin-base.git",
@@ -79,7 +81,7 @@
     "nodemon": "^2.0.4",
     "supertest": "^4.0.2",
     "typedoc": "^0.19.2",
-    "typescript": "^4.0.3"
+    "typescript": "^4.0.5"
   },
   "repository": {
     "type": "git",
