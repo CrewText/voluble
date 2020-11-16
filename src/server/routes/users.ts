@@ -4,7 +4,7 @@ import { errors, scopes } from "voluble-common";
 import { OrgManager } from "../../org-manager";
 import { UserManager } from "../../user-manager";
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
+import { checkHasOrgAccessParamMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
 //const logger = winston.loggers.get(process.title).child({ module: 'UsersRoute' })
 const router = express.Router();
@@ -18,12 +18,11 @@ const router = express.Router();
  * 
  * @apiSuccess {User[]} data Array of Users
  */
-router.get('/:org_id/users', checkJwt,
-
-    checkScopesMiddleware([scopes.UserView,
-    scopes.OrganizationEdit,
-    scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware,
+router.get('/:org_id/users',
+    checkJwt,
+    checkScopesMiddleware([scopes.UserView, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
         const org_id = req.params.org_id
 
@@ -54,10 +53,10 @@ router.get('/:org_id/users', checkJwt,
  */
 router.post('/:org_id/users',
     checkJwt,
-    checkScopesMiddleware([scopes.UserAdd,
-    scopes.OrganizationEdit,
-    scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware, async (req, res, next) => {
+    checkScopesMiddleware([scopes.UserAdd, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
+    async (req, res, next) => {
         const org_id = req.params.org_id
         const new_user_id = req.body.id
 
@@ -169,7 +168,7 @@ router.get('/:org_id/users/:user_id',
     checkJwt,
     checkScopesMiddleware([scopes.UserView, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
-    checkHasOrgAccessMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
         const org_id = req.params.org_id
         const user_id = req.params.user_id
@@ -201,10 +200,9 @@ router.get('/:org_id/users/:user_id',
  */
 router.delete('/:org_id/users/:user_id',
     checkJwt,
-    checkScopesMiddleware([scopes.UserDelete,
-    scopes.OrganizationEdit,
-    scopes.OrganizationOwner,
-    scopes.VolubleAdmin]), setupUserOrganizationMiddleware, checkHasOrgAccessMiddleware,
+    checkScopesMiddleware([scopes.UserDelete, scopes.OrganizationEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
         const user_id = req.params.user_id
 

@@ -49,26 +49,26 @@ export function checkHasOrgAccessParamMiddleware(org_param_name: string): Expres
     }
 }
 
-/**
- * DEPRECATED - use @function checkHasOrgAccessParamMiddleware instead.
- * @param req 
- * @param res 
- * @param next 
- */
-export function checkHasOrgAccessMiddleware(req: Request, res: Response, next: NextFunction): void {
-    try {
-        checkHasOrgAccess(req['user'], req.params.org_id)
-        return next()
-    }
-    catch (e) {
-        const serialized_data = req.app.locals.serializer.serializeError(e)
-        res.status(403).json(serialized_data)
-    }
-}
+// /**
+//  * DEPRECATED - use @function checkHasOrgAccessParamMiddleware instead.
+//  * @param req 
+//  * @param res 
+//  * @param next 
+//  */
+// export function checkHasOrgAccessMiddleware(req: Request, res: Response, next: NextFunction): void {
+//     try {
+//         checkHasOrgAccess(req['user'], req.params.org_id)
+//         return next()
+//     }
+//     catch (e) {
+//         const serialized_data = req.app.locals.serializer.serializeError(e)
+//         res.status(403).json(serialized_data)
+//     }
+// }
 
 export function checkHasOrgAccess(user: Auth0User, requested_org: string): void {
     if (!hasScope(user, scopes.VolubleAdmin) && user.organization != requested_org) {
-        throw new errors.ResourceOutOfUserScopeError(`User does not have access to the requested resource: ${requested_org}`)
+        throw new errors.ResourceOutOfUserScopeError(`User with org ID does not have access to the requested resource: ${requested_org}`)
     }
 }
 

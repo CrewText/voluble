@@ -11,7 +11,7 @@ import { getE164PhoneNumber } from "../../utilities";
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkLimit, checkOffset } from '../helpers/check_limit_offset';
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkHasOrgAccessParamMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccess, checkHasOrgAccessParamMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
 //const logger = winston.loggers.get(process.title).child({ module: 'ContactsRoute' })
 const router = express.Router();
@@ -250,7 +250,7 @@ router.put('/:org_id/contacts/:contact_id', checkJwt,
 router.delete('/:org_id/contacts/:contact_id',
   checkJwt,
   setupUserOrganizationMiddleware,
-  checkHasOrgAccessMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
   checkScopesMiddleware([scopes.ContactDelete, scopes.VolubleAdmin]), async (req, res, next) => {
 
     const contact_id = req.params.contact_id

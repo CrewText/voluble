@@ -9,7 +9,7 @@ import { UserManager } from "../../user-manager";
 import { getE164PhoneNumber } from '../../utilities';
 import { checkExtendsModel } from "../helpers/check_extends_model";
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccessMiddleware, checkScopesMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
+import { checkHasOrgAccessParamMiddleware, checkScopesMiddleware, hasScope, setupUserOrganizationMiddleware } from '../security/scopes';
 
 const logger = winston.loggers.get(process.title).child({ module: 'OrgsRoute' })
 const router = express.Router();
@@ -138,7 +138,8 @@ router.get('/:org_id',
     checkJwt,
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
-    checkHasOrgAccessMiddleware, async (req, res, next) => {
+    checkHasOrgAccessParamMiddleware('org_id'),
+    async (req, res, next) => {
 
         const org_id = req.params.org_id
         try {
@@ -193,7 +194,7 @@ router.put('/:org_id',
     checkJwt,
     checkScopesMiddleware([scopes.OrganizationOwner, scopes.OrganizationEdit, scopes.VolubleAdmin]),
     setupUserOrganizationMiddleware,
-    checkHasOrgAccessMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
         const org_id = req.params.org_id
         const new_org_data = req.body
@@ -248,11 +249,11 @@ router.put('/:org_id',
 
 
 /** Removes an Organization */
-router.delete('/:org_id', checkJwt,
-    checkScopesMiddleware([scopes.OrganizationOwner,
-    scopes.OrganizationDelete,
-    scopes.VolubleAdmin]), setupUserOrganizationMiddleware,
-    checkHasOrgAccessMiddleware,
+router.delete('/:org_id',
+    checkJwt,
+    checkScopesMiddleware([scopes.OrganizationOwner, scopes.OrganizationDelete, scopes.VolubleAdmin]),
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
         const org_id = req.params.org_id
         const org = await OrgManager.getOrganizationById(org_id)

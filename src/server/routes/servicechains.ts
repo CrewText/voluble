@@ -5,17 +5,17 @@ import { errors, scopes } from "voluble-common";
 import { OrgManager } from "../../org-manager";
 import { ResponseServicechain, ServicechainManager, ServicePriority } from '../../servicechain-manager/';
 import { checkJwt } from '../security/jwt';
-import { checkHasOrgAccess, checkHasOrgAccessMiddleware, checkHasOrgAccessParamMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
-
+import { checkHasOrgAccessParamMiddleware, checkScopesMiddleware, setupUserOrganizationMiddleware } from "../security/scopes";
 
 //const logger = winston.loggers.get(process.title).child({ module: 'ServicechainsRoute' })
 
 const router = express.Router();
 
 router.get('/:org_id/servicechains/', checkJwt,
-  checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin]),
-  checkHasOrgAccessParamMiddleware('org_id'),
+  checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
   setupUserOrganizationMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
+
   async (req, res, next) => {
 
     const resp: ResponseServicechain[] = []
@@ -29,9 +29,11 @@ router.get('/:org_id/servicechains/', checkJwt,
     return next()
   })
 
-router.get('/:org_id/servicechains/count', checkJwt, checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
-  checkHasOrgAccessParamMiddleware('org_id'),
+router.get('/:org_id/servicechains/count', checkJwt,
+  checkScopesMiddleware([scopes.ServicechainView, scopes.VolubleAdmin, scopes.OrganizationOwner]),
   setupUserOrganizationMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
+
   async (req, res, next) => {
 
     try {
@@ -53,11 +55,13 @@ router.get('/:org_id/servicechains/count', checkJwt, checkScopesMiddleware([scop
   })
 
 router.post('/:org_id/servicechains/', checkJwt,
-  checkScopesMiddleware([scopes.ServicechainAdd, scopes.VolubleAdmin]),
+  checkScopesMiddleware([scopes.ServicechainAdd, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
   async (req, res, next) => {
     let created_sc_id: string
     try {
-      checkHasOrgAccess(req['user'], req.params.org_id)
+      // checkHasOrgAccess(req['user'], req.params.org_id)
       if (!req.body.services) { throw new errors.InvalidParameterValueError(`Parameter 'services' must be supplied`) }
       if (!(req.body.services instanceof Array)) { throw new errors.InvalidParameterValueError(`Parameter 'services' must be an Array`) }
 
@@ -98,27 +102,32 @@ router.post('/:org_id/servicechains/', checkJwt,
     }
   })
 
-router.get('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainView]), async (req, res, next) => {
+router.get('/:org_id/servicechains/:sc_id',
+  checkJwt,
+  checkScopesMiddleware([scopes.ServicechainView, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
+  async (req, res, next) => {
 
-  try {
-    const full_sc = await ServicechainManager.getFullServicechain(req.params.sc_id)
-    const serialized = req.app.locals.serializer.serialize('servicechain', full_sc)
-    res.status(200).json(serialized)
-    return next()
-  } catch (e) {
-    const serialized_err = req.app.locals.serializer.serializeError(e)
-    if (e instanceof errors.ResourceNotFoundError) {
-      res.status(400).json(serialized_err)
+    try {
+      const full_sc = await ServicechainManager.getFullServicechain(req.params.sc_id)
+      const serialized = req.app.locals.serializer.serialize('servicechain', full_sc)
+      res.status(200).json(serialized)
+      return next()
+    } catch (e) {
+      const serialized_err = req.app.locals.serializer.serializeError(e)
+      if (e instanceof errors.ResourceNotFoundError) {
+        res.status(400).json(serialized_err)
+      }
+      else { next(e) }
     }
-    else { next(e) }
-  }
-})
+  })
 
 
 router.put('/:org_id/servicechains/:id', checkJwt,
-  checkScopesMiddleware([scopes.ServicechainEdit]),
+  checkScopesMiddleware([scopes.ServicechainEdit, scopes.OrganizationOwner, scopes.VolubleAdmin]),
   setupUserOrganizationMiddleware,
-  checkHasOrgAccessMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
   async (req, res, next) => {
     // This completely overwrites the Servicechain, as opposed to using PUT on other resources,
     // which modifies them in-place.
@@ -159,8 +168,12 @@ router.put('/:org_id/servicechains/:id', checkJwt,
     }
   })
 
-router.delete('/:org_id/servicechains/:sc_id', checkJwt, checkScopesMiddleware([scopes.ServicechainDelete]),
-  checkHasOrgAccessMiddleware,
+router.delete('/:org_id/servicechains/:sc_id',
+  checkJwt,
+  setupUserOrganizationMiddleware,
+  checkHasOrgAccessParamMiddleware('org_id'),
+  checkScopesMiddleware([scopes.ServicechainDelete, scopes.OrganizationOwner, scopes.VolubleAdmin]),
+
   async (req, res, next) => {
     try {
       await ServicechainManager.deleteServicechain(req.params.sc_id)

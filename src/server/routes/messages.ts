@@ -99,7 +99,7 @@ router.get('/:org_id/messages/count', checkJwt,
         req.query.end_timestamp ? new Date(parseInt(req.query.end_timestamp as string) * 1000) : new Date())
 
       res.status(200).json({ data: { count: msgs.length } })
-      return next()
+      //return next()
     }
     catch (e) {
       const serialized_err = res.app.locals.serializer.serializeError(e)
