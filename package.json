@@ -10,8 +10,8 @@
   "scripts": {
     "start": "node ./dist/server/index.js",
     "dev": "nodemon ./dist/server/index.js",
-    "preinstall": "chmod +x ./.ci/heroku-preinstall.sh; bash ./.ci/heroku-preinstall.sh",
-    "postinstall": "chmod +x ./.ci/heroku-postinstall.sh; bash ./.ci/heroku-postinstall.sh; tsc -v ; tsc",
+    "heroku-prebuild": "chmod +x ./.ci/heroku-preinstall.sh; bash ./.ci/heroku-preinstall.sh",
+    "heroku-cleanup": "chmod +x ./.ci/heroku-postinstall.sh; bash ./.ci/heroku-postinstall.sh; tsc -v ; tsc",
     "test-tap": "mocha dist/test --exit --reporter tap",
     "test": "mocha dist/test --exit --full-trace --bail --timeout=20000",
     "start-server": "node --trace-warnings ./dist/server/index.js",
