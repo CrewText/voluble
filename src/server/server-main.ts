@@ -38,30 +38,6 @@ const app = express();
 
 let svr: Server;
 
-// function onError(error: any) {
-//   if (error.syscall !== 'listen') {
-//     throw error;
-//   }
-
-//   var bind = typeof port === 'string'
-//     ? 'Pipe ' + port
-//     : 'Port ' + port;
-
-//   // handle specific listen errors with friendly messages
-//   switch (error.code) {
-//     case 'EACCES':
-//       ;
-//       process.exit(1);
-//       break;
-//     case 'EADDRINUSE':
-//       ;
-//       process.exit(1);
-//       break;
-//     default:
-//       throw error;
-//   }
-// }
-
 function forceSSL(req: express.Request, res: express.Response, next: express.NextFunction) {
   if (req.headers['x-forwarded-proto'] !== 'https') {
     const secure_url = ['https://', req.get('Host'), req.url].join('')
@@ -70,6 +46,11 @@ function forceSSL(req: express.Request, res: express.Response, next: express.Nex
   }
   return next();
 }
+
+logger.debug("Using cors")
+app.use(cors())
+
+app.options('*', cors()) // include before other routes
 
 // Force SSL
 if (process.env.NODE_ENV != "production") {
@@ -94,11 +75,6 @@ export async function initServer(): Promise<Server> {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(xmlParser({ explicitArray: false }))
   app.use(express.static(path.join(__dirname, 'public')));
-
-  logger.debug("Using cors")
-  app.use(cors())
-
-  app.options('*', cors()) // include before other routes
 
   logger.debug('Setting up routes')
   // app.use('/v1/', routes_index);
