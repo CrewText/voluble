@@ -13,7 +13,7 @@ export function checkHasCredits(credits_required: number): ExpressMiddleware {
             try {
                 const org = await OrgManager.getOrganizationById(req['user'].organization)
 
-                if (org.plan == PlanTypes.PAYG && org.credits < credits_required) {
+                if (org.plan == PlanTypes.PAY_IN_ADVANCE && org.credits < credits_required) {
                     throw new errors.NotEnoughCreditsError('The Organization does not have enough credits for this operation')
                 } else {
                     return next()
