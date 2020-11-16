@@ -80,9 +80,8 @@ router.get('/users/:org_id/:user_id', checkOriginIsAllowed, checkJwt, setupUserO
                 headers: { 'Authorization': `Bearer ${token.access_token}` },
                 validateStatus: _ => true
             })
-        if (resp.data.app_metadata.organization != req.params.org_id) { throw new errors.UserNotInOrgError(`Organization ${req.params.org_id} does not contain a user with ID ${req.params.user_id}`) }
+        if (resp.data.app_metadata.organization != req.params.org_id) { return next(new errors.UserNotInOrgError(`Organization ${req.params.org_id} does not contain a user with ID ${req.params.user_id}`)) }
         res.status(resp.status).json(resp.data)
-        return next()
     })
 
 /**
