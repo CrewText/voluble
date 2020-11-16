@@ -37,7 +37,6 @@ export class RMQWorker extends EventEmitter {
                             res(m)
                         }
                     })
-
             })
             const timeoutProm = new Promise((_, rej) => {
                 const wait = setTimeout(() => {

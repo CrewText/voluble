@@ -20,24 +20,24 @@ export class UserManager {
     public static getMgmtAccessToken(): Promise<string> {
         // let options = {
         //     //method: 'POST',
-        //     //url: `${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/oauth/token`,
+        //     //url: `https://${process.env.AUTH0_VOLUBLE_TENANT}/oauth/token`,
         //     headers: { 'content-type': 'application/json' },
         //     // body:
         //     // {
         //     //     grant_type: 'client_credentials',
         //     //     client_id: process.env["AUTH0_USER_MGMT_CLIENT_ID"],
         //     //     client_secret: process.env["AUTH0_USER_MGMT_CLIENT_SECRET"],
-        //     //     audience: `${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/api/v2/`
+        //     //     audience: `https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/`
         //     // },
         //     json: true
         // };
 
-        return Axios.post(`${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/oauth/token`,
+        return Axios.post(`https://${process.env.AUTH0_VOLUBLE_TENANT}/oauth/token`,
             {
                 grant_type: 'client_credentials',
                 client_id: process.env["AUTH0_USER_MGMT_CLIENT_ID"],
                 client_secret: process.env["AUTH0_USER_MGMT_CLIENT_SECRET"],
-                audience: `${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/api/v2/`
+                audience: `https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/`
             },
             { headers: { 'content-type': 'application/json' }, responseType: "json" }
         )
@@ -65,7 +65,7 @@ export class UserManager {
                 return this.getUserById(user_id)
                     .then(function (user) {
 
-                        return Axios.get(`${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/api/v2/users/auth0|${user.id}`,
+                        return Axios.get(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/auth0|${user.id}`,
                             {
                                 headers: { 'Authorization': 'Bearer ' + token },
                                 responseType: "json"
@@ -77,7 +77,7 @@ export class UserManager {
                             })
                             .then(function (scopes_available) {
                                 scopes_available.push(...desired_scopes)
-                                return Axios.patch(`${process.env["https://${process.env.AUTH0_VOLUBLE_TENANT}"]}/api/v2/users/${user.id}`,
+                                return Axios.patch(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${user.id}`,
                                     { 'app_metadata': { 'scopes': scopes_available } },
                                     {
                                         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
