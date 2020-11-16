@@ -27,13 +27,31 @@ export class RMQWorker extends EventEmitter {
 
     public async start(): Promise<void> {
         this.continue_check = true
-        while (this.continue_check) {
-            let msg: RedisSMQ.QueueMessage | Record<string, unknown>
 
-            setTimeout(async () => { msg = await this.rsmq.receiveMessageAsync({ qname: this.queue_name }) }, 5000)
-            if ("id" in msg) {
-                this.emit('message', msg.message, () => { this.rsmq.deleteMessageAsync({ id: (msg as RedisSMQ.QueueMessage).id, qname: this.queue_name }) }, msg.id)
-            }
+        while (this.continue_check) {
+
+            const msgRecvProm: Promise<RedisSMQ.QueueMessage | Record<string, unknown>> = new Promise(async (res, _) => {
+                let m = await this.rsmq.receiveMessageAsync({ qname: this.queue_name })
+                if (m["id"]) {
+                    res(m)
+                }
+            })
+            const timeoutProm = new Promise((_, rej) => {
+                const wait = setTimeout(() => {
+                    clearTimeout(wait);
+                    rej(new TimeoutError())
+                }, 5000)
+            })
+
+            await Promise.race([msgRecvProm, timeoutProm])
+                .then((message: RedisSMQ.QueueMessage) => {
+
+                    if (message?.id) { this.emit('message', message.message, () => { this.rsmq.deleteMessageAsync({ id: (message as RedisSMQ.QueueMessage).id, qname: this.queue_name }) }, message.id) }
+                })
+                .catch(e => {
+                    if (e instanceof TimeoutError) {
+                    } else { console.error(e) }
+                })
         }
     }
 
@@ -47,4 +65,7 @@ export class RMQWorker extends EventEmitter {
                 return queues.includes(queue_name)
             })
     }
+
 }
+
+class TimeoutError extends Error { constructor(m?: string) { super(m); Object.setPrototypeOf(this, TimeoutError.prototype) } }

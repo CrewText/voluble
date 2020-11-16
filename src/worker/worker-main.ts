@@ -1,7 +1,7 @@
 import * as redis from 'redis'
 import * as rsmq from 'rsmq'
 // import * as rsmqWorker from 'rsmq-worker'
-import { errors,MessageStates, PlanTypes } from 'voluble-common'
+import { errors, MessageStates, PlanTypes } from 'voluble-common'
 import * as winston from 'winston'
 
 import { ContactManager } from '../contact-manager'
@@ -77,9 +77,12 @@ worker_msg_send.on("message", async function (message: string, next: () => void)
 }).start()
 
 worker_send_msg_update.on("message", async function (message, next) {
-    const update = JSON.parse(message)
-    logger.debug("Got message update for message " + update.message_id + ": " + update.status)
-    try { await MessageManager.updateMessageState(update.message_id, update.status) }
+    let update;
+    try {
+        update = JSON.parse(message)
+        logger.debug("Got message update for message " + update.message_id + ": " + update.status)
+        await MessageManager.updateMessageState(update.message_id, update.status)
+    }
     catch (error) {
         if (error instanceof errors.ResourceNotFoundError) {
             logger.info("Dropping message update request for message with ID " + update.message_id)
