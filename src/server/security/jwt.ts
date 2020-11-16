@@ -17,7 +17,7 @@ export async function checkJwt(req: Request, res: Response, next: NextFunction):
         return
     }
 
-    const jwks = createRemoteJWKSet(new URL("https://${process.env.AUTH0_VOLUBLE_TENANT}/.well-known/jwks.json"))
+    const jwks = createRemoteJWKSet(new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/.well-known/jwks.json`))
     jwtVerify(auth_header_token, jwks, {
         audience: process.env.AUTH0_API_ID,
         issuer: `https://${process.env.AUTH0_VOLUBLE_TENANT}/`,
