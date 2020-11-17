@@ -3,6 +3,7 @@ import * as express from "express";
 import { generate } from 'generate-password';
 import { errors } from 'voluble-common';
 import * as winston from 'winston';
+
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessParamMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
 
@@ -69,6 +70,29 @@ const checkOriginIsAllowed = (req, res, next) => {
 //TODO: ADD CHECKING OF USER SCOPES ACROSS ALL METHODS
 
 /**
+ * Get a list of the users in the Organization.
+ */
+router.get('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizationMiddleware, checkHasOrgAccessParamMiddleware('org_id'),
+    async (req, res, next) => {
+        const token = await getMgmtAuthToken()
+
+        const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
+        url.searchParams.append("fields", "user_id,picture,name,email,app_metadata")
+        url.searchParams.append("include_fields", "true")
+        url.searchParams.append("search_engine", "v3")
+        url.searchParams.append("q", `app_metadata.organization:"${req.params.org_id}"`)
+        const resp = await axios.get(url.toString(),
+            {
+                headers: { 'Authorization': `Bearer ${token.access_token}` },
+                validateStatus: _ => true
+            })
+
+        res.status(resp.status).json(resp.data)
+        return next()
+    })
+
+
+/**
  * Retrieve a given user from the Organization
  */
 router.get('/users/:org_id/:user_id', checkOriginIsAllowed, checkJwt, setupUserOrganizationMiddleware, checkHasOrgAccessParamMiddleware('org_id'),
@@ -88,27 +112,25 @@ router.get('/users/:org_id/:user_id', checkOriginIsAllowed, checkJwt, setupUserO
     })
 
 /**
- * Get a list of the users in the Organization.
+ * Remove a given user from the Organization
  */
-router.get('/users/:org_id', checkOriginIsAllowed, checkJwt, setupUserOrganizationMiddleware, checkHasOrgAccessParamMiddleware('org_id'),
+router.delete('/users/:org_id/:user_id', checkOriginIsAllowed, checkJwt, setupUserOrganizationMiddleware, checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
-        const token = await getMgmtAuthToken()
+        const mgmt_token = await getMgmtAuthToken()
+        const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${req.params.user_id}`)
 
-        const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
-        url.searchParams.append("fields", "picture,name,email,app_metadata")
-        url.searchParams.append("include_fields", "true")
-        url.searchParams.append("search_engine", "v3")
-        url.searchParams.append("q", `app_metadata.organization:"${req.params.org_id}"`)
-        const resp = await axios.get(url.toString(),
+        const resp = await axios.delete(url.toString(),
             {
-                headers: { 'Authorization': `Bearer ${token.access_token}` },
-                validateStatus: _ => true
+                headers: {
+                    'Authorization': `Bearer ${mgmt_token.access_token}`,
+                    'Content-Type': 'application/json'
+                }, responseType: "json",
+                validateStatus: (_) => true
             })
 
         res.status(resp.status).json(resp.data)
         return next()
     })
-
 /**
  * Create a new User in the Organization, with a random, Auth0-friendly password.
  */
