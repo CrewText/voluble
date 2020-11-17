@@ -3,9 +3,9 @@ import * as express from "express";
 import { generate } from 'generate-password';
 import { errors } from 'voluble-common';
 import * as winston from 'winston';
-
 import { checkJwt } from '../security/jwt';
 import { checkHasOrgAccessParamMiddleware, setupUserOrganizationMiddleware } from '../security/scopes';
+
 
 
 const router = express.Router();
@@ -65,6 +65,9 @@ const checkOriginIsAllowed = (req, res, next) => {
     } else return next()
 }
 
+
+//TODO: ADD CHECKING OF USER SCOPES ACROSS ALL METHODS
+
 /**
  * Retrieve a given user from the Organization
  */
@@ -115,51 +118,59 @@ router.post('/users/:org_id',
     setupUserOrganizationMiddleware,
     checkHasOrgAccessParamMiddleware('org_id'),
     async (req, res, next) => {
-        ["email", "first_name", "last_name", "avatar_uri"].forEach(field => {
-            if (!req.body[field]) { throw new errors.InvalidParameterValueError(`Field ${field} must be supplied`) }
-        });
+        try {
+            ["email", "first_name", "last_name", "avatar_uri"].forEach(field => {
+                if (!req.body[field]) { throw new errors.InvalidParameterValueError(`Field ${field} must be supplied`) }
+            });
 
-        const mgmt_token = await getMgmtAuthToken()
+            const mgmt_token = await getMgmtAuthToken()
 
-        const create_user_url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
-        const create_user_body = {
-            email: req.body.email,
-            given_name: req.body.first_name,
-            family_name: req.body.last_name,
-            picture: req.body.avatar_uri,
-            password: req.body.password || generate({ length: 12, numbers: true, symbols: true, uppercase: true, lowercase: true, strict: true }),
-            connection: "Username-Password-Authentication",
-            verify_email: true
-        }
-
-        const create_user_resp = await axios.post(create_user_url.toString(), create_user_body,
-            {
-                headers: {
-                    'Authorization': `Bearer ${mgmt_token.access_token}`,
-                    'Content-Type': 'application/json'
-                }, responseType: "json",
-                validateStatus: (_) => true
-            })
-
-        const update_meta_url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${create_user_resp.data.user_id}`)
-        const update_meta_body = {
-            app_metadata: {
-                organization: req.params.org_id
+            const create_user_url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users`)
+            const create_user_body = {
+                email: req.body.email,
+                given_name: req.body.first_name,
+                family_name: req.body.last_name,
+                picture: req.body.avatar_uri,
+                password: req.body.password || generate({ length: 12, numbers: true, symbols: true, uppercase: true, lowercase: true, strict: true }),
+                connection: "Username-Password-Authentication",
+                verify_email: false // The password reset counts as validating the email address
             }
+
+            const create_user_resp = await axios.post(create_user_url.toString(), create_user_body,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${mgmt_token.access_token}`,
+                        'Content-Type': 'application/json'
+                    }, responseType: "json",
+                    validateStatus: (_) => true
+                })
+
+            const update_meta_url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${create_user_resp.data.user_id}`)
+            const update_meta_body = {
+                app_metadata: {
+                    organization: req.params.org_id
+                }
+            }
+
+            const update_meta_resp = await axios.patch(update_meta_url.toString(), update_meta_body,
+                {
+                    headers: { 'Authorization': `Bearer ${mgmt_token.access_token}`, 'Content-Type': 'application/json' },
+                    responseType: "json",
+                    validateStatus: (_) => true
+                })
+
+
+            res.status(update_meta_resp.status).json(update_meta_resp.data)
+            return next()
+        } catch (e) {
+            const serialized_err = req.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.InvalidParameterValueError) {
+                res.status(400).json(serialized_err)
+            } else { next(e) }
         }
-
-        const update_meta_resp = await axios.patch(update_meta_url.toString(), update_meta_body,
-            {
-                headers: { 'Authorization': `Bearer ${mgmt_token.access_token}`, 'Content-Type': 'application/json' },
-                responseType: "json",
-                validateStatus: (_) => true
-            })
-
-
-        res.status(update_meta_resp.status).json(update_meta_resp.data)
-        return next()
     })
 
+// Create a password reset ticket - note, doesn't actually send the email
 router.post('/users/:org_id/:user_id/resetpassword',
     checkOriginIsAllowed,
     checkJwt,
@@ -186,4 +197,56 @@ router.post('/users/:org_id/:user_id/resetpassword',
 
     })
 
+// Set a user's role
+router.post('/users/:org_id/:user_id/setroles',
+    checkOriginIsAllowed,
+    checkJwt,
+    setupUserOrganizationMiddleware,
+    checkHasOrgAccessParamMiddleware('org_id'),
+    async (req, res, next) => {
+        try {
+            if (!req.body.roles) { throw new errors.InvalidParameterValueError("Field 'roles' must be supplied.") }
+            if (!Array.isArray(req.body.roles)) { throw new errors.InvalidParameterValueError("Field 'roles' must be an array of role IDs to assign.") }
+
+            const mgmt_token = await getMgmtAuthToken()
+            const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/users/${req.params.user_id}/roles`)
+
+            const resp = await axios.post(url.toString(),
+                { roles: req.body.roles },
+                {
+                    headers: { 'Authorization': `Bearer ${mgmt_token.access_token}`, 'Content-Type': 'application/json' },
+                    responseType: "json",
+                    validateStatus: (_) => true
+                })
+
+            res.status(resp.status).json(resp.data)
+            return next()
+
+        } catch (e) {
+            const serialized_err = req.app.locals.serializer.serializeError(e)
+            if (e instanceof errors.InvalidParameterValueError) {
+                res.status(400).json(serialized_err)
+            } else { next(e) }
+        }
+    })
+
+
+router.get("/roles",
+    checkOriginIsAllowed,
+    checkJwt,
+    async (req, res, next) => {
+        const mgmt_token = await getMgmtAuthToken()
+        const url = new URL(`https://${process.env.AUTH0_VOLUBLE_TENANT}/api/v2/roles`)
+        url.searchParams.append("per_page", "100")
+
+        const resp = await axios.get(url.toString(),
+            {
+                headers: { 'Authorization': `Bearer ${mgmt_token.access_token}`, 'Content-Type': 'application/json' },
+                responseType: "json",
+                validateStatus: (_) => true
+            })
+
+        res.status(resp.status).json(resp.data)
+        return next()
+    })
 export default router;
