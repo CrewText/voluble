@@ -5,6 +5,7 @@ import { Category } from './category'
 import { Contact } from './contact'
 import { Servicechain } from './servicechain'
 import { User } from './user'
+import { Organization } from './organization'
 
 
 export class Message extends Model implements MessageAttributes {
@@ -20,6 +21,10 @@ export class Message extends Model implements MessageAttributes {
     public sent_time!: Date
     public sent_service: string
     public cost!: number
+
+    public getOrganization!: BelongsToGetAssociationMixin<Organization>
+    public setOrganization!: BelongsToSetAssociationMixin<Organization, Organization['id']>
+    public createOrganization!: BelongsToCreateAssociationMixin<Organization>
 
     public getContact!: BelongsToGetAssociationMixin<Contact>
     public setContact!: BelongsToSetAssociationMixin<Contact, Contact['id']>

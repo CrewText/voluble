@@ -64,6 +64,9 @@ Category.hasMany(Contact, { foreignKey: 'category', as: 'contacts' })
 Contact.belongsTo(Servicechain, { foreignKey: 'servicechain' })
 Servicechain.hasOne(Contact, { foreignKey: 'servicechain' })
 
+Message.belongsTo(Organization, { foreignKey: 'organization', onDelete: 'CASCADE' })
+Organization.hasMany(Message, { foreignKey: 'organization', as: 'messages' })
+
 Message.belongsTo(Contact, { foreignKey: "contact", onDelete: 'CASCADE' })
 Contact.hasMany(Message, { foreignKey: "contact", as: 'messages' })
 

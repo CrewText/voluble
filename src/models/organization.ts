@@ -6,6 +6,7 @@ import { Category } from "./category";
 import { Contact } from "./contact";
 import { Servicechain } from "./servicechain";
 import { User } from "./user";
+import { Message } from "./message"
 
 
 export class Organization extends Model implements OrgAttributes {
@@ -42,6 +43,17 @@ export class Organization extends Model implements OrgAttributes {
     public hasContacts!: HasManyHasAssociationsMixin<Contact, Contact['id']>
     public removeContact!: HasManyRemoveAssociationMixin<Contact, Contact['id']>
     public removeContacts!: HasManyRemoveAssociationsMixin<Contact, Contact['id']>
+
+    public getMessages!: HasManyGetAssociationsMixin<Message>
+    public setMessages!: HasManySetAssociationsMixin<Message, Message['id']>
+    public addMessage!: HasManyAddAssociationMixin<Message, Message['id']>
+    public addMessages!: HasManyAddAssociationsMixin<Message, Message['id']>
+    public createMessage: HasManyCreateAssociationMixin<Message>
+    public countMessages!: HasManyCountAssociationsMixin
+    public hasMessage!: HasManyHasAssociationMixin<Message, Message['id']>
+    public hasMessages!: HasManyHasAssociationsMixin<Message, Message['id']>
+    public removeMessage!: HasManyRemoveAssociationMixin<Message, Message['id']>
+    public removeMessages!: HasManyRemoveAssociationsMixin<Message, Message['id']>
 
     public getServicechains!: HasManyGetAssociationsMixin<Servicechain>
     public setServicechains!: HasManySetAssociationsMixin<Servicechain, Servicechain['id']>

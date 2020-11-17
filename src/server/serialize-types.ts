@@ -81,32 +81,32 @@ export function serializeTypes(serializer: JSONAPISerializer): void {
             },
             servicechain: {
                 type: 'servicechain',
-                links: data => { return { related: `/orgs/${data.organization}/servicechains/${data.servicechain}` } },
+                links: data => { return data.servicechain ? { related: `/orgs/${data.organization}/servicechains/${data.servicechain}` } : null },
                 schema: 'id-only'
             },
             contact: {
                 type: 'contact',
-                links: data => { return { related: `contacts/${data.contact}` } },
+                links: data => { return { related: `/orgs/${data.organization}/contacts/${data.contact}` } },
                 schema: 'id-only'
             },
             category: {
                 type: 'contact',
-                links: data => { return { related: `/orgs/${data.organization}/contacts/${data.contact}` } },
+                links: data => { return data.category ? { related: `/orgs/${data.organization}/categories/${data.category}` } : null },
                 schema: 'id-only'
             },
             user: {
                 type: 'user',
-                links: data => { return { related: `/orgs/${data.organization}/users/${data.user}` } },
+                links: data => { return data.user ? { related: `/orgs/${data.organization}/users/${data.user}` } : null },
                 schema: 'id-only'
             },
             sent_service: {
                 type: 'service',
-                links: data => { return { related: `services/${data.sent_service}` } },
+                links: data => { return data.sent_service ? { related: `/services/${data.sent_service}` } : null },
                 schema: 'id-only'
             },
             is_reply_to: {
                 type: 'message',
-                links: data => { return { related: `orgs/${data.organization}/messages/${data.is_reply_to}` } },
+                links: data => { return data.is_reply_to ? { related: `/orgs/${data.organization}/messages/${data.is_reply_to}` } : null },
                 schema: 'id-only'
             }
         }
