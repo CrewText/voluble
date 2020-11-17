@@ -4,9 +4,9 @@ import { Org as OrgAttributes, PlanTypes } from 'voluble-common';
 import { getE164PhoneNumber } from '../utilities';
 import { Category } from "./category";
 import { Contact } from "./contact";
+import { Message } from "./message"
 import { Servicechain } from "./servicechain";
 import { User } from "./user";
-import { Message } from "./message"
 
 
 export class Organization extends Model implements OrgAttributes {

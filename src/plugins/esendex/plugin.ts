@@ -107,7 +107,9 @@ class EsendexPlugin extends voluble_plugin {
 
     // TODO: Actually find the contact out?
     const interpreted_message: InterpretedIncomingMessage = {
-      phone_number: parsed_message.inboundmessage.from,
+
+      phone_number_from: parsed_message.inboundmessage.from,
+      phone_number_to: parsed_message.inboundmessage.to,
       message_body: parsed_message.inboundmessage.messagetext
     }
 

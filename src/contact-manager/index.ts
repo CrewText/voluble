@@ -88,8 +88,8 @@ export class ContactManager {
         return db.models.Contact.findByPk(id)
     }
 
-    public static getContactFromEmail(email_address: string): Promise<Contact | null> {
-        return db.models.Contact.findOne({
+    public static getContactsFromEmail(email_address: string): Promise<Contact[]> {
+        return db.models.Contact.findAll({
             where: {
                 email_address: email_address
             }

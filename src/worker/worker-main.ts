@@ -1,15 +1,16 @@
 import * as redis from 'redis'
 import * as rsmq from 'rsmq'
 // import * as rsmqWorker from 'rsmq-worker'
-import { errors, MessageStates, PlanTypes } from 'voluble-common'
+import { Contact, errors, MessageStates, PlanTypes } from 'voluble-common'
 import * as winston from 'winston'
-
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
+import { OrgManager } from '../org-manager'
 import { PluginManager } from '../plugin-manager'
 import { MessageReceivedRequest, QueueManager } from '../queue-manager'
 import { RMQWorker } from '../RMQWorker'
 import { getE164PhoneNumber } from '../utilities'
+
 
 
 
@@ -118,55 +119,6 @@ worker_msg_sent_service.on("message", async (message: string, next: () => void) 
     return next()
 }).start()
 
-/**
- * Attempts to identify which Contact sent an inbound Message by using it's contact details as supplied by the receiving plugin
- * @param phone_number The phone number supplied by the plugin as a way of attempting to identify the Contact
- * @param email_address The email address supplied by the plugin as a way of attempting to identify the Contact
- * @returns The ID of the Contact that this Message is from, or `null` if it cannot be identified
- */
-async function attemptContactIdentification(phone_number?: string, email_address?: string): Promise<string | null> {
-    if (!phone_number && !email_address) {
-        return null
-    }
-
-    // First, try and identify from the phone number
-    if (phone_number) {
-        try {
-            phone_number = phone_number.startsWith("+") ? phone_number : `+${phone_number}`
-            // The contact ID has not been supplied, we need to try and determine it from the phone number
-            const phone_number_e164 = getE164PhoneNumber(phone_number)
-
-            return await ContactManager.getContactFromPhone(phone_number_e164)
-                .then(function (contact) {
-                    if (contact) {
-                        return contact.id
-                    } else {
-                        throw new errors.ResourceNotFoundError(`No contact found with phone number ${phone_number} (parsed as ${phone_number_e164})`)
-                    }
-                })
-        } catch (e) {
-            logger.warn(`Could not identify inbound contact from phone number: ${e.name}: ${e.message}`)
-        }
-    }
-
-    if (email_address) {
-        // Neither the contact ID or the phone number are supplied, we need to determine it from the email address
-        try {
-            const contact = await ContactManager.getContactFromEmail(email_address)
-            if (contact) {
-                return contact.id
-            } else {
-                throw new errors.ResourceNotFoundError(`No contact found with email ${email_address}`)
-            }
-        } catch (e) {
-            logger.warn(`Could not identify inbound contact from email address: ${e.name}: ${e.message}`)
-        }
-    }
-
-    // We haven't been able to identify the Contact by the phone number or email
-    return null
-}
-
 worker_msg_recv.on("message", async (message: string, next) => {
     let identified_contact_id: string
 
@@ -190,31 +142,69 @@ worker_msg_recv.on("message", async (message: string, next) => {
             throw new EmptyMessageInfoError()
         }
 
-        if (message_info.contact_id) {
-            const contact = await ContactManager.getContactWithId(message_info.contact_id)
+        if (message_info.resolved_contact_id) {
+            // The contact has been found for us - use this and move on
+            const contact = await ContactManager.getContactWithId(message_info.resolved_contact_id)
             if (!contact) {
-                logger.warn(`InterpretedIncomingMessage supplied with Contact ID, but Contact not found!`, { contact_id: message_info.contact_id })
+                logger.warn(`InterpretedIncomingMessage supplied with Contact ID, but Contact not found!`, { contact_id: message_info.resolved_contact_id })
             } else {
                 identified_contact_id = contact.id
+            }
+        } else {
+            if (!message_info.phone_number_from && !message_info.phone_number_to && !message_info.email_address_from) {
+                throw new InvalidMessageInfoError(`Invalid message_info supplied: Neither Contact ID, phone_number_from or email_address_from provided`)
             }
         }
 
         if (!identified_contact_id && message_info.is_reply_to) {
+            // We can find the contact if it's a reply to a Message by using the Contact from the original message
             const outbound_message = await MessageManager.getMessageFromId(message_info.is_reply_to)
             if (!outbound_message) {
                 logger.warn(`Message supplied as is_reply_to does not exist!`, { 'message_id': message_info.is_reply_to })
+                // Nullify is_reply_to, so that if we find a Contact, the created Message doesn't try and associate with a Message that doesn't exist
+                message_info.is_reply_to = null
             } else {
                 identified_contact_id = await outbound_message.getContact().then((contact) => { return contact.id })
             }
         }
 
-        if (!message_info.contact_id && !(message_info.phone_number || message_info.email_address)) {
-            throw new InvalidMessageInfoError(`Invalid message_info supplied: Neither Contact ID, phone_number or email_address provided`)
+        if (!identified_contact_id && message_info.phone_number_to && message_info.phone_number_from) {
+            // We can use the phone_number_to to find the Organization that the Message was destined for
+            const orgs = await OrgManager.getOrganizationsByPhoneNumber(message_info.phone_number_to)
+            if (!orgs) { throw new errors.ResourceNotFoundError("No Organization could be found with a phone number matching 'phone_number_to'.") }
+            else {
+                let potential_contacts: Contact[]
+
+                // Get all the Contacts in all the Orgs this could be for
+                const all_orgs_contacts = await Promise.all(orgs.map(org => org.getContacts({
+                    where: {
+                        phone_number: message_info.phone_number_from
+                    }
+                })))
+
+                all_orgs_contacts.forEach(ctts_in_org => {
+                    potential_contacts = potential_contacts.concat(ctts_in_org)
+                });
+
+                if (potential_contacts.length = 0) {
+                    throw new errors.ResourceNotFoundError("No Organization could be found with a phone number matching 'phone_number_to' and a Contact with a phone number matching 'phone_number_from'.")
+                } else if (potential_contacts.length == 1) {
+                    identified_contact_id = potential_contacts[0].id
+                } else {
+                    logger.warn("More than one Organization has a phone number matching 'phone_number_to' and a Contact with a phone number matching 'phone_number_from'.")
+                }
+            }
         }
 
-        if (!identified_contact_id && (message_info.phone_number || message_info.email_address)) {
-            const attempted_ident = await attemptContactIdentification(message_info.phone_number, message_info.email_address)
-            if (attempted_ident) { identified_contact_id = attempted_ident }
+        if (!identified_contact_id && message_info.email_address_from) {
+            const potential_contacts = await ContactManager.getContactsFromEmail(message_info.email_address_from)
+            if (!potential_contacts.length) {
+                throw new errors.ResourceNotFoundError("No Contact could be found with an email address matching 'email_address_from'.")
+            } else if (potential_contacts.length == 1) {
+                identified_contact_id = potential_contacts[0].id
+            } else {
+                logger.warn("More than one Contact has en email address matching 'email_address_from'.")
+            }
         }
 
         if (!identified_contact_id) {
@@ -222,17 +212,16 @@ worker_msg_recv.on("message", async (message: string, next) => {
         }
 
         // We've identified the Contact, so now just create the Message in the database
-
         const contact = await ContactManager.getContactWithId(identified_contact_id)
-        const sc = await contact.getServicechain()
 
         logger.debug(`Creating new Message from inbound message`, { service: incoming_message_request.service_id, contact: contact.id })
 
-        const new_message = await MessageManager.createMessage(message_info.message_body,
+        const new_message = await MessageManager.createMessage(
+            message_info.message_body,
             contact.id,
             "INBOUND",
             MessageStates.MSG_ARRIVED,
-            sc ? sc.id : null,
+            (await contact.getOrganization()).id,
             message_info.is_reply_to ? message_info.is_reply_to : null)
 
         logger.debug(`Created new inbound Message`, { message: new_message.id })

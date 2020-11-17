@@ -6,7 +6,6 @@
   "packages": {
     "": {
       "version": "0.0.0-a1",
-      "hasInstallScript": true,
       "license": "MIT",
       "dependencies": {
         "auth0": "^2.28.0",
@@ -5921,8 +5920,8 @@
       "license": "MIT"
     },
     "node_modules/voluble-plugin-base": {
-      "version": "1.0.2",
-      "resolved": "git+ssh://git@github.com/CrewText/voluble-plugin-base.git#445dc11f7fdd7c08c5f75618fd0dc49f24494fca",
+      "version": "1.1.0",
+      "resolved": "git+ssh://git@github.com/CrewText/voluble-plugin-base.git#7f60dcb8554379d2b3429998435b5c7325ec2f02",
       "license": "UNLICENSED",
       "dependencies": {
         "voluble-common": "git+https://github.com/CrewText/voluble-common.git",
@@ -11060,7 +11059,7 @@
       "from": "voluble-common@git+ssh://github.com/crewtext/voluble-common.git"
     },
     "voluble-plugin-base": {
-      "version": "git+ssh://git@github.com/CrewText/voluble-plugin-base.git#445dc11f7fdd7c08c5f75618fd0dc49f24494fca",
+      "version": "git+ssh://git@github.com/CrewText/voluble-plugin-base.git#7f60dcb8554379d2b3429998435b5c7325ec2f02",
       "from": "voluble-plugin-base@git+ssh://github.com/CrewText/voluble-plugin-base.git",
       "requires": {
         "voluble-common": "git+https://github.com/CrewText/voluble-common.git",

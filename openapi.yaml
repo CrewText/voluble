@@ -7,8 +7,6 @@ info:
 
     Current API status:![OpenAPI Validity
     Status](http://validator.swagger.io/validator?url=https://raw.githubusercontent.com/calmcl1/voluble/master/openapi.yaml)
-
-    Note: all responses are `JSEND`-compatible, which means that the general success or failure of a request can be determined from the `status` field in the HTTP response. The API data returned can be found in the `data` field in the response.
   contact:
     email: mail@callum-mclean.co.uk
     name: Cal McLean
@@ -272,7 +270,8 @@ components:
           type: string
           nullable: false
           readOnly: true
-          description: The Auth0-generated ID of the corresponding user in Auth0 for
+          description:
+            The Auth0-generated ID of the corresponding user in Auth0 for
             authentication management.
           example: auth0|c616d114-4f68-4dba-b976-cd5ae0aa359d
   securitySchemes:
@@ -293,7 +292,7 @@ paths:
       security:
         - jwt: []
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
@@ -303,7 +302,7 @@ paths:
                   $ref: "#/components/schemas/User"
         "500":
           $ref: "#/components/responses/500"
-          
+
   /orgs/{org-id}/contacts:
     parameters:
       - $ref: "#/components/parameters/org-id"

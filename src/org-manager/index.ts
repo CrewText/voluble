@@ -39,6 +39,15 @@ export class OrgManager {
         return db.models.Organization.findByPk(id)
     }
 
+    public static getOrganizationsByPhoneNumber(phone_number: string): Promise<Organization[]> {
+        ////TODO: Update this to filter out any Orgs that use the shared phone number plan
+        return db.models.Organization.findAll({
+            where: {
+                phone_number: phone_number,
+            }
+        })
+    }
+
     public static updateOrganizationWithId(id: string, updates: Partial<Org>): Promise<[number, Organization[]]> {
         return db.models.Organization.update(updates, {
             where: { id: id }

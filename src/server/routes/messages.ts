@@ -183,7 +183,8 @@ router.post('/:org_id/messages/', checkJwt,
       if (!contact) { throw new errors.ResourceNotFoundError(`Contact with ID ${req.body.contact} not found`) }
       const sc = req.body.servicechain ? await ServicechainManager.getServicechainById(req.body.servicechain) : await contact.getServicechain()
 
-      let msg = await MessageManager.createMessage(req.body.body,
+      let msg = await MessageManager.createMessage(
+        req.body.body,
         req.body.contact,
         req.body.direction || "OUTBOUND", //TODO: <-- Is this necessary? If the message is being sent, then it's outbound implicitly...
         MessageStates.MSG_PENDING,

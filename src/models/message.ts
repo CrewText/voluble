@@ -3,9 +3,9 @@ import { Message as MessageAttributes, MessageDirections, MessageStates } from '
 
 import { Category } from './category'
 import { Contact } from './contact'
+import { Organization } from './organization'
 import { Servicechain } from './servicechain'
 import { User } from './user'
-import { Organization } from './organization'
 
 
 export class Message extends Model implements MessageAttributes {
