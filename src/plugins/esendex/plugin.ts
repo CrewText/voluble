@@ -99,12 +99,11 @@ class EsendexPlugin extends voluble_plugin {
       messageid: 'guid-of-inbound-message',
       accountid: 'guid-of-esendex-account-for-message',
       messagetext: 'This is the inbound message',
-      from: '00447426437449',
-      to: '00353879409420' } }
+      from: '447426437449',
+      to: '353879409420' } }
     */
 
     const parsed_message = <IncomingEsendexMessage>message_data
-    console.log(parsed_message)
     // TODO: Actually find the contact out?
     const interpreted_message: InterpretedIncomingMessage = {
 
