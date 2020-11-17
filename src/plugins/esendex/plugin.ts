@@ -104,12 +104,12 @@ class EsendexPlugin extends voluble_plugin {
     */
 
     const parsed_message = <IncomingEsendexMessage>message_data
-
+    console.log(parsed_message)
     // TODO: Actually find the contact out?
     const interpreted_message: InterpretedIncomingMessage = {
 
-      phone_number_from: parsed_message.inboundmessage.from,
-      phone_number_to: parsed_message.inboundmessage.to,
+      phone_number_from: parsed_message.inboundmessage.from.replace("00", "+"),
+      phone_number_to: parsed_message.inboundmessage.to.replace("00", "+"),
       message_body: parsed_message.inboundmessage.messagetext
     }
 
