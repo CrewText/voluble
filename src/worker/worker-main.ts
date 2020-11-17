@@ -174,7 +174,7 @@ worker_msg_recv.on("message", async (message: string, next) => {
             const orgs = await OrgManager.getOrganizationsByPhoneNumber(message_info.phone_number_to)
             if (!orgs) { throw new errors.ResourceNotFoundError("No Organization could be found with a phone number matching 'phone_number_to'.") }
             else {
-                let potential_contacts: Contact[]
+                let potential_contacts: Contact[] = []
 
                 // Get all the Contacts in all the Orgs this could be for
                 const all_orgs_contacts = await Promise.all(orgs.map(org => org.getContacts({
@@ -198,7 +198,7 @@ worker_msg_recv.on("message", async (message: string, next) => {
         }
 
         if (!identified_contact_id && message_info.email_address_from) {
-            const potential_contacts = await ContactManager.getContactsFromEmail(message_info.email_address_from)
+            const potential_contacts = await ContactManager.getContactsFromEmail(message_info.email_address_from) ?? []
             if (!potential_contacts.length) {
                 throw new errors.ResourceNotFoundError("No Contact could be found with an email address matching 'email_address_from'.")
             } else if (potential_contacts.length == 1) {
