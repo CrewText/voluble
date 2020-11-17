@@ -157,6 +157,9 @@ worker_msg_recv.on("message", async (message: string, next) => {
             }
         }
 
+        message_info.phone_number_from = getE164PhoneNumber(message_info.phone_number_from)
+        message_info.phone_number_to = getE164PhoneNumber(message_info.phone_number_to)
+
         if (!identified_contact_id && message_info.is_reply_to) {
             // We can find the contact if it's a reply to a Message by using the Contact from the original message
             const outbound_message = await MessageManager.getMessageFromId(message_info.is_reply_to)
