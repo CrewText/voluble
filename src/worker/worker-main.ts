@@ -3,6 +3,7 @@ import * as rsmq from 'rsmq'
 // import * as rsmqWorker from 'rsmq-worker'
 import { Contact, errors, MessageStates, PlanTypes } from 'voluble-common'
 import * as winston from 'winston'
+
 import { ContactManager } from '../contact-manager'
 import { MessageManager } from '../message-manager'
 import { OrgManager } from '../org-manager'
@@ -186,7 +187,7 @@ worker_msg_recv.on("message", async (message: string, next) => {
                     potential_contacts = potential_contacts.concat(ctts_in_org)
                 });
 
-                if (potential_contacts.length = 0) {
+                if (potential_contacts.length == 0) {
                     throw new errors.ResourceNotFoundError("No Organization could be found with a phone number matching 'phone_number_to' and a Contact with a phone number matching 'phone_number_from'.")
                 } else if (potential_contacts.length == 1) {
                     identified_contact_id = potential_contacts[0].id
