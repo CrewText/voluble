@@ -68,7 +68,7 @@ export function checkHasOrgAccessParamMiddleware(org_param_name: string): Expres
 
 export function checkHasOrgAccess(user: Auth0User, requested_org: string): void {
     if (!hasScope(user, scopes.VolubleAdmin) && user.organization != requested_org) {
-        throw new errors.ResourceOutOfUserScopeError(`User with org ID does not have access to the requested resource: ${requested_org}`)
+        throw new errors.ResourceOutOfUserScopeError(`User does not have access to the requested resource: ${requested_org}`)
     }
 }
 

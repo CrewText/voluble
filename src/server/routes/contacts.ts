@@ -72,6 +72,7 @@ router.get('/:org_id/contacts/count', checkJwt, checkScopesMiddleware([scopes.Co
  */
 router.get('/:org_id/contacts/:contact_id', checkJwt,
   checkScopesMiddleware([scopes.ContactView, scopes.VolubleAdmin]),
+  setupUserOrganizationMiddleware,
   checkHasOrgAccessParamMiddleware('org_id'),
   async (req, res, next) => {
     try {
