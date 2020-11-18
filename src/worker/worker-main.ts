@@ -228,6 +228,9 @@ worker_msg_recv.on("message", async (message: string, next) => {
             (await contact.getOrganization()).id,
             message_info.is_reply_to ? message_info.is_reply_to : null)
 
+        new_message.sent_time = new Date()
+        new_message.save()
+
         logger.debug(`Created new inbound Message`, { message: new_message.id })
 
     } catch (e) {
