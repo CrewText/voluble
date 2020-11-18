@@ -76,9 +76,9 @@ export class MessageManager {
 
         const sc = await ServicechainManager.getServicechainById(msg.servicechain)
         const svc_count = await sc.countServices()
-        if (!svc_count) {
-            QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
-        }
+        // if (!svc_count) {
+        //     QueueManager.addMessageStateUpdateRequest(msg.id, "MSG_FAILED")
+        // }
 
         let is_sent = false
 
@@ -131,22 +131,20 @@ export class MessageManager {
             })
     }
 
-    public static updateMessageState(msg_id: string, msg_state: string): Promise<Message> {
+    public static async updateMessageState(msg_id: string, msg_state: string): Promise<Message> {
         logger.info("Updating message state", { 'msg': msg_id, 'state': MessageStates[msg_state] })
-        return this.getMessageFromId(msg_id)
-            .then(function (msg) {
-                if (msg) {
-                    if (msg_state in MessageStates) {
-                        msg.message_state = MessageStates[msg_state]
-                    } else {
-                        return Promise.reject(new MessageStateInvalidError(`Message with ID ${msg_id} supplied invalid MessageState: ${msg_state}`))
-                    }
-                    return msg.save()
-                } else {
-                    logger.warn(`Could not find message with ID ${msg_id}`)
-                    return Promise.reject(new errors.ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
-                }
-            })
+        const msg = await this.getMessageFromId(msg_id)
+        if (!msg) {
+            logger.warn(`Could not find message with ID ${msg_id}`)
+            return Promise.reject(new errors.ResourceNotFoundError(`Message with ID ${msg_id} was not found`))
+        }
+
+        if (!(msg_state in MessageStates)) {
+            return Promise.reject(new MessageStateInvalidError(`Message with ID ${msg_id} supplied invalid MessageState: ${msg_state}`))
+        }
+
+        msg.message_state = MessageStates[msg_state]
+        return msg.save()
     }
 
     /**
